@@ -2,10 +2,8 @@ name: Publish Über Assembly to Github Packages
 
 on:
   workflow_dispatch:
-#   push:
-#     branches: [ master ]
-#   pull_request:
-#     branches: [ master ]
+   push:
+     branches: [ main ]
 
 env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
@@ -28,5 +26,3 @@ jobs:
         distribution: 'temurin'
     - name: Publish Über Jar to Github Packages
       run: sbt publishAssemblyToGithubPackages
-    - name: Upload to RamNode
-      run: sbt uploadAssemblyToRamNode
