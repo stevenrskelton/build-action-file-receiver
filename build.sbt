@@ -32,13 +32,12 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http2-support" % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-stream" % akkaVersion,
-//  "com.typesafe.akka" %% "akka-discovery" % akkaVersion,
-//  "com.typesafe.akka" %% "akka-pki" % akkaVersion,
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
   "ch.qos.logback" % "logback-classic" % "1.4.1",
-  "org.scala-lang.modules" %% "scala-xml" % "2.1.0"
-//  "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion % Test,
-//  "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % Test,
-//  "org.scalatest" %% "scalatest" % "3.2.12" % Test
+  "org.scala-lang.modules" %% "scala-xml" % "2.1.0",
+  "org.mockito" %% "mockito-scala" % "1.17.12" % Test,
+  "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % Test,
+  "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
+  "org.scalatest" %% "scalatest" % "3.2.14" % Test
 )
