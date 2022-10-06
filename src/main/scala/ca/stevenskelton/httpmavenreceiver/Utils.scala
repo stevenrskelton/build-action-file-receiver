@@ -7,10 +7,11 @@ import com.typesafe.scalalogging.Logger
 
 import java.io._
 import java.security.MessageDigest
+import java.time.Duration
 import scala.concurrent.Future
 import scala.util.{Try, Using}
 
-object FileUtils {
+object Utils {
 
   private val ByteStringSink = Sink.fold[String, ByteString]("") { case (acc, str) =>
     acc + str.utf8String
@@ -80,6 +81,21 @@ object FileUtils {
       } else {
         s"${size}bytes"
       }
+    }
+  }
+
+  def humanReadableDuration(duration: Duration): String = {
+    val seconds = duration.toSeconds
+    if (seconds >= 2592000) {
+      s"${(seconds / 2592000).toInt} months"
+    } else if (seconds > 86400) {
+      s"${(seconds / 86400).toInt} days"
+    } else if (seconds > 3600) {
+      s"${(seconds / 3600).toInt} hours"
+    } else if (seconds > 60) {
+      s"${(seconds / 60).toInt} minutes"
+    } else {
+      s"$seconds seconds"
     }
   }
 }
