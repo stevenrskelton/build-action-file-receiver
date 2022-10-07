@@ -21,18 +21,17 @@ object Main extends App {
   implicit private val logger = Logger("http")
 
   private val directory = new File(conf.getString("http-maven-receiver.file-directory"))
-  logger.info(s"Setting file directory to: ${directory.getPath}")
+  private val maxUploadByteSize = Try(conf.getBytes("http-maven-receiver.max-upload-size").toLong).getOrElse(100000L)
 
-  private val artifactUpload = {
-    val httpExt = Http(actorSystem)
-    val configGithubToken = Try(conf.getString("http-maven-receiver.github-token")).toOption
-    ArtifactUpload(
-      httpExt,
-      directory.toPath,
-      configGithubToken,
-      (githubPackage, fileInfo) => new MavenMD5CompareRequestHooks(httpExt, configGithubToken, directory.toPath, githubPackage, fileInfo)
-    )
-  }
+  logger.info(s"Setting file directory to: ${directory.getPath} with max upload size: ${maxUploadByteSize}bytes")
+
+  private val artifactUpload = ArtifactUpload(
+    Http(actorSystem),
+    directory.toPath,
+    new MavenMD5CompareRequestHooks(_),
+    Try(conf.getString("http-maven-receiver.github-token")).toOption.filterNot(_.isBlank),
+    maxUploadByteSize
+  )
 
   bindPublic(
     artifactUpload,
