@@ -1,3 +1,8 @@
 *.class
 *.log
-/venv/
+/venv
+**/.cache
+**/target
+/.idea
+/.settings
+*.iml
