@@ -1,9 +1,10 @@
 package ca.stevenskelton.httpmavenreceiver
 
 import akka.actor.{ActorSystem, ExtendedActorSystem}
-import akka.http.scaladsl.{Http, HttpExt}
 import akka.http.scaladsl.client.RequestBuilding.Post
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.{Http, HttpExt}
+import org.mockito.ArgumentMatcher
 import org.mockito.ArgumentMatchers.{any, argThat}
 import org.mockito.IdiomaticMockito.StubbingOps
 import org.mockito.MockitoSugar._
@@ -18,9 +19,9 @@ object UploadRequestHelper {
   val httpExt = Http(actorSystem)
 
   def postMultipartFileRequest(
-                                uri: Uri,
                                 resource: File,
-                                githubPackage: GithubPackage
+                                githubPackage: GithubPackage,
+                                uri: Uri = Uri./
                               ): HttpRequest = {
 
     val bodyBytes = getClass.getResourceAsStream(resource.getAbsolutePath).readAllBytes()
@@ -31,10 +32,17 @@ object UploadRequestHelper {
     Post(uri.toString, multipartForm)
   }
 
-  def createHttpExt(uri: Uri, httpResponse: HttpResponse): HttpExt = {
+  def createHttpExtMock(uri: Uri, httpResponse: HttpResponse, headers: Seq[(String, String)] = Nil): HttpExt = {
+
+    val matches = new ArgumentMatcher[HttpRequest] {
+      override def matches(argument: HttpRequest): Boolean = {
+        argument.uri == uri && argument.headers.map(header => header.name -> header.value).toSet == headers.toSet
+      }
+    }
+
     val mockHttp = mock[HttpExt]
     mockHttp.system shouldReturn actorSystem
-    mockHttp.singleRequest(argThat((argument: HttpRequest) => argument.uri == uri), any, any, any) shouldReturn Future.successful(httpResponse)
+    mockHttp.singleRequest(argThat(matches), any, any, any) shouldReturn Future.successful(httpResponse)
     mockHttp
   }
 }

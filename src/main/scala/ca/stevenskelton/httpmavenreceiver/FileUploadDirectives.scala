@@ -16,7 +16,7 @@ import scala.util.{Failure, Success}
  * Modified code from akka.http.scaladsl.server.directives.FileUploadDirectives.fileUpload
  * Modified to:
  *  - parse form fields preceding file into GithubPackage data class
- *  (these need to be preceding the file part so they can be read before upload is allowed to start)
+ *    (these need to be preceding the file part so they can be read before upload is allowed to start)
  */
 object FileUploadDirectives {
 
@@ -50,7 +50,7 @@ object FileUploadDirectives {
                   part.entity.discardBytes().future().map(_ => Done)
                 }
               case part if part.entity.contentType == ContentTypes.`text/plain(UTF-8)` =>
-                FileUtils.sinkToString(part.entity.dataBytes).map {
+                Utils.sinkToString(part.entity.dataBytes).map {
                   keyValue => githubPackageFormFields.addOne((part.name, keyValue))
                 }
               case part =>

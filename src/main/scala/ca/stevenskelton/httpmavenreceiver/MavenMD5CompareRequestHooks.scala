@@ -1,11 +1,14 @@
 package ca.stevenskelton.httpmavenreceiver
 
+import akka.Done
 import akka.http.scaladsl.HttpExt
 import akka.http.scaladsl.client.RequestBuilding.Get
-import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.RawHeader
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
+import akka.http.scaladsl.server.directives.FileInfo
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
+import ca.stevenskelton.httpmavenreceiver.MavenMD5CompareRequestHooks.MavenPackage
 import com.typesafe.scalalogging.Logger
 
 import java.io.File
@@ -17,18 +20,60 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, XML}
 
-case class GithubPackages(
-                           httpExt: HttpExt,
-                           directory: Path,
-                           githubToken: String
-                         )(implicit logger: Logger) {
+class MavenMD5CompareRequestHooks(httpExt: HttpExt, githubToken: Option[String], directory: Path, githubPackage: GithubPackage, fileInfo: FileInfo)(implicit materializer: Materializer, logger: Logger)
+  extends RequestHooks(directory, githubPackage, fileInfo, logger) {
 
-  implicit val materializer: Materializer = Materializer(httpExt.system)
-
-  case class MavenPackage(githubPackage: GithubPackage, version: String, updated: ZonedDateTime) {
-    val jarFilename: String = s"${githubPackage.artifactId}-${githubPackage.version}.jar"
-    val artifactUrl = s"${githubPackage.path}/$jarFilename"
+  private def withAuthorization(request: HttpRequest, githubPackage: GithubPackage): HttpRequest = {
+    githubPackage.githubToken.orElse(githubToken).fold({
+      logger.debug("No github token found for Maven, calling unauthenticated.")
+      request
+    }) { token => request.addHeader(RawHeader("Authorization", s"token $token")) }
   }
+
+  private val uploadedF = {
+    val urlMd5 = s"${githubPackage.path}/${fileInfo.fileName}.md5"
+    val request = withAuthorization(Get(urlMd5), githubPackage)
+    httpExt.singleRequest(request).flatMap {
+      response =>
+        if (response.status == StatusCodes.OK) {
+          Utils.sinkToString(response.entity.dataBytes)
+        } else {
+          val errorMessage = s"Maven version ${fileInfo.fileName} ${githubPackage.version} does not exist in Github"
+          Future.failed(UserMessageException(StatusCodes.BadRequest, errorMessage))
+        }
+    }
+  }
+
+  override def preHook(): Future[Done] = {
+    if (fileInfo.fileName.contains("SNAPSHOT")) {
+      super.preHook()
+    } else {
+      uploadedF.flatMap(_ => super.preHook())
+    }
+  }
+
+  override def tmpFileHook(tmp: File, md5Sum: String): Future[File] = {
+    if (fileInfo.fileName.contains("SNAPSHOT")) {
+      super.tmpFileHook(tmp, md5Sum)
+    } else {
+      uploadedF.flatMap {
+        md5 =>
+          val uploadMD5 = Utils.md5sum(tmp)
+          if (md5 != uploadMD5) {
+            val errorMessage = s"Upload ${destinationFile.getName} MD5 not equal, $md5 expected != $uploadMD5"
+            logger.error(errorMessage)
+            tmp.delete
+            Future.failed(UserMessageException(StatusCodes.BadRequest, errorMessage))
+          } else {
+            tmp.renameTo(destinationFile)
+            Future.successful(destinationFile)
+          }
+      }
+    }
+  }
+
+  override def postHook(httpResponse: HttpResponse): Future[HttpResponse] = super.postHook(httpResponse)
+
 
   def downloadLatestMavenPackage(githubPackage: GithubPackage): Future[File] = {
     fetchLatestMetadata(githubPackage).flatMap {
@@ -36,15 +81,15 @@ case class GithubPackages(
     }
   }
 
-  def fetchLatestMetadata(githubPackage: GithubPackage): Future[Seq[MavenPackage]] = {
-    val request = Get(s"${githubPackage.path}/maven-metadata.xml").addHeader(RawHeader("Authorization", s"token $githubToken"))
+  private def fetchLatestMetadata(githubPackage: GithubPackage): Future[Seq[MavenPackage]] = {
+    val request = withAuthorization(Get(s"${githubPackage.path}/maven-metadata.xml"), githubPackage)
     httpExt.singleRequest(request).map {
       response =>
         val entity = Try(response.entity.toString)
         entity.filter(_ => response.status == StatusCodes.OK).map {
           bodyString =>
             val xml = XML.loadString(bodyString)
-            parseMavenMetadata(githubPackage, xml)
+            MavenMD5CompareRequestHooks.parseMavenMetadata(githubPackage, xml)
         }.getOrElse {
           throw new Exception(s"${response.status} Could not fetch Github maven: ${entity.toOption.getOrElse("``")}")
         }
@@ -53,7 +98,7 @@ case class GithubPackages(
 
   def downloadMavenMD5(mavenPackage: MavenPackage): Future[String] = {
     logger.info(s"Downloading ${mavenPackage.jarFilename}.md5")
-    val request = Get(s"${mavenPackage.artifactUrl}.md5").addHeader(RawHeader("Authorization", s"token $githubToken"))
+    val request = withAuthorization(Get(s"${mavenPackage.artifactUrl}.md5"), mavenPackage.githubPackage)
     httpExt.singleRequest(request).map {
       response =>
         if (response.status == StatusCodes.OK) {
@@ -79,8 +124,8 @@ case class GithubPackages(
         md5sum =>
           val md5file = new File(s"${directory.toFile.getPath}/${mavenPackage.jarFilename}.md5")
           //TODO: handle error
-          FileUtils.writeFile(md5file, md5sum)
-          val request = Get(mavenPackage.artifactUrl).addHeader(RawHeader("Authorization", s"token $githubToken"))
+          Utils.writeFile(md5file, md5sum)
+          val request = withAuthorization(Get(mavenPackage.artifactUrl), mavenPackage.githubPackage)
           //TODO: timeout?
           val futureIOResult = httpExt.singleRequest(request).flatMap {
             response =>
@@ -97,7 +142,7 @@ case class GithubPackages(
             case Success(ioResult) =>
               ioResult.status match {
                 case Success(_) =>
-                  val md5SumOfDownload = FileUtils.md5sum(jarfile)
+                  val md5SumOfDownload = Utils.md5sum(jarfile)
                   if (md5sum != md5SumOfDownload) {
                     logger.error(s"MD5SUM of ${jarfile.getName} not equal: $md5sum != $md5SumOfDownload")
                     jarfile.delete
@@ -118,7 +163,11 @@ case class GithubPackages(
     }
   }
 
-  def parseMavenMetadata(githubPackage: GithubPackage, metadata: Elem): Seq[MavenPackage] = {
+}
+
+object MavenMD5CompareRequestHooks {
+
+  private def parseMavenMetadata(githubPackage: GithubPackage, metadata: Elem): Seq[MavenPackage] = {
     (metadata \\ "snapshotVersion").withFilter {
       n => (n \ "extension").text == "jar"
     }.flatMap {
@@ -133,4 +182,8 @@ case class GithubPackages(
     }.sortBy(_.updated).reverse
   }
 
+ private case class MavenPackage(githubPackage: GithubPackage, version: String, updated: ZonedDateTime) {
+    val jarFilename: String = s"${githubPackage.artifactId}-${githubPackage.version}.jar"
+    val artifactUrl = s"${githubPackage.path}/$jarFilename"
+  }
 }
