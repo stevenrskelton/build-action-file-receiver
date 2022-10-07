@@ -1,46 +1,38 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import akka.Done
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{HttpResponse, Multipart}
+import akka.http.scaladsl.server.RequestContext
 import akka.http.scaladsl.server.directives.FileInfo
-import com.typesafe.scalalogging.Logger
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 
 import java.io.File
-import java.nio.file.Path
-import java.time.Duration
 import scala.concurrent.Future
 
-class RequestHooks(val directory: Path, val githubPackage: GithubPackage, val fileInfo: FileInfo, val logger: Logger) {
+trait RequestHooks {
 
-  private val start = System.currentTimeMillis()
+  /**
+   * Executes when request is received
+   *
+   * @return
+   */
+  def preHook(form: Multipart.FormData, requestContext: RequestContext): Future[(GithubPackage, FileInfo, Source[ByteString, Any])]
 
-  val destinationFile = new File(s"${directory.toFile.getAbsolutePath}/${fileInfo.fileName}")
+  /**
+   * Executes after file has been uploaded to a temporary file
+   *
+   * @param tmp
+   * @param md5Sum
+   * @return Location where temporary file should be moved
+   */
+  def tmpFileHook(tmp: File, md5Sum: String): Future[File]
 
-  def preHook(): Future[Done] = {
-    if (destinationFile.exists) {
-      val msg = s"${destinationFile.getName} already exists"
-      logger.error(msg)
-      Future.failed(UserMessageException(StatusCodes.BadRequest, msg))
-    } else {
-      Future.successful(Done)
-    }
-  }
-
-  def tmpFileHook(tmp: File, md5Sum: String): Future[File] = {
-    if (tmp.renameTo(destinationFile)) {
-      Future.successful(destinationFile)
-    } else {
-      val msg = s"Could not rename temporary file ${tmp.getName} to ${destinationFile.getName}"
-      logger.error(msg)
-      Future.failed(UserMessageException(StatusCodes.BadRequest, msg))
-    }
-  }
-
-  def postHook(httpResponse: HttpResponse): Future[HttpResponse] = Future.successful {
-    val duration = Duration.ofMillis(System.currentTimeMillis() - start)
-    logger.info(s"Completed ${fileInfo.fileName} in ${Utils.humanReadableDuration(duration)}")
-    httpResponse
-  }
-
+  /**
+   * Blocks response until complete
+   *
+   * @param httpResponse
+   * @return
+   */
+  def postHook(httpResponse: HttpResponse): Future[HttpResponse]
 }
 

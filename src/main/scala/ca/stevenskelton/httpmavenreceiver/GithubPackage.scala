@@ -25,7 +25,6 @@ case class GithubPackage(
 
 object GithubPackage {
 
-  val MaxUploadByteSize = 120000000
   val FileUploadFieldName = "file"
   val FormErrorMessage = s"POST should include fields: githubUser, githubRepository, groupId, artifactId, version, and $FileUploadFieldName"
 
