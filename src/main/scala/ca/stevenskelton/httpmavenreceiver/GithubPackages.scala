@@ -9,7 +9,7 @@ import akka.stream.scaladsl.FileIO
 import com.typesafe.scalalogging.Logger
 
 import java.io.File
-import java.nio.file.StandardOpenOption
+import java.nio.file.{Path, StandardOpenOption}
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
 import scala.concurrent.ExecutionContext.Implicits._
@@ -19,40 +19,32 @@ import scala.xml.{Elem, XML}
 
 case class GithubPackages(
                            httpExt: HttpExt,
-                           directory: File,
-                           githubToken: String,
-                           githubUser: String,
-                           githubRepository: String,
-                           groupId: String,
-                           artifactId: String,
-                           version: String
+                           directory: Path,
+                           githubToken: String
                          )(implicit logger: Logger) {
 
   implicit val materializer: Materializer = Materializer(httpExt.system)
 
-  val path = s"https://maven.pkg.github.com/$githubUser/$githubRepository/${groupId.replace(".", "/")}/$artifactId/$version"
-
-  val releasesUrl = s"$path/maven-metadata.xml"
-
-  case class MavenPackage(version: String, updated: ZonedDateTime) {
-    def jarFilename: String = s"$artifactId-$version.jar"
+  case class MavenPackage(githubPackage: GithubPackage, version: String, updated: ZonedDateTime) {
+    val jarFilename: String = s"${githubPackage.artifactId}-${githubPackage.version}.jar"
+    val artifactUrl = s"${githubPackage.path}/$jarFilename"
   }
 
-  def downloadLatestMavenPackage: Future[File] = {
-    fetchLatestMetadata.flatMap {
+  def downloadLatestMavenPackage(githubPackage: GithubPackage): Future[File] = {
+    fetchLatestMetadata(githubPackage).flatMap {
       metadata => downloadMavenPackage(metadata.head)
     }
   }
 
-  def fetchLatestMetadata: Future[Seq[MavenPackage]] = {
-    val request = Get("https://akka.io").addHeader(RawHeader("Authorization", s"token $githubToken"))
+  def fetchLatestMetadata(githubPackage: GithubPackage): Future[Seq[MavenPackage]] = {
+    val request = Get(s"${githubPackage.path}/maven-metadata.xml").addHeader(RawHeader("Authorization", s"token $githubToken"))
     httpExt.singleRequest(request).map {
       response =>
         val entity = Try(response.entity.toString)
         entity.filter(_ => response.status == StatusCodes.OK).map {
           bodyString =>
             val xml = XML.loadString(bodyString)
-            parseMavenMetadata(xml)
+            parseMavenMetadata(githubPackage, xml)
         }.getOrElse {
           throw new Exception(s"${response.status} Could not fetch Github maven: ${entity.toOption.getOrElse("``")}")
         }
@@ -61,7 +53,7 @@ case class GithubPackages(
 
   def downloadMavenMD5(mavenPackage: MavenPackage): Future[String] = {
     logger.info(s"Downloading ${mavenPackage.jarFilename}.md5")
-    val request = Get(s"$path/${mavenPackage.jarFilename}.md5").addHeader(RawHeader("Authorization", s"token $githubToken"))
+    val request = Get(s"${mavenPackage.artifactUrl}.md5").addHeader(RawHeader("Authorization", s"token $githubToken"))
     httpExt.singleRequest(request).map {
       response =>
         if (response.status == StatusCodes.OK) {
@@ -76,7 +68,7 @@ case class GithubPackages(
   }
 
   def downloadMavenPackage(mavenPackage: MavenPackage): Future[File] = {
-    val jarfile = new File(s"${directory.getPath}/${mavenPackage.jarFilename}")
+    val jarfile = new File(s"${directory.toFile.getPath}/${mavenPackage.jarFilename}")
     if (jarfile.exists) {
       val msg = s"File ${jarfile.getName} exists"
       val ex = new Exception(msg)
@@ -85,11 +77,10 @@ case class GithubPackages(
     } else {
       downloadMavenMD5(mavenPackage).flatMap {
         md5sum =>
-          val md5file = new File(s"${directory.getPath}/${mavenPackage.jarFilename}.md5")
+          val md5file = new File(s"${directory.toFile.getPath}/${mavenPackage.jarFilename}.md5")
           //TODO: handle error
           FileUtils.writeFile(md5file, md5sum)
-          val url = s"$path/${mavenPackage.jarFilename}"
-          val request = Get(url).addHeader(RawHeader("Authorization", s"token $githubToken"))
+          val request = Get(mavenPackage.artifactUrl).addHeader(RawHeader("Authorization", s"token $githubToken"))
           //TODO: timeout?
           val futureIOResult = httpExt.singleRequest(request).flatMap {
             response =>
@@ -127,7 +118,7 @@ case class GithubPackages(
     }
   }
 
-  def parseMavenMetadata(metadata: Elem): Seq[MavenPackage] = {
+  def parseMavenMetadata(githubPackage: GithubPackage, metadata: Elem): Seq[MavenPackage] = {
     (metadata \\ "snapshotVersion").withFilter {
       n => (n \ "extension").text == "jar"
     }.flatMap {
@@ -137,7 +128,7 @@ case class GithubPackages(
           updated <- n \ "updated"
         } yield {
           val updatedTime = LocalDateTime.parse(updated.text, DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
-          MavenPackage(value.text, updatedTime.atZone(ZoneId.of("UTC")))
+          MavenPackage(githubPackage, value.text, updatedTime.atZone(ZoneId.of("UTC")))
         }
     }.sortBy(_.updated).reverse
   }

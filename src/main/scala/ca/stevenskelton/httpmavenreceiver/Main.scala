@@ -16,7 +16,7 @@ object Main extends App {
   httpServer.map {
     httpBinding =>
       val address = httpBinding.localAddress
-      logger.info("HTTP server bound to {}:{}", address.getHostString, address.getPort)
+      logger.info(s"HTTP server bound to ${address.getHostString}:${address.getPort}")
       httpBinding.whenTerminated.onComplete {
         _ =>
           actorSystem.terminate()

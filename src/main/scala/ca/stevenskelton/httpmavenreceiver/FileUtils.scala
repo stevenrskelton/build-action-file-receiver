@@ -1,12 +1,24 @@
 package ca.stevenskelton.httpmavenreceiver
 
+import akka.stream.Materializer
+import akka.stream.scaladsl.Sink
+import akka.util.ByteString
 import com.typesafe.scalalogging.Logger
 
 import java.io._
 import java.security.MessageDigest
+import scala.concurrent.Future
 import scala.util.{Try, Using}
 
 object FileUtils {
+
+  private val ByteStringSink = Sink.fold[String, ByteString]("") { case (acc, str) =>
+    acc + str.utf8String
+  }
+
+  def sinkToString(source: akka.stream.scaladsl.Source[ByteString, _])(implicit mat: Materializer): Future[String] = {
+    source.runWith(ByteStringSink)
+  }
 
   def writeFile(file: File, content: String)(implicit logger: Logger): Try[Unit] = {
     if (file.exists) logger.info(s"Overwriting existing ${file.getAbsolutePath}")

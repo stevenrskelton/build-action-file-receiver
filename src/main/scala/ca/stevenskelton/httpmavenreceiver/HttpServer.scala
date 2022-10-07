@@ -17,16 +17,13 @@ object HttpServer {
 
     val host = config.getString("http-maven-receiver.host")
     val port = config.getInt("http-maven-receiver.port")
+    val directory = new File(config.getString("http-maven-receiver.file-directory"))
+    logger.info(s"Setting file directory to: ${directory.getPath}")
 
     val jarUpload = new ArtifactUpload(GithubPackages(
       Http(actorSystem),
-      directory = new File(""),
-      githubToken = "TODO",
-      githubUser = "stevenrskelton",
-      githubRepository = "stockpricescraper",
-      groupId = "ca.stevenskelton.tradeaudit.stockpricescraper",
-      artifactId = "stockpricescraper-assembly",
-      version = "0.1.0-SNAPSHOT"
+      directory.toPath,
+      githubToken = "TODO"
     ))
 
     //    val publicRoutes = path("releases")(concat(jarUpload.releasesGet, jarUpload.releasesPost))
