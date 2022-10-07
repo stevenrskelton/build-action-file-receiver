@@ -4,6 +4,7 @@ import akka.http.scaladsl.HttpExt
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives.{complete, completeOrRecoverWith, extractRequestContext, post, withSizeLimit}
 import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.directives.FileInfo
 import akka.http.scaladsl.server.directives.MarshallingDirectives.{as, entity}
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
@@ -18,11 +19,16 @@ import scala.util.{Failure, Success}
 case class ArtifactUpload(httpExt: HttpExt,
                           directory: Path,
                           createHooks: ArtifactUpload => RequestHooks,
+                          maxUploadFileSizeBytes: Long,
                           githubToken: Option[String] = None,
-                          maxUploadFileSizeBytes: Long = 100000
                          )(implicit val logger: Logger) {
 
   implicit val materializer: Materializer = Materializer(httpExt.system)
+
+  def successfulResponseBody(githubPackage: GithubPackage, fileInfo: FileInfo, destinationFile: File, destinationFileMD5: String): HttpResponse = {
+    val responseBody = s"Successfully saved upload of ${fileInfo.fileName}, ${Utils.humanFileSize(destinationFile)}, MD5 $destinationFileMD5"
+    HttpResponse(StatusCodes.OK, Nil, HttpEntity(ContentTypes.`text/plain(UTF-8)`, responseBody))
+  }
 
   val releasesPost: Route = withSizeLimit(maxUploadFileSizeBytes) {
     post {
@@ -30,7 +36,7 @@ case class ArtifactUpload(httpExt: HttpExt,
         entity(as[Multipart.FormData]) { formData =>
           val hooks = createHooks(this)
           val uploadedF = hooks.preHook(formData, ctx).flatMap {
-            case (_, fileInfo, bytes) =>
+            case (githubPackage, fileInfo, bytes) =>
               val tmpFile = File.createTempFile(System.currentTimeMillis.toString, ".tmp", directory.toFile)
               bytes
                 .runWith(FileIO.toPath(tmpFile.toPath))
@@ -40,8 +46,7 @@ case class ArtifactUpload(httpExt: HttpExt,
                       val uploadMD5 = Utils.md5sum(tmpFile)
                       hooks.tmpFileHook(tmpFile, uploadMD5).flatMap {
                         dest =>
-                          val responseBody = s"Successfully saved upload of ${fileInfo.fileName}, ${Utils.humanFileSize(dest)}, MD5 $uploadMD5"
-                          val response = HttpResponse(StatusCodes.OK, Nil, HttpEntity(ContentTypes.`text/plain(UTF-8)`, responseBody))
+                          val response = successfulResponseBody(githubPackage, fileInfo, dest, uploadMD5)
                           hooks.postHook(response)
                       }
                     case Failure(ex) => Future.failed(ex)
@@ -49,7 +54,7 @@ case class ArtifactUpload(httpExt: HttpExt,
                 }
                 .recoverWith {
                   case ex =>
-                    logger.error(s"Upload IOResult failed ${ex.getMessage}")
+                    logger.error("Upload IOResult failed", ex)
                     tmpFile.delete()
                     Future.failed(ex)
                 }
