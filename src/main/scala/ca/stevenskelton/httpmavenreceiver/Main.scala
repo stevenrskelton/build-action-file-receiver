@@ -23,9 +23,9 @@ object Main extends App {
   private val directory = new File(conf.getString("http-maven-receiver.file-directory"))
   private val maxUploadByteSize = Try(conf.getBytes("http-maven-receiver.max-upload-size").toLong).getOrElse(1024000L)
 
-  if(!directory.exists){
+  if (!directory.exists) {
     logger.info(s"Creating file directory: ${directory.getAbsolutePath}")
-    if(!directory.mkdirs){
+    if (!directory.mkdirs) {
       logger.error(s"Could not create directory")
       System.exit(1)
     }

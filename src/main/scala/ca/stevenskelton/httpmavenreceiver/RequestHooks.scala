@@ -1,6 +1,6 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import akka.http.scaladsl.model.{HttpResponse, Multipart}
+import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server.RequestContext
 import akka.http.scaladsl.server.directives.FileInfo
 import akka.stream.scaladsl.Source
@@ -16,7 +16,12 @@ trait RequestHooks {
    *
    * @return
    */
-  def preHook(form: Multipart.FormData, requestContext: RequestContext): Future[(GithubPackage, FileInfo, Source[ByteString, Any])]
+  def preHook(
+               formFields: Map[String, String],
+               fileInfo: FileInfo,
+               fileSource: Source[ByteString, Any],
+               requestContext: RequestContext
+             ): Future[(GithubPackage, FileInfo, Source[ByteString, Any])]
 
   /**
    * Executes after file has been uploaded to a temporary file

@@ -1,6 +1,6 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import akka.http.scaladsl.model.{HttpResponse, Multipart, StatusCodes}
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.RequestContext
 import akka.http.scaladsl.server.directives.FileInfo
 import akka.stream.scaladsl.Source
@@ -10,7 +10,6 @@ import com.typesafe.scalalogging.Logger
 import java.io.File
 import java.nio.file.Path
 import java.time.Duration
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class DefaultRequestHooks(val directory: Path, val logger: Logger) extends RequestHooks {
@@ -19,18 +18,25 @@ class DefaultRequestHooks(val directory: Path, val logger: Logger) extends Reque
   protected var destinationFile: File = null
   protected var fileInfo: FileInfo = null
 
-  override def preHook(formData: Multipart.FormData, requestContext: RequestContext): Future[(GithubPackage, FileInfo, Source[ByteString, Any])] = {
-    FileUploadDirectives.parseFormData(formData, requestContext).flatMap {
-      case obj@(_, fileInfo, _) =>
-        this.fileInfo = fileInfo
-        destinationFile = new File(s"${directory.toFile.getAbsolutePath}/${fileInfo.fileName}")
-        if (destinationFile.exists) {
-          val msg = s"${destinationFile.getName} already exists"
-          logger.error(msg)
-          Future.failed(UserMessageException(StatusCodes.BadRequest, msg))
-        } else {
-          Future.successful(obj)
-        }
+  override def preHook(
+                        formFields: Map[String, String],
+                        fileInfo: FileInfo,
+                        fileSource: Source[ByteString, Any],
+                        requestContext: RequestContext
+                      ): Future[(GithubPackage, FileInfo, Source[ByteString, Any])] = {
+
+    this.fileInfo = fileInfo
+    destinationFile = new File(s"${directory.toFile.getAbsolutePath}/${fileInfo.fileName}")
+    if (destinationFile.exists) {
+      val msg = s"${destinationFile.getName} already exists"
+      logger.error(msg)
+      Future.failed(UserMessageException(StatusCodes.BadRequest, msg))
+    } else {
+      GithubPackage.fromFieldData(formFields).map {
+        githubPackage => Future.successful((githubPackage, fileInfo, fileSource))
+      }.getOrElse {
+        Future.failed(UserMessageException(StatusCodes.BadRequest, GithubPackage.FormErrorMessage))
+      }
     }
   }
 

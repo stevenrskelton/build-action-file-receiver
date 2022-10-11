@@ -35,29 +35,32 @@ case class ArtifactUpload(httpExt: HttpExt,
       extractRequestContext { ctx =>
         entity(as[Multipart.FormData]) { formData =>
           val hooks = createHooks(this)
-          val uploadedF = hooks.preHook(formData, ctx).flatMap {
-            case (githubPackage, fileInfo, bytes) =>
-              val tmpFile = File.createTempFile(System.currentTimeMillis.toString, ".tmp", directory.toFile)
-              bytes
-                .runWith(FileIO.toPath(tmpFile.toPath))
-                .flatMap { ioResult =>
-                  ioResult.status match {
-                    case Success(_) =>
-                      val uploadMD5 = Utils.md5sum(tmpFile)
-                      hooks.tmpFileHook(tmpFile, uploadMD5).flatMap {
-                        dest =>
-                          val response = successfulResponseBody(githubPackage, fileInfo, dest, uploadMD5)
-                          hooks.postHook(response)
+          val uploadedF = FileUploadDirectives.parseFormData(formData, ctx).flatMap {
+            o =>
+              hooks.preHook(o._1, o._2, o._3, ctx).flatMap {
+                case (githubPackage, fileInfo, bytes) =>
+                  val tmpFile = File.createTempFile(System.currentTimeMillis.toString, ".tmp", directory.toFile)
+                  bytes
+                    .runWith(FileIO.toPath(tmpFile.toPath))
+                    .flatMap { ioResult =>
+                      ioResult.status match {
+                        case Success(_) =>
+                          val uploadMD5 = Utils.md5sum(tmpFile)
+                          hooks.tmpFileHook(tmpFile, uploadMD5).flatMap {
+                            dest =>
+                              val response = successfulResponseBody(githubPackage, fileInfo, dest, uploadMD5)
+                              hooks.postHook(response)
+                          }
+                        case Failure(ex) => Future.failed(ex)
                       }
-                    case Failure(ex) => Future.failed(ex)
-                  }
-                }
-                .recoverWith {
-                  case ex =>
-                    logger.error("Upload IOResult failed", ex)
-                    tmpFile.delete()
-                    Future.failed(ex)
-                }
+                    }
+                    .recoverWith {
+                      case ex =>
+                        logger.error("Upload IOResult failed", ex)
+                        tmpFile.delete()
+                        Future.failed(ex)
+                    }
+              }
           }
           completeOrRecoverWith(uploadedF) {
             case UserMessageException(statusCode, userMessage) => complete(statusCode, HttpEntity(ContentTypes.`text/plain(UTF-8)`, userMessage))

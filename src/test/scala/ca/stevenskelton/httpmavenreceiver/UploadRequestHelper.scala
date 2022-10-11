@@ -18,16 +18,30 @@ object UploadRequestHelper {
   val actorSystem: ExtendedActorSystem = ActorSystem("specs").asInstanceOf[ExtendedActorSystem]
   val httpExt = Http(actorSystem)
 
-  def postMultipartFileRequest(
+  def toMap(githubPackage: GithubPackage): Map[String, String] = Map(
+    "githubUser" -> githubPackage.githubUser,
+    "githubRepository" -> githubPackage.githubRepository,
+    "groupId" -> githubPackage.groupId,
+    "artifactId" -> githubPackage.artifactId,
+    "version" -> githubPackage.version
+  )
+
+  def postGithubPackageRequest(
                                 resource: File,
                                 githubPackage: GithubPackage,
+                                uri: Uri = Uri./
+                              ): HttpRequest = postMultipartFileRequest(resource, toMap(githubPackage), uri)
+
+  def postMultipartFileRequest(
+                                resource: File,
+                                formFields: Map[String, String],
                                 uri: Uri = Uri./
                               ): HttpRequest = {
 
     val bodyBytes = getClass.getResourceAsStream(resource.getAbsolutePath).readAllBytes()
     val requestEntity = HttpEntity(ContentTypes.`application/octet-stream`, bodyBytes)
     val filePart = Multipart.FormData.BodyPart.Strict(GithubPackage.FileUploadFieldName, requestEntity, Map("filename" -> resource.getName))
-    val parts = githubPackage.multipartFormData :+ filePart
+    val parts = formFields.toSeq.map(keyValue => Multipart.FormData.BodyPart.Strict.apply(keyValue._1, HttpEntity(keyValue._2))) :+ filePart
     val multipartForm = Multipart.FormData(parts: _*)
     Post(uri.toString, multipartForm)
   }
