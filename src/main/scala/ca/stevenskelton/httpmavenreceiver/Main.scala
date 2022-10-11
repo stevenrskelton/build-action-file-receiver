@@ -21,7 +21,6 @@ object Main extends App {
   implicit private val logger = Logger("http")
 
   private val directory = new File(conf.getString("http-maven-receiver.file-directory"))
-  private val maxUploadByteSize = Try(conf.getBytes("http-maven-receiver.max-upload-size").toLong).getOrElse(1024000L)
 
   if (!directory.exists) {
     logger.info(s"Creating file directory: ${directory.getAbsolutePath}")
@@ -31,13 +30,12 @@ object Main extends App {
     }
   }
 
-  logger.info(s"Setting file directory to: ${directory.getAbsolutePath} with max upload size: $maxUploadByteSize bytes")
+  logger.info(s"Setting file directory to: ${directory.getAbsolutePath}")
 
   private val artifactUpload = ArtifactUpload(
     Http(actorSystem),
     directory.toPath,
     new MavenMD5CompareRequestHooks(_),
-    maxUploadByteSize,
     Try(conf.getString("http-maven-receiver.github-token")).toOption.filterNot(_.isBlank)
   )
 
@@ -51,6 +49,7 @@ object Main extends App {
       logger.info(s"HTTP server bound to ${address.getHostString}:${address.getPort}")
       httpBinding.whenTerminated.onComplete {
         _ =>
+          logger.info(s"Shutting down HTTP server on ${address.getHostString}:${address.getPort}")
           actorSystem.terminate()
           System.exit(0)
       }

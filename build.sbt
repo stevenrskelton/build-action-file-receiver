@@ -15,6 +15,7 @@ lazy val root = (project in file("."))
     javacOptions ++= Seq("-source", javaVersion, "-target", javaVersion),
     assembly / mainClass := Some ("ca.stevenskelton.httpmavenreceiver.Main"),
     assembly / assemblyMergeStrategy := {
+      case PathList("META-INF", "services", xs@_*) => MergeStrategy.first
       case PathList("META-INF", xs@_*) => MergeStrategy.discard
       //added to support Akka
       case "reference.conf" => MergeStrategy.concat
@@ -34,7 +35,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream" % akkaVersion,
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
-  "ch.qos.logback" % "logback-classic" % "1.4.1",
+  "ch.qos.logback" % "logback-classic" % "1.4.3",
   "org.scala-lang.modules" %% "scala-xml" % "2.1.0",
   "org.mockito" %% "mockito-scala" % "1.17.12" % Test,
   "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % Test,
