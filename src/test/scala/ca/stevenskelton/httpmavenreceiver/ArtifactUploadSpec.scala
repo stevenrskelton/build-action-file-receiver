@@ -6,37 +6,36 @@ import akka.http.scaladsl.server.directives.FileInfo
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import com.typesafe.scalalogging.Logger
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 import java.io.File
-import java.nio.file.{Files, Path}
+import java.nio.file.Files
 import scala.concurrent.Future
 
 class ArtifactUploadSpec extends AnyWordSpec with Matchers with ScalatestRouteTest {
 
-  implicit val logger = Logger("specs")
+  import UploadRequestHelper.logger
 
   val validFile = new File("/5c55838e6a9fb7bb5470cb222fd3b1f3.png")
-  val uri = Uri("https://maven.pkg.github.com/gh-user/gh-project/gh-groupId/gh.artifact.id/gh.version/5c55838e6a9fb7bb5470cb222fd3b1f3.png.md5")
+  val uri = Uri(s"https://maven.pkg.github.com/gh-user/gh-project/gh-groupId/gh.artifact.id/gh.version/${validFile.getName}.md5")
   val githubPackage = GithubPackage(
     githubUser = "gh-user",
     githubRepository = "gh-project",
     groupId = "gh-groupId",
     artifactId = "gh.artifact.id",
-    version = "gh.version",
-    githubToken = None
+    version = "gh.version"
   )
 
   "Successful Maven responses" should {
 
+    val uploadRequest = UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage)
     val httpExt = UploadRequestHelper.createHttpExtMock(uri, HttpResponse(entity = HttpEntity("5c55838e6a9fb7bb5470cb222fd3b1f3")))
-    val TempDirWithPrefix: Path = Files.createTempDirectory("http-maven-receiver-specs-")
-    val artifactUpload = ArtifactUpload(httpExt, TempDirWithPrefix, new MavenMD5CompareRequestHooks(_), 10000)
-    val uploadRequest = UploadRequestHelper.postMultipartFileRequest(validFile, githubPackage)
 
     "save upload if file does not exist, return BadRequest if it already exists" in {
+      val tempDirWithPrefix = Files.createTempDirectory("http-maven-receiver-specs-")
+      val artifactUpload = ArtifactUpload(httpExt, tempDirWithPrefix, new MavenMD5CompareRequestHooks(_))
+
       uploadRequest ~> artifactUpload.releasesPost ~> check {
         status shouldEqual StatusCodes.OK
         responseAs[String] shouldEqual "Successfully saved upload of 5c55838e6a9fb7bb5470cb222fd3b1f3.png, 7kb, MD5 5c55838e6a9fb7bb5470cb222fd3b1f3"
@@ -48,6 +47,9 @@ class ArtifactUploadSpec extends AnyWordSpec with Matchers with ScalatestRouteTe
     }
 
     "throw error if no github form data included in request" in {
+      val tempDirWithPrefix = Files.createTempDirectory("http-maven-receiver-specs-")
+      val artifactUpload = ArtifactUpload(httpExt, tempDirWithPrefix, new MavenMD5CompareRequestHooks(_))
+
       val bodyBytes = getClass.getResourceAsStream(validFile.getAbsolutePath).readAllBytes()
       val requestEntity = HttpEntity(ContentTypes.`application/octet-stream`, bodyBytes)
       val filePart = Multipart.FormData.BodyPart.Strict(GithubPackage.FileUploadFieldName, requestEntity, Map("filename" -> validFile.getName))
@@ -64,10 +66,10 @@ class ArtifactUploadSpec extends AnyWordSpec with Matchers with ScalatestRouteTe
 
     "cause error when upload md5 sum doesn't match" in {
       val httpExt = UploadRequestHelper.createHttpExtMock(uri, HttpResponse(entity = HttpEntity("thisMD5doesntmatch")))
-      val TempDirWithPrefix: Path = Files.createTempDirectory("http-maven-receiver-specs-")
-      val artifactUpload = ArtifactUpload(httpExt, TempDirWithPrefix, new MavenMD5CompareRequestHooks(_), 10000)
+      val tempDirWithPrefix = Files.createTempDirectory("http-maven-receiver-specs-")
+      val artifactUpload = ArtifactUpload(httpExt, tempDirWithPrefix, new MavenMD5CompareRequestHooks(_))
 
-      UploadRequestHelper.postMultipartFileRequest(validFile, githubPackage) ~> artifactUpload.releasesPost ~> check {
+      UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage) ~> artifactUpload.releasesPost ~> check {
         status shouldEqual StatusCodes.BadRequest
         responseAs[String] shouldEqual "Upload 5c55838e6a9fb7bb5470cb222fd3b1f3.png MD5 not equal, thisMD5doesntmatch expected != 5c55838e6a9fb7bb5470cb222fd3b1f3"
       }
@@ -75,10 +77,10 @@ class ArtifactUploadSpec extends AnyWordSpec with Matchers with ScalatestRouteTe
 
     "cause errors when Maven 404" in {
       val httpExt = UploadRequestHelper.createHttpExtMock(uri, HttpResponse(StatusCodes.NotFound))
-      val TempDirWithPrefix: Path = Files.createTempDirectory("http-maven-receiver-specs-")
-      val artifactUpload = ArtifactUpload(httpExt, TempDirWithPrefix, new MavenMD5CompareRequestHooks(_), 10000)
+      val tempDirWithPrefix = Files.createTempDirectory("http-maven-receiver-specs-")
+      val artifactUpload = ArtifactUpload(httpExt, tempDirWithPrefix, new MavenMD5CompareRequestHooks(_))
 
-      UploadRequestHelper.postMultipartFileRequest(validFile, githubPackage) ~> artifactUpload.releasesPost ~> check {
+      UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage) ~> artifactUpload.releasesPost ~> check {
         status shouldEqual StatusCodes.BadRequest
         responseAs[String] shouldEqual "Maven version 5c55838e6a9fb7bb5470cb222fd3b1f3.png gh.version does not exist in Github"
       }
@@ -90,10 +92,10 @@ class ArtifactUploadSpec extends AnyWordSpec with Matchers with ScalatestRouteTe
 
     "match config if not on request" in {
       val httpExt = UploadRequestHelper.createHttpExtMock(uri, HttpResponse(entity = HttpEntity("5c55838e6a9fb7bb5470cb222fd3b1f3")), Seq("Authorization" -> "token a-token"))
-      val TempDirWithPrefix: Path = Files.createTempDirectory("http-maven-receiver-specs-")
-      val artifactUpload = ArtifactUpload(httpExt, TempDirWithPrefix, new MavenMD5CompareRequestHooks(_), 10000, Some("a-token"))
+      val tempDirWithPrefix = Files.createTempDirectory("http-maven-receiver-specs-")
+      val artifactUpload = ArtifactUpload(httpExt, tempDirWithPrefix, new MavenMD5CompareRequestHooks(_), Some("a-token"))
 
-      UploadRequestHelper.postMultipartFileRequest(validFile, githubPackage) ~> artifactUpload.releasesPost ~> check {
+      UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage) ~> artifactUpload.releasesPost ~> check {
         status shouldEqual StatusCodes.OK
         responseAs[String] shouldEqual "Successfully saved upload of 5c55838e6a9fb7bb5470cb222fd3b1f3.png, 7kb, MD5 5c55838e6a9fb7bb5470cb222fd3b1f3"
       }
@@ -102,19 +104,19 @@ class ArtifactUploadSpec extends AnyWordSpec with Matchers with ScalatestRouteTe
     "match request if specified" in {
 
       val httpExt = UploadRequestHelper.createHttpExtMock(uri, HttpResponse(entity = HttpEntity("5c55838e6a9fb7bb5470cb222fd3b1f3")), Seq("Authorization" -> "token b-token"))
-      val TempDirWithPrefix: Path = Files.createTempDirectory("http-maven-receiver-specs-")
-      val artifactUpload = ArtifactUpload(httpExt, TempDirWithPrefix, new MavenMD5CompareRequestHooks(_), 10000, Some("a-token"))
+      val tempDirWithPrefix = Files.createTempDirectory("http-maven-receiver-specs-")
+      val artifactUpload = ArtifactUpload(httpExt, tempDirWithPrefix, new MavenMD5CompareRequestHooks(_), Some("a-token"))
 
       val githubPackageB = GithubPackage(
         githubUser = "gh-user",
         githubRepository = "gh-project",
         groupId = "gh-groupId",
         artifactId = "gh.artifact.id",
-        version = "gh.version",
-        githubToken = Some("b-token")
+        version = "gh.version"
       )
+      val formBtoken = UploadRequestHelper.toMap(githubPackageB) + (MavenMD5CompareRequestHooks.GithubTokenField -> "b-token")
 
-      UploadRequestHelper.postMultipartFileRequest(validFile, githubPackageB) ~> artifactUpload.releasesPost ~> check {
+      UploadRequestHelper.postMultipartFileRequest(validFile, formBtoken) ~> artifactUpload.releasesPost ~> check {
         status shouldEqual StatusCodes.OK
         responseAs[String] shouldEqual "Successfully saved upload of 5c55838e6a9fb7bb5470cb222fd3b1f3.png, 7kb, MD5 5c55838e6a9fb7bb5470cb222fd3b1f3"
       }
@@ -135,9 +137,12 @@ class ArtifactUploadSpec extends AnyWordSpec with Matchers with ScalatestRouteTe
         httpExt,
         Files.createTempDirectory("http-maven-receiver-specs-"),
         au => new DefaultRequestHooks(au.directory, logger) {
-          override def preHook(formData: Multipart.FormData, requestContext: RequestContext): Future[(GithubPackage, FileInfo, Source[ByteString, Any])] = {
+          override def preHook(formFields: Map[String, String],
+                               fileInfo: FileInfo,
+                               fileSource: Source[ByteString, Any],
+                               requestContext: RequestContext): Future[(GithubPackage, FileInfo, Source[ByteString, Any])] = {
             preHookCount += 1
-            super.preHook(formData, requestContext)
+            super.preHook(formFields, fileInfo, fileSource, requestContext)
           }
 
           override def tmpFileHook(tmp: File, md5Sum: String): Future[File] = {
@@ -154,8 +159,8 @@ class ArtifactUploadSpec extends AnyWordSpec with Matchers with ScalatestRouteTe
             postHookCount += 1
             super.postHook(httpResponse)
           }
-        }, 10000)
-      val uploadRequest = UploadRequestHelper.postMultipartFileRequest(validFile, githubPackage)
+        })
+      val uploadRequest = UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage)
 
       uploadRequest ~> artifactUpload.releasesPost ~> check {
         status shouldEqual StatusCodes.OK
@@ -193,8 +198,8 @@ class ArtifactUploadSpec extends AnyWordSpec with Matchers with ScalatestRouteTe
           override def postHook(httpResponse: HttpResponse): Future[HttpResponse] = {
             Future.successful(HttpResponse(StatusCodes.Conflict, entity = HttpEntity("custom-error")))
           }
-        }, 10000)
-      val uploadRequest = UploadRequestHelper.postMultipartFileRequest(validFile, githubPackage)
+        })
+      val uploadRequest = UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage)
 
       uploadRequest ~> artifactUpload.releasesPost ~> check {
         status shouldEqual StatusCodes.Conflict
@@ -210,8 +215,8 @@ class ArtifactUploadSpec extends AnyWordSpec with Matchers with ScalatestRouteTe
           override def postHook(httpResponse: HttpResponse): Future[HttpResponse] = {
             Future.failed(UserMessageException(StatusCodes.Conflict, "custom-error"))
           }
-        }, 10000)
-      val uploadRequest = UploadRequestHelper.postMultipartFileRequest(validFile, githubPackage)
+        })
+      val uploadRequest = UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage)
 
       uploadRequest ~> artifactUpload.releasesPost ~> check {
         status shouldEqual StatusCodes.Conflict
@@ -221,7 +226,6 @@ class ArtifactUploadSpec extends AnyWordSpec with Matchers with ScalatestRouteTe
 
   }
 
-
   "Unhandled exceptions" should {
     val httpExt = UploadRequestHelper.createHttpExtMock(uri, HttpResponse(entity = HttpEntity("5c55838e6a9fb7bb5470cb222fd3b1f3")))
 
@@ -230,10 +234,13 @@ class ArtifactUploadSpec extends AnyWordSpec with Matchers with ScalatestRouteTe
         httpExt,
         Files.createTempDirectory("http-maven-receiver-specs-"),
         au => new DefaultRequestHooks(au.directory, logger) {
-          override def preHook(formData: Multipart.FormData, requestContext: RequestContext): Future[(GithubPackage, FileInfo, Source[ByteString, Any])] =
+          override def preHook(formFields: Map[String, String],
+                               fileInfo: FileInfo,
+                               fileSource: Source[ByteString, Any],
+                               requestContext: RequestContext): Future[(GithubPackage, FileInfo, Source[ByteString, Any])] =
             Future.failed(new Exception("sensitive information and stacktrace"))
-        }, 10000)
-      val uploadRequest = UploadRequestHelper.postMultipartFileRequest(validFile, githubPackage)
+        })
+      val uploadRequest = UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage)
 
       uploadRequest ~> artifactUpload.releasesPost ~> check {
         status shouldEqual StatusCodes.InternalServerError
@@ -246,8 +253,8 @@ class ArtifactUploadSpec extends AnyWordSpec with Matchers with ScalatestRouteTe
         Files.createTempDirectory("http-maven-receiver-specs-"),
         au => new DefaultRequestHooks(au.directory, logger) {
           override def tmpFileHook(tmp: File, md5Sum: String): Future[File] = Future.failed(new Exception("sensitive information and stacktrace"))
-        }, 10000)
-      val uploadRequest = UploadRequestHelper.postMultipartFileRequest(validFile, githubPackage)
+        })
+      val uploadRequest = UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage)
 
       uploadRequest ~> artifactUpload.releasesPost ~> check {
         status shouldEqual StatusCodes.InternalServerError
@@ -260,8 +267,8 @@ class ArtifactUploadSpec extends AnyWordSpec with Matchers with ScalatestRouteTe
         Files.createTempDirectory("http-maven-receiver-specs-"),
         au => new DefaultRequestHooks(au.directory, logger) {
           override def postHook(httpResponse: HttpResponse): Future[HttpResponse] = Future.failed(new Exception("sensitive information and stacktrace"))
-        }, 10000)
-      val uploadRequest = UploadRequestHelper.postMultipartFileRequest(validFile, githubPackage)
+        })
+      val uploadRequest = UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage)
 
       uploadRequest ~> artifactUpload.releasesPost ~> check {
         status shouldEqual StatusCodes.InternalServerError

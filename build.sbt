@@ -1,12 +1,12 @@
 ThisBuild / version := "0.1.0-SNAPSHOT"
 ThisBuild / organization := "ca.stevenskelton"
-ThisBuild / scalaVersion := "2.13.10"
+ThisBuild / scalaVersion := "2.13.8"
 
 addArtifact(assembly / artifact, assembly)
 
 val javaVersion = "11"
-val akkaVersion = "2.8.0"
-val akkaHttpVersion = "10.5.0"
+val akkaVersion = "2.6.20"
+val akkaHttpVersion = "10.2.10"
 
 lazy val root = (project in file("."))
   .settings(

@@ -2,7 +2,7 @@ package ca.stevenskelton.httpmavenreceiver
 
 import akka.http.scaladsl.client.RequestBuilding.Get
 import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse, Multipart, StatusCodes}
+import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.RequestContext
 import akka.http.scaladsl.server.directives.FileInfo
 import akka.stream.scaladsl.{FileIO, Source}
@@ -23,23 +23,30 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUpload)
 
   import artifactUpload.materializer
 
-  private def withAuthorization(request: HttpRequest, githubPackage: GithubPackage): HttpRequest = {
-    githubPackage.githubToken.orElse(artifactUpload.githubToken).fold({
+  private def withAuthorization(request: HttpRequest): HttpRequest = {
+    githubAuthenticationToken.orElse(artifactUpload.githubToken).fold({
       logger.debug("No github token found for Maven, calling unauthenticated.")
       request
     }) { token => request.addHeader(RawHeader("Authorization", s"token $token")) }
   }
 
   protected var md5Sum: String = null
+  protected var githubAuthenticationToken: Option[String] = None
 
-  override def preHook(formData: Multipart.FormData, requestContext: RequestContext): Future[(GithubPackage, FileInfo, Source[ByteString, Any])] = {
-    super.preHook(formData, requestContext).flatMap {
-      case obj@(githubPackage, fileInfo, source) =>
+  override def preHook(
+                        formFields: Map[String, String],
+                        fileInfo: FileInfo,
+                        fileSource: Source[ByteString, Any],
+                        requestContext: RequestContext
+                      ): Future[(GithubPackage, FileInfo, Source[ByteString, Any])] = {
+    super.preHook(formFields, fileInfo, fileSource, requestContext).flatMap {
+      case obj@(githubPackage, fileInfo, fileSource) =>
         if (fileInfo.fileName.contains("SNAPSHOT")) {
           Future.successful(obj)
         } else {
+          githubAuthenticationToken = formFields.get(MavenMD5CompareRequestHooks.GithubTokenField).filterNot(_.isEmpty)
           val urlMd5 = s"${githubPackage.path}/${fileInfo.fileName}.md5"
-          val request = withAuthorization(Get(urlMd5), githubPackage)
+          val request = withAuthorization(Get(urlMd5))
           artifactUpload.httpExt.singleRequest(request).flatMap {
             response =>
               if (response.status == StatusCodes.OK) {
@@ -83,7 +90,7 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUpload)
   }
 
   private def fetchLatestMetadata(githubPackage: GithubPackage): Future[Seq[MavenPackage]] = {
-    val request = withAuthorization(Get(s"${githubPackage.path}/maven-metadata.xml"), githubPackage)
+    val request = withAuthorization(Get(s"${githubPackage.path}/maven-metadata.xml"))
     artifactUpload.httpExt.singleRequest(request).map {
       response =>
         val entity = Try(response.entity.toString)
@@ -99,7 +106,7 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUpload)
 
   def downloadMavenMD5(mavenPackage: MavenPackage): Future[String] = {
     logger.info(s"Downloading ${mavenPackage.jarFilename}.md5")
-    val request = withAuthorization(Get(s"${mavenPackage.artifactUrl}.md5"), mavenPackage.githubPackage)
+    val request = withAuthorization(Get(s"${mavenPackage.artifactUrl}.md5"))
     artifactUpload.httpExt.singleRequest(request).map {
       response =>
         if (response.status == StatusCodes.OK) {
@@ -126,7 +133,7 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUpload)
           val md5file = new File(s"${directory.toFile.getPath}/${mavenPackage.jarFilename}.md5")
           //TODO: handle error
           Utils.writeFile(md5file, md5sum)(logger)
-          val request = withAuthorization(Get(mavenPackage.artifactUrl), mavenPackage.githubPackage)
+          val request = withAuthorization(Get(mavenPackage.artifactUrl))
           //TODO: timeout?
           val futureIOResult = artifactUpload.httpExt.singleRequest(request).flatMap {
             response =>
@@ -167,6 +174,8 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUpload)
 }
 
 object MavenMD5CompareRequestHooks {
+
+  val GithubTokenField = "githubToken"
 
   private def parseMavenMetadata(githubPackage: GithubPackage, metadata: Elem): Seq[MavenPackage] = {
     (metadata \\ "snapshotVersion").withFilter {
