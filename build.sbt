@@ -1,12 +1,12 @@
 ThisBuild / version := "0.1.0-SNAPSHOT"
 ThisBuild / organization := "ca.stevenskelton"
-ThisBuild / scalaVersion := "2.13.8"
+ThisBuild / scalaVersion := "2.13.10"
 
 addArtifact(assembly / artifact, assembly)
 
 val javaVersion = "11"
-val akkaVersion = "2.6.20"
-val akkaHttpVersion = "10.2.10"
+val akkaVersion = "2.8.0"
+val akkaHttpVersion = "10.5.0"
 
 lazy val root = (project in file("."))
   .settings(
@@ -15,6 +15,11 @@ lazy val root = (project in file("."))
     javacOptions ++= Seq("-source", javaVersion, "-target", javaVersion),
     assembly / mainClass := Some ("ca.stevenskelton.httpmavenreceiver.Main"),
     assembly / assemblyMergeStrategy := {
+      //Logback
+      case PathList("META-INF", "services", xs@_*) if xs.lastOption.contains("ch.qos.logback.classic.spi.Configurator") => MergeStrategy.first
+      case PathList("META-INF", "services", xs@_*) if xs.lastOption.contains("jakarta.servlet.ServletContainerInitializer") => MergeStrategy.first
+      case PathList("META-INF", "services", xs@_*) if xs.lastOption.contains("org.slf4j.spi.SLF4JServiceProvider") => MergeStrategy.first
+      //Others
       case PathList("META-INF", xs@_*) => MergeStrategy.discard
       //added to support Akka
       case "reference.conf" => MergeStrategy.concat
@@ -34,7 +39,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream" % akkaVersion,
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
-  "ch.qos.logback" % "logback-classic" % "1.4.1",
+  "ch.qos.logback" % "logback-classic" % "1.4.6",
   "org.scala-lang.modules" %% "scala-xml" % "2.1.0",
   "org.mockito" %% "mockito-scala" % "1.17.12" % Test,
   "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % Test,
