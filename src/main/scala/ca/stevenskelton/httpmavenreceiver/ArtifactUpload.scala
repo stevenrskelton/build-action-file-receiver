@@ -2,7 +2,7 @@ package ca.stevenskelton.httpmavenreceiver
 
 import akka.http.scaladsl.HttpExt
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives.{complete, completeOrRecoverWith, extractRequestContext, post}
+import akka.http.scaladsl.server.Directives.{complete, completeOrRecoverWith, extractRequestContext, post, withSizeLimit}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.FileInfo
 import akka.http.scaladsl.server.directives.MarshallingDirectives.{as, entity}
@@ -20,6 +20,7 @@ import scala.util.{Failure, Success}
 case class ArtifactUpload(httpExt: HttpExt,
                           directory: Path,
                           createHooks: ArtifactUpload => RequestHooks,
+                          maxUploadFileSizeBytes: Long,
                           githubToken: Option[String] = None,
                          )(implicit val logger: Logger) {
 
@@ -31,44 +32,46 @@ case class ArtifactUpload(httpExt: HttpExt,
   }
 
   val releasesPost: Route = post {
-    entity(as[Multipart.FormData]) { formData =>
-      extractRequestContext { ctx =>
-        val hooks = createHooks(this)
-        val uploadedF = FileUploadDirectives.parseFormData(formData, ctx).flatMap {
-          o =>
-            hooks.preHook(o._1, o._2, o._3, ctx).flatMap {
-              case (githubPackage, fileInfo, bytes) =>
-                val tmpFile = File.createTempFile(System.currentTimeMillis.toString, ".tmp", directory.toFile)
-                val digest = MessageDigest.getInstance("MD5")
-                bytes
-                  .via(Flow.fromFunction {
-                    byteString =>
-                      digest.update(byteString.toArray, 0, byteString.size)
-                      byteString
-                  })
-                  .runWith(FileIO.toPath(tmpFile.toPath))
-                  .flatMap { ioResult =>
-                    ioResult.status match {
-                      case Success(_) =>
-                        val uploadMD5 = Utils.byteArrayToHexString(digest.digest)
-                        hooks.tmpFileHook(tmpFile, uploadMD5).flatMap {
-                          dest =>
-                            val response = successfulResponseBody(githubPackage, fileInfo, dest, uploadMD5)
-                            hooks.postHook(response)
-                        }
-                      case Failure(ex) => Future.failed(ex)
+    withSizeLimit(maxUploadFileSizeBytes) {
+      entity(as[Multipart.FormData]) { formData =>
+        extractRequestContext { ctx =>
+          val hooks = createHooks(this)
+          val uploadedF = FileUploadDirectives.parseFormData(formData, ctx).flatMap {
+            o =>
+              hooks.preHook(o._1, o._2, o._3, ctx).flatMap {
+                case (githubPackage, fileInfo, bytes) =>
+                  val tmpFile = File.createTempFile(System.currentTimeMillis.toString, ".tmp", directory.toFile)
+                  val digest = MessageDigest.getInstance("MD5")
+                  bytes
+                    .via(Flow.fromFunction {
+                      byteString =>
+                        digest.update(byteString.toArray, 0, byteString.size)
+                        byteString
+                    })
+                    .runWith(FileIO.toPath(tmpFile.toPath))
+                    .flatMap { ioResult =>
+                      ioResult.status match {
+                        case Success(_) =>
+                          val uploadMD5 = Utils.byteArrayToHexString(digest.digest)
+                          hooks.tmpFileHook(tmpFile, uploadMD5).flatMap {
+                            dest =>
+                              val response = successfulResponseBody(githubPackage, fileInfo, dest, uploadMD5)
+                              hooks.postHook(response)
+                          }
+                        case Failure(ex) => Future.failed(ex)
+                      }
                     }
-                  }
-                  .recoverWith {
-                    case ex =>
-                      logger.error("Upload IOResult failed", ex)
-                      tmpFile.delete()
-                      Future.failed(ex)
-                  }
-            }
-        }
-        completeOrRecoverWith(uploadedF) {
-          case UserMessageException(statusCode, userMessage) => complete(statusCode, HttpEntity(ContentTypes.`text/plain(UTF-8)`, userMessage))
+                    .recoverWith {
+                      case ex =>
+                        logger.error("Upload IOResult failed", ex)
+                        tmpFile.delete()
+                        Future.failed(ex)
+                    }
+              }
+          }
+          completeOrRecoverWith(uploadedF) {
+            case UserMessageException(statusCode, userMessage) => complete(statusCode, HttpEntity(ContentTypes.`text/plain(UTF-8)`, userMessage))
+          }
         }
       }
     }
