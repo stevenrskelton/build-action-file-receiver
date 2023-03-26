@@ -13,7 +13,7 @@ case class GithubPackage(
 
 object GithubPackage {
 
-  val FileUploadFieldName = "file"
+  val FileUploadFieldName = "jar"
   val FormErrorMessage = s"POST should include fields: githubUser, githubRepository, groupId, artifactId, version, and $FileUploadFieldName"
 
   def fromFieldData(iterable: Iterable[(String, String)]): Option[GithubPackage] = {

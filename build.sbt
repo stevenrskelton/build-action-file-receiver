@@ -1,6 +1,6 @@
 ThisBuild / version := "0.1.0-SNAPSHOT"
 ThisBuild / organization := "ca.stevenskelton"
-ThisBuild / scalaVersion := "2.13.8"
+ThisBuild / scalaVersion := "2.13.10"
 
 addArtifact(assembly / artifact, assembly)
 

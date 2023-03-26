@@ -38,6 +38,7 @@ case class ArtifactUpload(httpExt: HttpExt,
           val hooks = createHooks(this)
           val uploadedF = FileUploadDirectives.parseFormData(formData, ctx).flatMap {
             o =>
+              logger.info(s"Received request for `${o._2.fileName}` upload")
               hooks.preHook(o._1, o._2, o._3, ctx).flatMap {
                 case (githubPackage, fileInfo, bytes) =>
                   val tmpFile = File.createTempFile(System.currentTimeMillis.toString, ".tmp", directory.toFile)
