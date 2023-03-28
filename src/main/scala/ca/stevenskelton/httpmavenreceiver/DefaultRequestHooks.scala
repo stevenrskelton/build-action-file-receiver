@@ -35,6 +35,7 @@ class DefaultRequestHooks(val directory: Path, val logger: Logger) extends Reque
       GithubPackage.fromFieldData(formFields).map {
         githubPackage => Future.successful((githubPackage, fileInfo, fileSource))
       }.getOrElse {
+        logger.error(GithubPackage.FormErrorMessage)
         Future.failed(UserMessageException(StatusCodes.BadRequest, GithubPackage.FormErrorMessage))
       }
     }
@@ -51,7 +52,7 @@ class DefaultRequestHooks(val directory: Path, val logger: Logger) extends Reque
   }
 
   override def postHook(httpResponse: HttpResponse): Future[HttpResponse] = Future.successful {
-    val duration = Duration.ofMillis(System.currentTimeMillis() - start)
+    val duration = Duration.ofMillis(System.currentTimeMillis - start)
     logger.info(s"Completed ${fileInfo.fileName} in ${Utils.humanReadableDuration(duration)}")
     httpResponse
   }

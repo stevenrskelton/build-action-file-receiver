@@ -45,7 +45,9 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUpload)
           Future.successful(obj)
         } else {
           githubAuthenticationToken = formFields.get(MavenMD5CompareRequestHooks.GithubTokenField).filterNot(_.isEmpty)
+          if(githubAuthenticationToken.isDefined) logger.info("Received Github auth token")
           val urlMd5 = s"${githubPackage.path}/${fileInfo.fileName}.md5"
+          logger.info(s"Fetching MD5 at $urlMd5")
           val request = withAuthorization(Get(urlMd5))
           artifactUpload.httpExt.singleRequest(request).flatMap {
             response =>
@@ -74,6 +76,7 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUpload)
         tmp.delete
         Future.failed(UserMessageException(StatusCodes.BadRequest, errorMessage))
       } else {
+        logger.info(s"MD5 validated $md5Sum, saving file at ${destinationFile.getName}")
         tmp.renameTo(destinationFile)
         Future.successful(destinationFile)
       }
