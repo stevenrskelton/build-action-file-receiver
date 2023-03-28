@@ -25,4 +25,4 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
     - name: Publish Über Jar to Github Packages
-      run: sbt publishAssemblyToGithubPackages
+      run: sbt publishAssemblyToGithubPackages uploadAssemblyToLunaNode
