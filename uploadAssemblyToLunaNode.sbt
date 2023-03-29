@@ -25,7 +25,11 @@ uploadAssemblyToLunaNode := {
   val githubArtifactId = s"${name.value}-assembly"
   val githubVersion = version.value
 
-  val mavenUrl = s"https://maven.pkg.github.com/$githubUser/$githubRepository/$githubGroupId/$githubArtifactId/$githubVersion/maven-metadata.xml"
+  val mavenUrl = if(githubVersion.contains("SNAPSHOT")){
+    s"https://maven.pkg.github.com/$githubUser/$githubRepository/$githubGroupId/$githubArtifactId/$githubVersion/maven-metadata.xml"
+  } else {
+    s"https://maven.pkg.github.com/$githubUser/$githubRepository/$githubGroupId/$githubArtifactId/maven-metadata.xml"
+  }
   val mavenMetadata = asyncHttpClient.prepareGet(mavenUrl)
     .addHeader("Authorization", s"token $githubToken")
     .execute()

@@ -8,7 +8,11 @@ case class GithubPackage(
                           artifactId: String,
                           version: String
                         ) {
-  val path: String = s"https://maven.pkg.github.com/$githubUser/$githubRepository/${groupId.replace(".", "/")}/$artifactId/$version"
+  val path: String = if (version.contains("SNAPSHOT")) {
+    s"https://maven.pkg.github.com/$githubUser/$githubRepository/${groupId.replace(".", "/")}/$artifactId/$version"
+  } else {
+    s"https://maven.pkg.github.com/$githubUser/$githubRepository/${groupId.replace(".", "/")}/$artifactId"
+  }
 
 }
 
