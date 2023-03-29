@@ -25,7 +25,9 @@ uploadAssemblyToLunaNode := {
   val githubArtifactId = s"${name.value}-assembly"
   val githubVersion = version.value
 
-  val mavenUrl = if(githubVersion.contains("SNAPSHOT")){
+  val isSnapshot = githubVersion.contains("SNAPSHOT")
+
+  val mavenUrl = if(isSnapshot){
     s"https://maven.pkg.github.com/$githubUser/$githubRepository/$githubGroupId/$githubArtifactId/$githubVersion/maven-metadata.xml"
   } else {
     s"https://maven.pkg.github.com/$githubUser/$githubRepository/$githubGroupId/$githubArtifactId/maven-metadata.xml"
@@ -39,39 +41,72 @@ uploadAssemblyToLunaNode := {
   println(s"Download Maven metadata $mavenUrl")
   if (mavenMetadata.getStatusCode == 200) {
     val mavenMetadataXML = XML.loadString(mavenMetadata.getResponseBody)
-    (mavenMetadataXML \\ "snapshot").headOption.map {
-      n =>
-        val mavenVersion = s"${(n \ "timestamp").text}-${(n \ "buildNumber").text}"
-        println(s"Latest Maven upload is $mavenVersion")
-        val assemblyJar = assembly.value
-        val versionedFile = new File(assemblyJar.getAbsolutePath.replace("SNAPSHOT", mavenVersion))
-        if (!assemblyJar.renameTo(versionedFile)) throw new Exception(s"Could not rename ${assemblyJar.getName} to ${versionedFile.getName}")
-        val filename = assemblyJar.getName.replace("SNAPSHOT", mavenVersion)
-        val postBuilder = asyncHttpClient.preparePost(url)
+    println(mavenMetadataXML)
+    if(isSnapshot) {
+      (mavenMetadataXML \\ "snapshot").headOption.map {
+        n =>
+          val mavenVersion = s"${(n \ "timestamp").text}-${(n \ "buildNumber").text}"
+          println(s"Latest Maven upload is $mavenVersion")
+          val assemblyJar = assembly.value
+          val versionedFile = new File(assemblyJar.getAbsolutePath.replace("SNAPSHOT", mavenVersion))
+          if (!assemblyJar.renameTo(versionedFile)) throw new Exception(s"Could not rename ${assemblyJar.getName} to ${versionedFile.getName}")
+          val filename = assemblyJar.getName.replace("SNAPSHOT", mavenVersion)
+          val postBuilder = asyncHttpClient.preparePost(url)
 
-        val builder = postBuilder
-          .addBodyPart(new StringPart("githubAuthToken", githubToken))
-          .addBodyPart(new StringPart("githubUser", githubUser))
-          .addBodyPart(new StringPart("githubRepository", githubRepository))
-          .addBodyPart(new StringPart("groupId", githubGroupId))
-          .addBodyPart(new StringPart("artifactId", githubArtifactId))
-          .addBodyPart(new StringPart("version", githubVersion))
-          .addBodyPart(new FilePart("jar", versionedFile))
+          val builder = postBuilder
+            .addBodyPart(new StringPart("githubAuthToken", githubToken))
+            .addBodyPart(new StringPart("githubUser", githubUser))
+            .addBodyPart(new StringPart("githubRepository", githubRepository))
+            .addBodyPart(new StringPart("groupId", githubGroupId))
+            .addBodyPart(new StringPart("artifactId", githubArtifactId))
+            .addBodyPart(new StringPart("version", githubVersion))
+            .addBodyPart(new FilePart("jar", versionedFile))
 
-        println(s"Uploading ${assemblyJar.getName} to $url as filename $filename")
-        val response = asyncHttpClient.executeRequest(builder.build()).toCompletableFuture.get(5, TimeUnit.MINUTES)
-        if (response.hasResponseStatus) {
-          response.getStatusCode match {
-            case 200 => println(s"Upload successful: ${response.getResponseBody}")
-            case status =>
-              throw new Exception(s"Upload failed $status: ${Try(response.getResponseBody).getOrElse("")}")
+          println(s"Uploading ${assemblyJar.getName} to $url as filename $filename")
+          val response = asyncHttpClient.executeRequest(builder.build()).toCompletableFuture.get(5, TimeUnit.MINUTES)
+          if (response.hasResponseStatus) {
+            response.getStatusCode match {
+              case 200 => println(s"Upload successful: ${response.getResponseBody}")
+              case status => throw new Exception(s"Upload failed $status: ${Try(response.getResponseBody).getOrElse("")}")
+            }
+          } else {
+            throw new Exception(s"Upload failed ${Try(response.getResponseBody).map(_.take(100)).getOrElse("")}")
           }
-        } else {
-          throw new Exception(s"Upload failed ${Try(response.getResponseBody).map(_.take(100)).getOrElse("")}")
-        }
-    }.getOrElse {
-      println(s"No maven artifact created")
-      throw new Exception(s"No maven artifact created")
+      }.getOrElse {
+        println(s"No maven artifact created")
+        throw new Exception(s"No maven artifact created")
+      }
+    } else {
+      (mavenMetadataXML \\ "latest").headOption.map {
+        n =>
+          val mavenVersion = n.text
+          println(s"Latest Maven upload is $mavenVersion")
+          val assemblyJar = assembly.value
+          val postBuilder = asyncHttpClient.preparePost(url)
+
+          val builder = postBuilder
+            .addBodyPart(new StringPart("githubAuthToken", githubToken))
+            .addBodyPart(new StringPart("githubUser", githubUser))
+            .addBodyPart(new StringPart("githubRepository", githubRepository))
+            .addBodyPart(new StringPart("groupId", githubGroupId))
+            .addBodyPart(new StringPart("artifactId", githubArtifactId))
+            .addBodyPart(new StringPart("version", githubVersion))
+            .addBodyPart(new FilePart("jar", assemblyJar))
+
+          println(s"Uploading ${assemblyJar.getName} to $url")
+          val response = asyncHttpClient.executeRequest(builder.build()).toCompletableFuture.get(5, TimeUnit.MINUTES)
+          if (response.hasResponseStatus) {
+            response.getStatusCode match {
+              case 200 => println(s"Upload successful: ${response.getResponseBody}")
+              case status => throw new Exception(s"Upload failed $status: ${Try(response.getResponseBody).getOrElse("")}")
+            }
+          } else {
+            throw new Exception(s"Upload failed ${Try(response.getResponseBody).map(_.take(100)).getOrElse("")}")
+          }
+      }.getOrElse {
+        println(s"No maven artifact created")
+        throw new Exception(s"No maven artifact created")
+      }
     }
   } else {
     println(s"Maven failed with ${mavenMetadata.getStatusCode}")
