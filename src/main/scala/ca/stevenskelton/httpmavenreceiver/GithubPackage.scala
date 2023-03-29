@@ -1,6 +1,7 @@
 package ca.stevenskelton.httpmavenreceiver
 
 case class GithubPackage(
+                          githubAuthToken: String,
                           githubUser: String,
                           githubRepository: String,
                           groupId: String,
@@ -19,11 +20,12 @@ object GithubPackage {
   def fromFieldData(iterable: Iterable[(String, String)]): Option[GithubPackage] = {
     val map = iterable.toMap
     for {
+      githubAuthToken <- map.get("githubAuthToken")
       githubUser <- map.get("githubUser")
       githubRepository <- map.get("githubRepository")
       groupId <- map.get("groupId")
       artifactId <- map.get("artifactId")
       version <- map.get("version")
-    } yield GithubPackage(githubUser, githubRepository, groupId, artifactId, version)
+    } yield GithubPackage(githubAuthToken, githubUser, githubRepository, groupId, artifactId, version)
   }
 }

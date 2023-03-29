@@ -23,15 +23,11 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUpload)
 
   import artifactUpload.materializer
 
-  private def withAuthorization(request: HttpRequest): HttpRequest = {
-    githubAuthenticationToken.orElse(artifactUpload.githubToken).fold({
-      logger.debug("No github token found for Maven, calling unauthenticated.")
-      request
-    }) { token => request.addHeader(RawHeader("Authorization", s"token $token")) }
+  private def withAuthorization(request: HttpRequest, githubAuthToken: String): HttpRequest = {
+    request.addHeader(RawHeader("Authorization", s"token $githubAuthToken"))
   }
 
-  protected var md5Sum: String = null
-  protected var githubAuthenticationToken: Option[String] = None
+  protected var md5Sum: String = _
 
   override def preHook(
                         formFields: Map[String, String],
@@ -44,11 +40,9 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUpload)
         if (fileInfo.fileName.contains("SNAPSHOT")) {
           Future.successful(obj)
         } else {
-          githubAuthenticationToken = formFields.get(MavenMD5CompareRequestHooks.GithubTokenField).filterNot(_.isEmpty)
-          if(githubAuthenticationToken.isDefined) logger.info("Received Github auth token")
           val urlMd5 = s"${githubPackage.path}/${fileInfo.fileName}.md5"
           logger.info(s"Fetching MD5 at $urlMd5")
-          val request = withAuthorization(Get(urlMd5))
+          val request = withAuthorization(Get(urlMd5), formFields("githubAuthToken"))
           artifactUpload.httpExt.singleRequest(request).flatMap {
             response =>
               if (response.status == StatusCodes.OK) {
@@ -93,7 +87,7 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUpload)
   }
 
   private def fetchLatestMetadata(githubPackage: GithubPackage): Future[Seq[MavenPackage]] = {
-    val request = withAuthorization(Get(s"${githubPackage.path}/maven-metadata.xml"))
+    val request = withAuthorization(Get(s"${githubPackage.path}/maven-metadata.xml"), githubPackage.githubAuthToken)
     artifactUpload.httpExt.singleRequest(request).map {
       response =>
         val entity = Try(response.entity.toString)
@@ -109,7 +103,7 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUpload)
 
   def downloadMavenMD5(mavenPackage: MavenPackage): Future[String] = {
     logger.info(s"Downloading ${mavenPackage.jarFilename}.md5")
-    val request = withAuthorization(Get(s"${mavenPackage.artifactUrl}.md5"))
+    val request = withAuthorization(Get(s"${mavenPackage.artifactUrl}.md5"), mavenPackage.githubPackage.githubAuthToken)
     artifactUpload.httpExt.singleRequest(request).map {
       response =>
         if (response.status == StatusCodes.OK) {
@@ -136,7 +130,7 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUpload)
           val md5file = new File(s"${directory.toFile.getPath}/${mavenPackage.jarFilename}.md5")
           //TODO: handle error
           Utils.writeFile(md5file, md5sum)(logger)
-          val request = withAuthorization(Get(mavenPackage.artifactUrl))
+          val request = withAuthorization(Get(mavenPackage.artifactUrl), mavenPackage.githubPackage.githubAuthToken)
           //TODO: timeout?
           val futureIOResult = artifactUpload.httpExt.singleRequest(request).flatMap {
             response =>
@@ -177,8 +171,6 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUpload)
 }
 
 object MavenMD5CompareRequestHooks {
-
-  val GithubTokenField = "githubToken"
 
   private def parseMavenMetadata(githubPackage: GithubPackage, metadata: Elem): Seq[MavenPackage] = {
     (metadata \\ "snapshotVersion").withFilter {

@@ -46,6 +46,7 @@ uploadAssemblyToLunaNode := {
         val postBuilder = asyncHttpClient.preparePost(url)
 
         val builder = postBuilder
+          .addBodyPart(new StringPart("githubAuthToken", githubToken))
           .addBodyPart(new StringPart("githubUser", githubUser))
           .addBodyPart(new StringPart("githubRepository", githubRepository))
           .addBodyPart(new StringPart("groupId", githubGroupId))

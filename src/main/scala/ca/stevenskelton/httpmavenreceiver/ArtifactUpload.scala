@@ -20,8 +20,7 @@ import scala.util.{Failure, Success}
 case class ArtifactUpload(httpExt: HttpExt,
                           directory: Path,
                           createHooks: ArtifactUpload => RequestHooks,
-                          maxUploadFileSizeBytes: Long,
-                          githubToken: Option[String] = None,
+                          maxUploadFileSizeBytes: Long
                          )(implicit val logger: Logger) {
 
   implicit val materializer: Materializer = Materializer(httpExt.system)

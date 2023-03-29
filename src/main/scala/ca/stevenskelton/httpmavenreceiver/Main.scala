@@ -17,8 +17,8 @@ object Main extends App {
 
   private val conf = ConfigFactory.load()
 
-  implicit private val actorSystem = ActorSystem("http", conf)
-  implicit private val logger = Logger("http")
+  implicit private val actorSystem: ActorSystem = ActorSystem("http", conf)
+  implicit private val logger: Logger = Logger("http")
 
   private val directory = new File(conf.getString("http-maven-receiver.file-directory"))
   private val maxUploadByteSize = Try(conf.getBytes("http-maven-receiver.max-upload-size").toLong).getOrElse(1024000L)
@@ -37,8 +37,7 @@ object Main extends App {
     Http(actorSystem),
     directory.toPath,
     new MavenMD5CompareRequestHooks(_),
-    maxUploadByteSize,
-    Try(conf.getString("http-maven-receiver.github-token")).toOption.filterNot(_.isBlank)
+    maxUploadByteSize
   )
 
   bindPublic(
