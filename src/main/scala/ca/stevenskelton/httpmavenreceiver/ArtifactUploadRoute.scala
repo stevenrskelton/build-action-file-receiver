@@ -20,12 +20,13 @@ import scala.util.{Failure, Success}
 case class ArtifactUploadRoute(httpExt: HttpExt,
                                directory: Path,
                                createHooks: ArtifactUploadRoute => RequestHooks,
-                               maxUploadFileSizeBytes: Long
+                               maxUploadFileSizeBytes: Long,
+                               allowedGithubUsers: Seq[AllowedGithubUser]
                               )(implicit val logger: Logger) {
 
   implicit val materializer: Materializer = Materializer(httpExt.system)
 
-  def successfulResponseBody(githubPackage: GithubPackage, fileInfo: FileInfo, destinationFile: File, destinationFileMD5: String): HttpResponse = {
+  private def successfulResponseBody(fileInfo: FileInfo, destinationFile: File, destinationFileMD5: String): HttpResponse = {
     val responseBody = s"Successfully saved upload of ${fileInfo.fileName}, ${Utils.humanFileSize(destinationFile)}, MD5 $destinationFileMD5"
     HttpResponse(StatusCodes.OK, Nil, HttpEntity(ContentTypes.`text/plain(UTF-8)`, responseBody))
   }
@@ -40,6 +41,12 @@ case class ArtifactUploadRoute(httpExt: HttpExt,
               val uploadedF = FileUploadDirectives.parseFormData(formData, ctx).flatMap {
                 o =>
                   logger.info(s"Received request for `${o._2.fileName}` upload from $clientIp")
+                  val requestGithubUser = o._1("githubUser")
+                  val githubUser = allowedGithubUsers.find(_.githubUsername == requestGithubUser).getOrElse {
+                    val message = s"Could not find user `$requestGithubUser``"
+                    logger.error(message)
+                    throw new Exception(message)
+                  }
                   hooks.preHook(o._1, o._2, o._3, ctx).flatMap {
                     case (githubPackage, fileInfo, bytes) =>
                       val tmpFile = File.createTempFile(System.currentTimeMillis.toString, ".tmp", directory.toFile)
@@ -57,8 +64,8 @@ case class ArtifactUploadRoute(httpExt: HttpExt,
                               val uploadMD5 = Utils.byteArrayToHexString(digest.digest)
                               hooks.tmpFileHook(tmpFile, uploadMD5).flatMap {
                                 dest =>
-                                  val response = successfulResponseBody(githubPackage, fileInfo, dest, uploadMD5)
-                                  hooks.postHook(response)
+                                  val response = successfulResponseBody(fileInfo, dest, uploadMD5)
+                                  hooks.postHook(response, githubUser, dest)
                               }
                             case Failure(ex) => Future.failed(ex)
                           }

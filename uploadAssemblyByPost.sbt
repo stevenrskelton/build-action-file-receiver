@@ -5,18 +5,11 @@ import java.util.concurrent.TimeUnit
 import scala.util.Try
 import scala.xml.XML
 
-lazy val uploadAssemblyPostUrl = settingKey[URI]("POST upload destination")
-
-//  val url = "http://168.235.90.16/releases"
-//  val url = "http://127.0.0.1:8080/releases"
-uploadAssemblyPostUrl := new URI("http://172.81.182.36:8080/releases")
-
 lazy val uploadAssemblyByPost = taskKey[Unit](s"Upload Jar via HTTP POST")
 uploadAssemblyByPost := {
   val githubToken = sys.env.getOrElse("GITHUB_TOKEN", throw new Exception("You must set environmental variable GITHUB_TOKEN"))
-  val githubUser = sys.env.getOrElse("GITHUB_REPOSITORY_OWNER", throw new Exception("You must set environmental variable GITHUB_REPOSITORY_OWNER, eg: your username"))
-
-  val url = uploadAssemblyPostUrl.value.toString
+  val githubUser = sys.env.getOrElse("GITHUB_REPOSITORY_OWNER", throw new Exception("You must set environmental variable GITHUB_REPOSITORY_OWNER, eg: your Github username"))
+  val url = sys.env.getOrElse("POST_URI", throw new Exception("You must set environmental variable POST_URI to the POST destination"))
 
   val asyncHttpClientConfig = new DefaultAsyncHttpClientConfig.Builder()
     .setMaxRequestRetry(0)

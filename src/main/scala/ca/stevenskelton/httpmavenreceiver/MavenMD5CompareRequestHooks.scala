@@ -79,8 +79,8 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUploadRoute)
     }
   }
 
-  override def postHook(httpResponse: HttpResponse): Future[HttpResponse] = super.postHook(httpResponse)
-
+  override def postHook(httpResponse: HttpResponse, allowedGithubUser: AllowedGithubUser, file: File): Future[HttpResponse] =
+    super.postHook(httpResponse, allowedGithubUser, file)
 
   def downloadLatestMavenPackage(githubPackage: GithubPackage): Future[File] = {
     fetchLatestMetadata(githubPackage).flatMap {
