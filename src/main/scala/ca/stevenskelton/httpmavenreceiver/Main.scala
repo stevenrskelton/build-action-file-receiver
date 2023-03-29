@@ -33,7 +33,7 @@ object Main extends App {
 
   logger.info(s"Setting file directory to: ${directory.getAbsolutePath} with max upload size: $maxUploadByteSize bytes")
 
-  private val artifactUpload = ArtifactUpload(
+  private val artifactUpload = ArtifactUploadRoute(
     Http(actorSystem),
     directory.toPath,
     new MavenMD5CompareRequestHooks(_),
@@ -61,7 +61,7 @@ object Main extends App {
       System.exit(1)
   }
 
-  def bindPublic(artifactUpload: ArtifactUpload, host: String, port: Int)(implicit actorSystem: ActorSystem, logger: Logger): Future[Http.ServerBinding] = {
+  def bindPublic(artifactUpload: ArtifactUploadRoute, host: String, port: Int)(implicit actorSystem: ActorSystem, logger: Logger): Future[Http.ServerBinding] = {
 
     val publicRoutes = path("releases")(artifactUpload.releasesPost)
 

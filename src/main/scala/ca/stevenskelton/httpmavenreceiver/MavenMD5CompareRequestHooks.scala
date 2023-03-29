@@ -18,7 +18,7 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, XML}
 
-class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUpload)
+class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUploadRoute)
   extends DefaultRequestHooks(artifactUpload.directory, artifactUpload.logger) {
 
   import artifactUpload.materializer
