@@ -49,10 +49,12 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUploadRoute)
                 Utils.sinkToString(response.entity.dataBytes).map {
                   md5 =>
                     md5Sum = md5
+                    logger.info(s"MD5 retrieved, $md5Sum")
                     obj
                 }
               } else {
                 val errorMessage = s"Maven version ${fileInfo.fileName} ${githubPackage.version} does not exist in Github"
+                logger.error(errorMessage)
                 Future.failed(UserMessageException(StatusCodes.BadRequest, errorMessage))
               }
           }
