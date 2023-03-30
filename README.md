@@ -1,6 +1,12 @@
 # http-maven-receiver
 HTTP server that receives artifact uploads and verifies MD5 against Maven.
 
+### Why would you use this?
+
+Use Ansible in your Github Actions instead of this program. It will upload your files securely and has a lot of plugins for various actions.
+
+This is okay if you either don't have SSH or don't want your keys stored in Github Secrets.
+
 ## Two Parts
 
 SBT build tasks
