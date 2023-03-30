@@ -12,10 +12,13 @@ Downsides of Ansible:
 
 If you are performing server-side actions after the file is uploaded, and don't want to grant the Ansible user permissions to perform them, the actions need to be separate scripts outside of Ansible.  This project is basically those server-side scripts, written in Java/JVM, with a small HTTP server attached.
 
+### User Permissions 
+
 Upload permissions are now based around the ability to publish to Github Packages Maven.
+
 Server-side permissions are isolated to the server.
 
-## Two Parts
+## Two Deployment Parts
 
 SBT build tasks
 - publishAssemblyToGithubPackages: uploads compiled code to Github Packages (Maven)
@@ -39,7 +42,7 @@ HTTP Upload Server
 POST_URI="http://yourdomain.com:8080/upload"
 ```
 
-Running this Github Action will compile your code, upload the artifact to Github Packages for the project, and then upload the file to your `POST_URI` destination.
+Running this Github Action will compile your code, upload the artifact to Github Packages for the project, upload the file to your `POST_URI` destination, and execute server-side actions all in 1 step.
 
 ## Server-side Receiver Install
 
