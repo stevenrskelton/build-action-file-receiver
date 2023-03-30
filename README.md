@@ -18,6 +18,7 @@ Upload permissions are now based around the ability to publish to Github Package
 
 Server-side permissions are isolated to the server.
 
+
 ## Two Deployment Parts
 
 SBT build tasks
@@ -31,7 +32,7 @@ HTTP Upload Server
 
 ![Request Flow](./requests.drawio.svg)
 
-## Project Install
+### Github Action Install
 
 (These assume you are using _"com.eed3si9n" % "sbt-assembly"_ to create uber jars)
 
@@ -44,7 +45,7 @@ POST_URI="http://yourdomain.com:8080/upload"
 
 Running this Github Action will compile your code, upload the artifact to Github Packages for the project, upload the file to your `POST_URI` destination, and execute server-side actions all in 1 step.
 
-## Server-side Receiver Install
+### Server-side Receiver Install
 
 Compile this Scala project, and run on your server. 
 
@@ -54,13 +55,13 @@ Set the values in `application.conf`, or use command line arguments to set them,
 ```
 java -Dhttp-maven-receiver.host="192.168.0.1" -jar http-maven-receiver-assembly-0.1.0-SNAPSHOT.jar
 ```
-
-### Command Line Params
+#### Command Line Params
 
 - `http-maven-receiver.host` : Host/IP address to bind to.  _Required_
 - `http-maven-receiver.port` : Port to bind to. _Default = 8080_
 - `http-maven-receiver.file-directory` : Directory to upload to. _Default = "./files"_
 - `http-maven-receiver.max-upload-size` : Maximum file size to handle. _Default = 1M_
+
 
 ## Post Upload Tasks
 
