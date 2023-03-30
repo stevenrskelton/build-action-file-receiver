@@ -12,7 +12,8 @@ Downsides of Ansible:
 
 If you are performing server-side actions after the file is uploaded, and don't want to grant the Ansible user permissions to perform them, the actions need to be separate scripts outside of Ansible.  This project is basically those server-side scripts, written in Java/JVM, with a small HTTP server attached.
 
-Upload permissions are now based around the ability to publish to Github Packages Maven.  Server-side permissions are isolated to the server.
+Upload permissions are now based around the ability to publish to Github Packages Maven.
+Server-side permissions are isolated to the server.
 
 ## Two Parts
 
