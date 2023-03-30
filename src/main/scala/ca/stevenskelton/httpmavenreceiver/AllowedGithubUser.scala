@@ -24,8 +24,8 @@ object StevenrskeltonGithubUser extends AllowedGithubUser("stevenrskelton") {
   override def postHook(file: File)(implicit logger: Logger): Future[Done] = {
     if(file.getName.startsWith("tradeauditserver-assembly-")){
       exec(s"sudo -- mv ${file.getAbsolutePath} /home/tradeaudit/")
-      exec(s"sudo -- rm /home/tradeaudit/tradeauditserver-assembly-0.1.0-SNAPSHOT.jar")
-      exec(s"sudo -- ln -s /home/tradeaudit/${file.getName} /home/tradeaudit/tradeauditserver-assembly-0.1.0-SNAPSHOT.jar")
+      exec(s"sudo -- rm /home/tradeaudit/tradeauditserver-assembly.jar")
+      exec(s"sudo -- ln -s /home/tradeaudit/${file.getName} /home/tradeaudit/tradeauditserver-assembly.jar")
       exec(s"sudo -- systemctl restart tradeaudit")
       logger.info(s"Successfully installed new tradeaudit version ${file.getName}")
     }
