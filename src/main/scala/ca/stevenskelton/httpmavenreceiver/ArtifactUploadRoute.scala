@@ -2,7 +2,7 @@ package ca.stevenskelton.httpmavenreceiver
 
 import akka.http.scaladsl.HttpExt
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives.{complete, completeOrRecoverWith, extractClientIP, extractRequestContext, post, withSizeLimit}
+import akka.http.scaladsl.server.Directives.{complete, completeOrRecoverWith, extractClientIP, extractRequestContext, put, withSizeLimit}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.FileInfo
 import akka.http.scaladsl.server.directives.MarshallingDirectives.{as, entity}
@@ -31,7 +31,7 @@ case class ArtifactUploadRoute(httpExt: HttpExt,
     HttpResponse(StatusCodes.OK, Nil, HttpEntity(ContentTypes.`text/plain(UTF-8)`, responseBody))
   }
 
-  val releasesPost: Route = post {
+  val releasesPost: Route = put {
     extractClientIP {
       clientIp =>
         withSizeLimit(maxUploadFileSizeBytes) {
