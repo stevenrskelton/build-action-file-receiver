@@ -52,15 +52,6 @@ class DefaultRequestHooks(val directory: Path, val logger: Logger) extends Reque
   }
 
   override def postHook(httpResponse: HttpResponse, allowedGithubUser: AllowedGithubUser, file: File): Future[HttpResponse] = Future.successful {
-    allowedGithubUser.postActions.foreach {
-      command =>
-        val commandString = MessageFormat.format(command, file.getAbsolutePath, allowedGithubUser.githubUsername)
-        logger.info(s"Executing! $commandString")
-        val result = sys.process.Process(commandString).!
-        if (result != 0) {
-          logger.error(s"Could not execute post command `$commandString`, returned $result")
-        }
-    }
     val duration = Duration.ofMillis(System.currentTimeMillis - start)
     logger.info(s"Completed ${fileInfo.fileName} in ${Utils.humanReadableDuration(duration)}")
     httpResponse

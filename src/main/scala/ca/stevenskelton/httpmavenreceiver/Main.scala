@@ -11,7 +11,6 @@ import com.typesafe.scalalogging.Logger
 import java.io.File
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.util.Try
 
 object Main extends App {
@@ -30,16 +29,6 @@ object Main extends App {
   private val port: Int = Option(conf.getInt("http-maven-receiver.port")).getOrElse {
     throw new Exception("Set `http-maven-receiver.port` to the port to bind")
   }
-  private val allowedGithubUsers: Seq[AllowedGithubUser] = Option(conf.getConfigList("http-maven-receiver.allowed-github-users")).getOrElse {
-    throw new Exception("Set `http-maven-receiver.allowed-github-users` to the set of GithubUsers allowed to upload")
-  }.asScala.toSeq.map {
-    configObj =>
-      val githubUsername = Option(configObj.getString("username")).getOrElse {
-        throw new Exception("Set `http-maven-receiver.allowed-github-users.[username]`")
-      }
-      val postCommands = Option(configObj.getStringList("post-commands")).map(_.asScala.toSeq).getOrElse(Nil)
-      AllowedGithubUser(githubUsername, postCommands)
-  }
   private val maxUploadByteSize = Try(conf.getBytes("http-maven-receiver.max-upload-size").toLong).getOrElse(1024000L)
 
   if (!uploadDirectory.exists) {
@@ -57,7 +46,7 @@ object Main extends App {
     uploadDirectory.toPath,
     new MavenMD5CompareRequestHooks(_),
     maxUploadByteSize,
-    allowedGithubUsers
+    allowedGithubUsers = Seq(StevenrskeltonGithubUser)
   )
 
   bindPublic(artifactUpload, host, port).map {
