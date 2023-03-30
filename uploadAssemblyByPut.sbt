@@ -56,9 +56,7 @@ uploadAssemblyByPut := {
     assemblyJar
   }
 
-  val postBuilder = asyncHttpClient.preparePost(url)
-
-  val builder = postBuilder
+  val builder = asyncHttpClient.preparePut(url)
     .addBodyPart(new StringPart("githubAuthToken", githubToken))
     .addBodyPart(new StringPart("githubUser", githubUser))
     .addBodyPart(new StringPart("githubRepository", githubRepository))
