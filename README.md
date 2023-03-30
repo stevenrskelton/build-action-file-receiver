@@ -54,10 +54,16 @@ java -Dhttp-maven-receiver.host="192.168.0.1" -jar http-maven-receiver-assembly-
 
 In Main.scala, the ArtifactUploadRoute takes a `Seq[AllowedGithubUser]` as a parameter.
 
-Only uploads from these Github userids will be allowed.  AllowedGithubUser defines:
+Only uploads from these Github userid repositories will be allowed.  AllowedGithubUser defines:
 
 ```
 def postHook(file: File): Future[Done]
 ```
 
 This can be used to perform any actions on the uploaded `File`.
+A simple example would be to move this file out of the upload folder to somewhere else.
+
+eg:
+```
+sys.process.Process("sudo -- mv ${file.getAbsolutePath} /home/hosted/").!
+```
