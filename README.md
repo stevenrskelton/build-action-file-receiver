@@ -38,3 +38,14 @@ Set the values in `application.conf`, or use command line arguments to set them,
 java -Dhttp-maven-receiver.host="192.168.0.1" -jar http-maven-receiver-assembly-0.1.0-SNAPSHOT.jar
 ```
 
+## Post Upload Tasks
+
+In Main.scala, the ArtifactUploadRoute takes a `Seq[AllowedGithubUser]` as a parameter.
+
+Only uploads from these Github userids will be allowed.  AllowedGithubUser defines:
+
+```
+def postHook(file: File): Future[Done]
+```
+
+This can be used to perform any actions on the uploaded `File`.
