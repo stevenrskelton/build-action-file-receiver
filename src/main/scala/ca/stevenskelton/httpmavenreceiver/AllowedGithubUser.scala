@@ -1,12 +1,12 @@
 package ca.stevenskelton.httpmavenreceiver
-import akka.http.scaladsl.model.HttpResponse
+import akka.Done
 import com.typesafe.scalalogging.Logger
 
 import java.io.File
 import scala.concurrent.Future
 
 trait PostHook {
-  def postHook(httpResponse: HttpResponse, allowedGithubUser: AllowedGithubUser, file: File)(implicit logger: Logger): Future[HttpResponse]
+  def postHook(file: File)(implicit logger: Logger): Future[Done]
 }
 abstract class AllowedGithubUser(val githubUsername: String) extends PostHook
 
@@ -21,7 +21,7 @@ object StevenrskeltonGithubUser extends AllowedGithubUser("stevenrskelton") {
     }
   }
 
-  override def postHook(httpResponse: HttpResponse, allowedGithubUser: AllowedGithubUser, file: File)(implicit logger: Logger): Future[HttpResponse] = {
+  override def postHook(file: File)(implicit logger: Logger): Future[Done] = {
     if(file.getName.startsWith("tradeauditserver-assembly-")){
       exec(s"sudo -- mv ${file.getAbsolutePath} /home/tradeaudit/")
       exec(s"sudo -- rm /home/tradeaudit/tradeauditserver-assembly-0.1.0-SNAPSHOT.jar")
@@ -29,6 +29,6 @@ object StevenrskeltonGithubUser extends AllowedGithubUser("stevenrskelton") {
       exec(s"sudo -- systemctl restart tradeaudit")
       logger.info(s"Successfully installed new tradeaudit version ${file.getName}")
     }
-    Future.successful(httpResponse)
+    Future.successful(Done)
   }
 }

@@ -65,8 +65,8 @@ case class ArtifactUploadRoute(httpExt: HttpExt,
                               hooks.tmpFileHook(tmpFile, uploadMD5).flatMap {
                                 dest =>
                                   val response = successfulResponseBody(fileInfo, dest, uploadMD5)
-                                  githubUser.postHook(response, githubUser, dest)(logger).map {
-                                    hooks.postHook(_, githubUser, dest)
+                                  githubUser.postHook(dest)(logger).flatMap {
+                                    _ => hooks.postHook(response, githubUser, dest)
                                   }
                               }
                             case Failure(ex) => Future.failed(ex)
