@@ -25,5 +25,5 @@ jobs:
       with:
         java-version: '11'
         distribution: 'temurin'
-    - name: Publish Über Jar to Github Packages and Upload
+    - name: Publish Über Jar & Deploy
       run: sbt publishAssemblyToGithubPackages uploadAssemblyByPut
