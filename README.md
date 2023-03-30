@@ -1,32 +1,35 @@
 # http-maven-receiver
-HTTP server that receives artifact uploads and verifies MD5 against Maven.
+Maximizing Github Free Tier as a CI/CD pipeline, using Java/JVM for almost everything.
+
+- Github for private source repos.
+- Github Actions for building.
+- Github Packages (Maven) for release backups (500MB limit).
+- Local Java/Scala/JVM executes your deployment.
 
 ### Why would you use this?
 
-Use Ansible in your Github Actions instead of this. Ansible has secure file upload and lots of plugins for simple server-side actions.
+Other tools like Ansible is probably better for you. Ansible has secure file upload and lots of plugins for simple server-side actions.
 
-Downsides of Ansible:
-- need SSH running
-- SSH user triggers server-side actions
-- SSH private key needs to be in Github
+If you don't want to create SSH accounts, install clients (other than this one), or use custom scripting languages, maybe this works for you.
 
-If you are performing server-side actions after the file is uploaded, and don't want to grant the Ansible user permissions to perform them, the actions need to be separate scripts outside of Ansible.  This project is basically those server-side scripts, written in Java/JVM, with a small HTTP server attached.
+This project is basically server-side deployment scripts written in Scala, with Akka HTTP receiving builds from Github.
+
 
 ### User Permissions 
 
-Upload permissions are now based around the ability to publish to Github Packages Maven.
+Upload permissions are limited to the ability to publish to Github Packages Maven.
 
-Server-side permissions are isolated to the server.
+Server-side permissions are completely internal to your server.
 
 
 ## Two Deployment Parts
 
 SBT build tasks
-- publishAssemblyToGithubPackages: uploads compiled code to Github Packages (Maven)
-- uploadAssemblyByPost: uploads compiled code to your server (HTTP POST)
+- publishAssemblyToGithubPackages: pushes compiled code to Github Packages (Maven)
+- uploadAssemblyByPost: pushes compiled code to your server (HTTP PUT)
 
 HTTP Upload Server
-- built on Akka, handles HTTP POST
+- built on Akka, handles HTTP PUT
 - validates upload is latest version in Maven, and has correct MD5 checksum
 - performs any custom server-side tasks, such as deployment and restarting
 
@@ -38,18 +41,18 @@ HTTP Upload Server
 
 - Copy `publishAssemblyToGithubPackages.sbt` and `uploadAssemblyByPost.sbt` to the root directory of your project.
 - Copy `upload-assembly-to-maven-post.yml` to the `.github/workflows` folder in your project.
-- In `upload-assembly-to-maven-post.yml` set `POST_URI` to the URL you want to upload to, eg:
+- In `upload-assembly-to-maven-post.yml` set `PUT_URI` to the URL you want to upload to, eg:
 ```
-POST_URI="http://yourdomain.com:8080/upload"
+PUT_URI="http://yourdomain.com:8080/upload"
 ```
 
-Running this Github Action will compile your code, upload the artifact to Github Packages for the project, upload the file to your `POST_URI` destination, and execute server-side actions all in 1 step.
+Running this Github Action will compile your code, upload the artifact to Github Packages for the project, upload the file to your `PUT_URI` destination, and execute server-side actions all in 1 step.
 
 ### Server-side Receiver Install
 
 Compile this Scala project, and run on your server. 
 
-You will need to specify the IP address to bind the server to, and what port to use.By default, this project will use port 8080.
+You will need to specify the IP address to bind the server to, optionally the port.
 
 Set the values in `application.conf`, or use command line arguments to set them, eg:
 ```
