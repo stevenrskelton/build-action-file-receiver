@@ -7,7 +7,6 @@ on:
 
 env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-  PRIVATE_REPO_OAUTH: ${{secrets.PRIVATE_REPO_OAUTH}}
   POST_URI: "http://172.81.182.36:8080/releases"
 
 permissions:
