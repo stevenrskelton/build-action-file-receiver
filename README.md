@@ -6,12 +6,12 @@ HTTP server that receives artifact uploads and verifies MD5 against Maven.
 Use Ansible in your Github Actions instead of this. Ansible has secure file upload and lots of plugins for simple server-side actions.
 Downsides of Ansible:
 - need SSH running
-- SSH user needs full permissions to trigger all server-side actions
+- SSH user triggers server-side actions
 - SSH private key needs to be in Github
 
-If you are performing actions server-side after the file is uploaded, the Ansible user needs permissions to perform them, or execute scripts under a more priviledged user.
+If you are performing server-side actions after the file is uploaded, and don't want to grant Ansible user needs permissions to perform them, the actions need to be separate scripts outside of Ansible.  This project is basically those server-side scripts, written in Java/JVM, with a small HTTP server attached.
 
-If there are more scripts server-side, and you want to write them in Java/JVM, then this code might be for you.
+Upload permissions are based around the ability to publish to Github Packages Maven.  Server-side permissions are isolated on the server.
 
 ## Two Parts
 
