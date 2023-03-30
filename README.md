@@ -1,10 +1,10 @@
 # http-maven-receiver
-Maximizing Github Free Tier as a CI/CD pipeline, using Java/JVM for almost everything.
+Maximizing Github Free Tier as a CI/CD pipeline, using Scala/Java/JVM for almost everything.
 
 - Github for private source repos.
 - Github Actions for building.
 - Github Packages (Maven) for release backups (500MB limit).
-- Local Java/Scala/JVM executes your deployment.
+- Local JVM executes your deployment.
 
 ### Why would you use this?
 
