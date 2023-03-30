@@ -26,7 +26,7 @@ Server-side permissions are completely internal to your server.
 
 SBT build tasks
 - publishAssemblyToGithubPackages: pushes compiled code to Github Packages (Maven)
-- uploadAssemblyByPost: pushes compiled code to your server (HTTP PUT)
+- uploadAssemblyByPut: pushes compiled code to your server (HTTP PUT)
 
 HTTP Upload Server
 - built on Akka, handles HTTP PUT
@@ -39,9 +39,9 @@ HTTP Upload Server
 
 (These assume you are using _"com.eed3si9n" % "sbt-assembly"_ to create uber jars)
 
-- Copy `publishAssemblyToGithubPackages.sbt` and `uploadAssemblyByPost.sbt` to the root directory of your project.
-- Copy `upload-assembly-to-maven-post.yml` to the `.github/workflows` folder in your project.
-- In `upload-assembly-to-maven-post.yml` set `PUT_URI` to the URL you want to upload to, eg:
+- Copy `publishAssemblyToGithubPackages.sbt` and `uploadAssemblyByPut.sbt` to the root directory of your project.
+- Copy `upload-assembly-to-maven-put.yml` to the `.github/workflows` folder in your project.
+- In `upload-assembly-to-maven-put.yml` set `PUT_URI` to the URL you want to upload to, eg:
 ```
 PUT_URI="http://yourdomain.com:8080/upload"
 ```
