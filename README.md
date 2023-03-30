@@ -52,10 +52,10 @@ java -Dhttp-maven-receiver.host="192.168.0.1" -jar http-maven-receiver-assembly-
 
 ### Command Line Params
 
-`http-maven-receiver.host` : Host/IP address to bind to.  _Required_
-`http-maven-receiver.port` : Port to bind to. _Default = 8080_
-`http-maven-receiver.file-directory` : Directory to upload to. _Default = "./files"_
-`http-maven-receiver.max-upload-size` : Maximum file size to handle. _Default = 1M_
+- `http-maven-receiver.host` : Host/IP address to bind to.  _Required_
+- `http-maven-receiver.port` : Port to bind to. _Default = 8080_
+- `http-maven-receiver.file-directory` : Directory to upload to. _Default = "./files"_
+- `http-maven-receiver.max-upload-size` : Maximum file size to handle. _Default = 1M_
 
 ## Post Upload Tasks
 
