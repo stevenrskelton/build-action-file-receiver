@@ -27,7 +27,7 @@ POST_URI="http://yourdomain.com:8080/upload"
 
 Running this Github Action will compile your code, upload the artifact to Github Packages for the project, and then upload the file to your `POST_URI` destination.
 
-## Server-side Reciever Install
+## Server-side Receiver Install
 
 Compile this Scala project, and run on your server. 
 
