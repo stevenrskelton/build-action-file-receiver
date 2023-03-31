@@ -81,5 +81,5 @@ A simple example would be to move this file out of the upload folder to somewher
 
 eg:
 ```
-sys.process.Process("sudo -- mv ${file.getAbsolutePath} /home/hosted/").!
+sys.process.Process(s"sudo -- mv ${file.getAbsolutePath} /home/hosted/").!
 ```
