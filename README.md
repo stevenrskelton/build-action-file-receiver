@@ -10,9 +10,9 @@ Maximizing Github Free Tier as a CI/CD pipeline, using Scala/Java/JVM for almost
 
 Other tools like Ansible is probably better for you. Ansible has secure file upload and lots of plugins for simple server-side actions.
 
-If you don't want to create SSH accounts, install clients (other than this one), or use custom scripting languages, maybe this works for you.
+If you don't want to create SSH accounts, install clients (other than this one), or want to use Scala instead of custom scripting languages, maybe this is for you.
 
-This project is basically server-side deployment scripts written in Scala, with Akka HTTP receiving builds from Github.
+This project is basically server-side deployment scripts written in Scala, with Akka HTTP receiving builds from Github, so it can easily be integrated as a `Route` of existing Akka HTTP / Play deployments.
 
 
 ### User Permissions 
@@ -81,5 +81,5 @@ A simple example would be to move this file out of the upload folder to somewher
 
 eg:
 ```
-sys.process.Process("sudo -- mv ${file.getAbsolutePath} /home/hosted/").!
+sys.process.Process(s"sudo -- mv ${file.getAbsolutePath} /home/hosted/").!
 ```
