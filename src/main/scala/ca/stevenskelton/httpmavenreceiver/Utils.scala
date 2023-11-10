@@ -1,11 +1,11 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.Sink
-import akka.util.ByteString
 import com.typesafe.scalalogging.Logger
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.util.ByteString
 
-import java.io._
+import java.io.*
 import java.security.MessageDigest
 import java.time.Duration
 import scala.concurrent.Future
@@ -17,7 +17,7 @@ object Utils {
     acc + str.utf8String
   }
 
-  def sinkToString(source: akka.stream.scaladsl.Source[ByteString, _])(implicit mat: Materializer): Future[String] = {
+  def sinkToString(source: org.apache.pekko.stream.scaladsl.Source[ByteString, _])(implicit mat: Materializer): Future[String] = {
     source.runWith(ByteStringSink)
   }
 
@@ -38,7 +38,7 @@ object Utils {
     val sb = new StringBuilder
 
     // loop through the bytes array
-    for (i <- 0 until bytes.length) { // the following line converts the decimal into
+    for (i <- bytes.indices) { // the following line converts the decimal into
       // hexadecimal format and appends that to the
       // StringBuilder object
       sb.append(Integer.toString((bytes(i) & 0xff) + 0x100, 16).substring(1))

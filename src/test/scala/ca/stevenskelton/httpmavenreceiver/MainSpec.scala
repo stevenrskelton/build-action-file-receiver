@@ -1,7 +1,7 @@
 //package ca.stevenskelton.httpmavenreceiver
 //
-//import akka.http.scaladsl.model._
-//import akka.http.scaladsl.testkit.ScalatestRouteTest
+//import org.apache.pekko.http.scaladsl.model._
+//import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 //import org.mockito.ArgumentMatchers.any
 //import org.mockito.IdiomaticMockito.StubbingOps
 //import org.scalatest.matchers.should.Matchers

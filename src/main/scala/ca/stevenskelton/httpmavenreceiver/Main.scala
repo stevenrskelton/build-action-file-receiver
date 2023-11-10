@@ -1,12 +1,12 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.*
+import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.server.Route
 
 import java.io.File
 import scala.concurrent.ExecutionContext.Implicits.global

@@ -1,17 +1,33 @@
-ThisBuild / version := "0.1.0-SNAPSHOT"
+ThisBuild / version := "1.0.0"
 ThisBuild / organization := "ca.stevenskelton"
-ThisBuild / scalaVersion := "2.13.10"
+ThisBuild / scalaVersion := "3.3.1"
 
 addArtifact(assembly / artifact, assembly)
 
-val javaVersion = "11"
-val akkaVersion = "2.6.20"
-val akkaHttpVersion = "10.2.10"
+val javaVersion = "17"
+val pekkoHttpVersion = "1.0.0"
+val pekkoVersion = "1.0.1"
 
 lazy val root = (project in file("."))
   .settings(
     name := "http-maven-receiver",
-    scalacOptions += s"-target:jvm-$javaVersion",
+    scalacOptions ++= {
+      Seq(
+        "-encoding", "UTF-8",
+        "-deprecation",
+        "-feature",
+        "-unchecked",
+        "-language:experimental.macros",
+        "-language:higherKinds",
+        "-language:implicitConversions",
+        "-Ykind-projector",
+        //        "-Yexplicit-nulls",
+        "-Ysafe-init",
+        //        "-Wvalue-discard",
+        //        "-source:3.0-migration",
+        // "-Xfatal-warnings"
+      )
+    },
     javacOptions ++= Seq("-source", javaVersion, "-target", javaVersion),
     assembly / mainClass := Some ("ca.stevenskelton.httpmavenreceiver.Main"),
     assembly / assemblyMergeStrategy := {
@@ -21,7 +37,7 @@ lazy val root = (project in file("."))
       case PathList("META-INF", "services", xs@_*) if xs.lastOption.contains("org.slf4j.spi.SLF4JServiceProvider") => MergeStrategy.first
       //Others
       case PathList("META-INF", xs@_*) => MergeStrategy.discard
-      //added to support Akka
+      //added to support Pekko
       case "reference.conf" => MergeStrategy.concat
       case x => MergeStrategy.first
     },
@@ -33,16 +49,12 @@ lazy val root = (project in file("."))
 
 libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.4.2",
-  "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-http2-support" % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
-  "com.typesafe.akka" %% "akka-stream" % akkaVersion,
-  "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
+  "org.apache.pekko" %% "pekko-http" % pekkoHttpVersion,
+  "org.apache.pekko" %% "pekko-stream" % pekkoVersion,
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
-  "ch.qos.logback" % "logback-classic" % "1.4.6",
+  "ch.qos.logback" % "logback-classic" % "1.4.7",
   "org.scala-lang.modules" %% "scala-xml" % "2.1.0",
-  "org.mockito" %% "mockito-scala" % "1.17.12" % Test,
-  "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % Test,
-  "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
-  "org.scalatest" %% "scalatest" % "3.2.14" % Test
+  "org.apache.pekko" %% "pekko-stream-testkit" % pekkoVersion % Test,
+  "org.apache.pekko" %% "pekko-http-testkit" % pekkoHttpVersion % Test,
+  "org.scalatest" %% "scalatest" % "3.2.15" % Test
 )

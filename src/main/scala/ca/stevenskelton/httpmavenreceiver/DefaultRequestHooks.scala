@@ -1,11 +1,11 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.RequestContext
-import akka.http.scaladsl.server.directives.FileInfo
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
 import com.typesafe.scalalogging.Logger
+import org.apache.pekko.http.scaladsl.model.{HttpResponse, StatusCodes}
+import org.apache.pekko.http.scaladsl.server.RequestContext
+import org.apache.pekko.http.scaladsl.server.directives.FileInfo
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 
 import java.io.File
 import java.nio.file.Path
@@ -15,7 +15,7 @@ import scala.concurrent.Future
 
 class DefaultRequestHooks(val directory: Path, val logger: Logger) extends RequestHooks {
 
-  protected val start = System.currentTimeMillis
+  protected val start: Long = System.currentTimeMillis
   protected var destinationFile: File = null
   protected var fileInfo: FileInfo = null
 

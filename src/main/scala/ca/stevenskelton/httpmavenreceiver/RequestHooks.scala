@@ -1,10 +1,10 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import akka.http.scaladsl.model.HttpResponse
-import akka.http.scaladsl.server.RequestContext
-import akka.http.scaladsl.server.directives.FileInfo
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.model.HttpResponse
+import org.apache.pekko.http.scaladsl.server.RequestContext
+import org.apache.pekko.http.scaladsl.server.directives.FileInfo
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 
 import java.io.File
 import scala.concurrent.Future

@@ -1,19 +1,19 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import akka.http.scaladsl.HttpExt
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives.{complete, completeOrRecoverWith, extractClientIP, extractRequestContext, put, withSizeLimit}
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.directives.FileInfo
-import akka.http.scaladsl.server.directives.MarshallingDirectives.{as, entity}
-import akka.stream.Materializer
-import akka.stream.scaladsl.{FileIO, Flow}
 import com.typesafe.scalalogging.Logger
+import org.apache.pekko.http.scaladsl.HttpExt
+import org.apache.pekko.http.scaladsl.model.*
+import org.apache.pekko.http.scaladsl.server.Directives.{complete, completeOrRecoverWith, extractClientIP, extractRequestContext, put, withSizeLimit}
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.server.directives.FileInfo
+import org.apache.pekko.http.scaladsl.server.directives.MarshallingDirectives.{as, entity}
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.{FileIO, Flow}
 
 import java.io.File
 import java.nio.file.Path
 import java.security.MessageDigest
-import scala.concurrent.ExecutionContext.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.*
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 

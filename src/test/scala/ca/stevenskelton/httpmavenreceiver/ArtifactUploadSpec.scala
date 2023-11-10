@@ -1,11 +1,11 @@
 //package ca.stevenskelton.httpmavenreceiver
 //
-//import akka.http.scaladsl.model._
-//import akka.http.scaladsl.server.RequestContext
-//import akka.http.scaladsl.server.directives.FileInfo
-//import akka.http.scaladsl.testkit.ScalatestRouteTest
-//import akka.stream.scaladsl.Source
-//import akka.util.ByteString
+//import org.apache.pekko.http.scaladsl.model._
+//import org.apache.pekko.http.scaladsl.server.RequestContext
+//import org.apache.pekko.http.scaladsl.server.directives.FileInfo
+//import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+//import org.apache.pekko.stream.scaladsl.Source
+//import org.apache.pekko.util.ByteString
 //import org.scalatest.matchers.should.Matchers
 //import org.scalatest.wordspec.AnyWordSpec
 //

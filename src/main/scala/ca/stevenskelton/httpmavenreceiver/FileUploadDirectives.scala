@@ -1,11 +1,11 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import akka.Done
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.RequestContext
-import akka.http.scaladsl.server.directives.FileInfo
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.Done
+import org.apache.pekko.http.scaladsl.model.*
+import org.apache.pekko.http.scaladsl.server.RequestContext
+import org.apache.pekko.http.scaladsl.server.directives.FileInfo
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.util.ByteString
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{Future, Promise}

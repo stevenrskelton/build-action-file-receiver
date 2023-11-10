@@ -1,19 +1,19 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import akka.http.scaladsl.client.RequestBuilding.Get
-import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.RequestContext
-import akka.http.scaladsl.server.directives.FileInfo
-import akka.stream.scaladsl.{FileIO, Source}
-import akka.util.ByteString
 import ca.stevenskelton.httpmavenreceiver.MavenMD5CompareRequestHooks.MavenPackage
+import org.apache.pekko.http.scaladsl.client.RequestBuilding.Get
+import org.apache.pekko.http.scaladsl.model.headers.RawHeader
+import org.apache.pekko.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
+import org.apache.pekko.http.scaladsl.server.RequestContext
+import org.apache.pekko.http.scaladsl.server.directives.FileInfo
+import org.apache.pekko.stream.scaladsl.{FileIO, Source}
+import org.apache.pekko.util.ByteString
 
 import java.io.File
 import java.nio.file.StandardOpenOption
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
-import scala.concurrent.ExecutionContext.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.*
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.xml.{Elem, XML}
@@ -103,7 +103,7 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUploadRoute)
     }
   }
 
-  def downloadMavenMD5(mavenPackage: MavenPackage): Future[String] = {
+  private def downloadMavenMD5(mavenPackage: MavenPackage): Future[String] = {
     logger.info(s"Downloading ${mavenPackage.jarFilename}.md5")
     val request = withAuthorization(Get(s"${mavenPackage.artifactUrl}.md5"), mavenPackage.githubPackage.githubAuthToken)
     artifactUpload.httpExt.singleRequest(request).map {
@@ -119,7 +119,7 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUploadRoute)
     }
   }
 
-  def downloadMavenPackage(mavenPackage: MavenPackage): Future[File] = {
+  private def downloadMavenPackage(mavenPackage: MavenPackage): Future[File] = {
     val jarfile = new File(s"${directory.toFile.getPath}/${mavenPackage.jarFilename}")
     if (jarfile.exists) {
       val msg = s"File ${jarfile.getName} exists"
