@@ -1,4 +1,4 @@
-name: Publish Über Assembly to Github Packages
+name: Publish Über Assembly to GitHub Packages
 
 on:
   workflow_dispatch:
@@ -27,4 +27,4 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
     - name: Publish Über Jar & Deploy
-      run: sbt publishAssemblyToGithubPackages uploadAssemblyByPut
+      run: sbt publishAssemblyToGitHubPackages uploadAssemblyByPut

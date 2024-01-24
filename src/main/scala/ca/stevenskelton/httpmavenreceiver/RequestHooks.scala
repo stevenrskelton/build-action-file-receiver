@@ -21,7 +21,7 @@ trait RequestHooks {
                fileInfo: FileInfo,
                fileSource: Source[ByteString, Any],
                requestContext: RequestContext
-             ): Future[(GithubPackage, FileInfo, Source[ByteString, Any])]
+             ): Future[(GitHubPackage, FileInfo, Source[ByteString, Any])]
 
   /**
    * Executes after file has been uploaded to a temporary file
@@ -38,6 +38,6 @@ trait RequestHooks {
    * @param httpResponse
    * @return
    */
-  def postHook(httpResponse: HttpResponse, allowedGithubUser: AllowedGithubUser, file: File): Future[HttpResponse]
+  def postHook(httpResponse: HttpResponse, allowedGitHubUser: AllowedGitHubUser, file: File): Future[HttpResponse]
 }
 

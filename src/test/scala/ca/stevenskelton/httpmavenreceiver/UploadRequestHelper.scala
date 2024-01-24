@@ -22,7 +22,7 @@
 //  val httpExt = Http(actorSystem)
 //  implicit val logger = Logger("specs")
 //
-//  def toMap(githubPackage: GithubPackage): Map[String, String] = Map(
+//  def toMap(githubPackage: GitHubPackage): Map[String, String] = Map(
 //    "githubUser" -> githubPackage.githubUser,
 //    "githubRepository" -> githubPackage.githubRepository,
 //    "groupId" -> githubPackage.groupId,
@@ -30,9 +30,9 @@
 //    "version" -> githubPackage.version
 //  )
 //
-//  def postGithubPackageRequest(
+//  def postGitHubPackageRequest(
 //                                resource: File,
-//                                githubPackage: GithubPackage,
+//                                githubPackage: GitHubPackage,
 //                                uri: Uri = Uri./
 //                              ): HttpRequest = postMultipartFileRequest(resource, toMap(githubPackage), uri)
 //
@@ -47,7 +47,7 @@
 //      java.nio.file.Files.readAllBytes(resource.toPath)
 //    }
 //    val requestEntity = HttpEntity(ContentTypes.`application/octet-stream`, bodyBytes)
-//    val filePart = Multipart.FormData.BodyPart.Strict(GithubPackage.FileUploadFieldName, requestEntity, Map("filename" -> resource.getName))
+//    val filePart = Multipart.FormData.BodyPart.Strict(GitHubPackage.FileUploadFieldName, requestEntity, Map("filename" -> resource.getName))
 //    val parts = formFields.toSeq.map(keyValue => Multipart.FormData.BodyPart.Strict.apply(keyValue._1, HttpEntity(keyValue._2))) :+ filePart
 //    val multipartForm = Multipart.FormData(parts: _*)
 //    Post(uri.toString, multipartForm)

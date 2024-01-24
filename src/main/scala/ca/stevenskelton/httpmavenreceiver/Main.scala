@@ -1,5 +1,6 @@
 package ca.stevenskelton.httpmavenreceiver
 
+import ca.stevenskelton.httpmavenreceiver.customuseractions.StevenRSkeltonGitHubUser
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
 import org.apache.pekko.actor.ActorSystem
@@ -15,21 +16,24 @@ import scala.util.Try
 
 object Main extends App {
 
+  private val DefaultAllowedUploadSize = 1024000L
+
   private val conf = ConfigFactory.load().resolve()
 
   implicit private val actorSystem: ActorSystem = ActorSystem("http", conf)
   implicit private val logger: Logger = Logger("http")
 
-  private val uploadDirectory: File = new File(Option(conf.getString("http-maven-receiver.file-directory")).getOrElse {
-    throw new Exception("Set `http-maven-receiver.upload-directory`")
-  })
-  private val host: String = Option(conf.getString("http-maven-receiver.host")).getOrElse {
-    throw new Exception("Set `http-maven-receiver.host` to the IP to bind")
+  private val uploadDirectory: File = new File(conf.getString("http-maven-receiver.file-directory"))
+
+  private val host: String = Try(conf.getString("http-maven-receiver.host")).toOption.getOrElse {
+    logger.warn("No `http-maven-receiver.host` config value found, binding to localhost")
+    "localhost"
   }
-  private val port: Int = Option(conf.getInt("http-maven-receiver.port")).getOrElse {
-    throw new Exception("Set `http-maven-receiver.port` to the port to bind")
+  private val port: Int = conf.getInt("http-maven-receiver.port")
+  private val maxUploadByteSize = Try(conf.getBytes("http-maven-receiver.max-upload-size").toLong).getOrElse {
+    logger.info(s"No `http-maven-receiver.max-upload-size` config value found, setting to default ${Utils.humanFileSize(DefaultAllowedUploadSize)}")
+    DefaultAllowedUploadSize
   }
-  private val maxUploadByteSize = Try(conf.getBytes("http-maven-receiver.max-upload-size").toLong).getOrElse(1024000L)
 
   if (!uploadDirectory.exists) {
     logger.info(s"Creating file directory: ${uploadDirectory.getAbsolutePath}")
@@ -39,14 +43,14 @@ object Main extends App {
     }
   }
 
-  logger.info(s"Setting file directory to: ${uploadDirectory.getAbsolutePath} with max upload size: $maxUploadByteSize bytes")
+  logger.info(s"Setting file directory to: ${uploadDirectory.getAbsolutePath} with max upload size: ${Utils.humanFileSize(maxUploadByteSize)}")
 
   private val artifactUpload = ArtifactUploadRoute(
     Http(actorSystem),
     uploadDirectory.toPath,
     new MavenMD5CompareRequestHooks(_),
     maxUploadByteSize,
-    allowedGithubUsers = Seq(StevenrskeltonGithubUser)
+    allowedGitHubUsers = Seq(StevenRSkeltonGitHubUser)
   )
 
   bindPublic(artifactUpload, host, port).map {

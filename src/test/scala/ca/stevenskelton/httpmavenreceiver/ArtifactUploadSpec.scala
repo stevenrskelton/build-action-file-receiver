@@ -19,7 +19,7 @@
 //
 //  val validFile = new File("/5c55838e6a9fb7bb5470cb222fd3b1f3.png")
 //  val uri = Uri(s"https://maven.pkg.github.com/gh-user/gh-project/gh-groupId/gh.artifact.id/gh.version/${validFile.getName}.md5")
-//  val githubPackage = GithubPackage(
+//  val githubPackage = GitHubPackage(
 //    githubUser = "gh-user",
 //    githubRepository = "gh-project",
 //    groupId = "gh-groupId",
@@ -29,7 +29,7 @@
 //
 //  "Successful Maven responses" should {
 //
-//    val uploadRequest = UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage)
+//    val uploadRequest = UploadRequestHelper.postGitHubPackageRequest(validFile, githubPackage)
 //    val httpExt = UploadRequestHelper.createHttpExtMock(uri, HttpResponse(entity = HttpEntity("5c55838e6a9fb7bb5470cb222fd3b1f3")))
 //
 //    "save upload if file does not exist, return BadRequest if it already exists" in {
@@ -52,13 +52,13 @@
 //
 //      val bodyBytes = getClass.getResourceAsStream(validFile.getAbsolutePath).readAllBytes()
 //      val requestEntity = HttpEntity(ContentTypes.`application/octet-stream`, bodyBytes)
-//      val filePart = Multipart.FormData.BodyPart.Strict(GithubPackage.FileUploadFieldName, requestEntity, Map("filename" -> validFile.getName))
+//      val filePart = Multipart.FormData.BodyPart.Strict(GitHubPackage.FileUploadFieldName, requestEntity, Map("filename" -> validFile.getName))
 //      val multipartForm = Multipart.FormData(filePart)
 //      val invalidRequest = Post(uri.toString, multipartForm)
 //
 //      invalidRequest ~> artifactUpload.releasesPost ~> check {
 //        status shouldEqual StatusCodes.BadRequest
-//        responseAs[String] shouldEqual GithubPackage.FormErrorMessage
+//        responseAs[String] shouldEqual GitHubPackage.FormErrorMessage
 //      }
 //    }
 //  }
@@ -69,7 +69,7 @@
 //      val tempDirWithPrefix = Files.createTempDirectory("http-maven-receiver-specs-")
 //      val artifactUpload = ArtifactUpload(httpExt, tempDirWithPrefix, new MavenMD5CompareRequestHooks(_))
 //
-//      UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage) ~> artifactUpload.releasesPost ~> check {
+//      UploadRequestHelper.postGitHubPackageRequest(validFile, githubPackage) ~> artifactUpload.releasesPost ~> check {
 //        status shouldEqual StatusCodes.BadRequest
 //        responseAs[String] shouldEqual "Upload 5c55838e6a9fb7bb5470cb222fd3b1f3.png MD5 not equal, thisMD5doesntmatch expected != 5c55838e6a9fb7bb5470cb222fd3b1f3"
 //      }
@@ -80,9 +80,9 @@
 //      val tempDirWithPrefix = Files.createTempDirectory("http-maven-receiver-specs-")
 //      val artifactUpload = ArtifactUpload(httpExt, tempDirWithPrefix, new MavenMD5CompareRequestHooks(_))
 //
-//      UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage) ~> artifactUpload.releasesPost ~> check {
+//      UploadRequestHelper.postGitHubPackageRequest(validFile, githubPackage) ~> artifactUpload.releasesPost ~> check {
 //        status shouldEqual StatusCodes.BadRequest
-//        responseAs[String] shouldEqual "Maven version 5c55838e6a9fb7bb5470cb222fd3b1f3.png gh.version does not exist in Github"
+//        responseAs[String] shouldEqual "Maven version 5c55838e6a9fb7bb5470cb222fd3b1f3.png gh.version does not exist in GitHub"
 //      }
 //    }
 //
@@ -95,7 +95,7 @@
 //      val tempDirWithPrefix = Files.createTempDirectory("http-maven-receiver-specs-")
 //      val artifactUpload = ArtifactUpload(httpExt, tempDirWithPrefix, new MavenMD5CompareRequestHooks(_), Some("a-token"))
 //
-//      UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage) ~> artifactUpload.releasesPost ~> check {
+//      UploadRequestHelper.postGitHubPackageRequest(validFile, githubPackage) ~> artifactUpload.releasesPost ~> check {
 //        status shouldEqual StatusCodes.OK
 //        responseAs[String] shouldEqual "Successfully saved upload of 5c55838e6a9fb7bb5470cb222fd3b1f3.png, 7kb, MD5 5c55838e6a9fb7bb5470cb222fd3b1f3"
 //      }
@@ -107,14 +107,14 @@
 //      val tempDirWithPrefix = Files.createTempDirectory("http-maven-receiver-specs-")
 //      val artifactUpload = ArtifactUpload(httpExt, tempDirWithPrefix, new MavenMD5CompareRequestHooks(_), Some("a-token"))
 //
-//      val githubPackageB = GithubPackage(
+//      val githubPackageB = GitHubPackage(
 //        githubUser = "gh-user",
 //        githubRepository = "gh-project",
 //        groupId = "gh-groupId",
 //        artifactId = "gh.artifact.id",
 //        version = "gh.version"
 //      )
-//      val formBtoken = UploadRequestHelper.toMap(githubPackageB) + (MavenMD5CompareRequestHooks.GithubTokenField -> "b-token")
+//      val formBtoken = UploadRequestHelper.toMap(githubPackageB) + (MavenMD5CompareRequestHooks.GitHubTokenField -> "b-token")
 //
 //      UploadRequestHelper.postMultipartFileRequest(validFile, formBtoken) ~> artifactUpload.releasesPost ~> check {
 //        status shouldEqual StatusCodes.OK
@@ -140,7 +140,7 @@
 //          override def preHook(formFields: Map[String, String],
 //                               fileInfo: FileInfo,
 //                               fileSource: Source[ByteString, Any],
-//                               requestContext: RequestContext): Future[(GithubPackage, FileInfo, Source[ByteString, Any])] = {
+//                               requestContext: RequestContext): Future[(GitHubPackage, FileInfo, Source[ByteString, Any])] = {
 //            preHookCount += 1
 //            super.preHook(formFields, fileInfo, fileSource, requestContext)
 //          }
@@ -160,7 +160,7 @@
 //            super.postHook(httpResponse)
 //          }
 //        })
-//      val uploadRequest = UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage)
+//      val uploadRequest = UploadRequestHelper.postGitHubPackageRequest(validFile, githubPackage)
 //
 //      uploadRequest ~> artifactUpload.releasesPost ~> check {
 //        status shouldEqual StatusCodes.OK
@@ -199,7 +199,7 @@
 //            Future.successful(HttpResponse(StatusCodes.Conflict, entity = HttpEntity("custom-error")))
 //          }
 //        })
-//      val uploadRequest = UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage)
+//      val uploadRequest = UploadRequestHelper.postGitHubPackageRequest(validFile, githubPackage)
 //
 //      uploadRequest ~> artifactUpload.releasesPost ~> check {
 //        status shouldEqual StatusCodes.Conflict
@@ -216,7 +216,7 @@
 //            Future.failed(UserMessageException(StatusCodes.Conflict, "custom-error"))
 //          }
 //        })
-//      val uploadRequest = UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage)
+//      val uploadRequest = UploadRequestHelper.postGitHubPackageRequest(validFile, githubPackage)
 //
 //      uploadRequest ~> artifactUpload.releasesPost ~> check {
 //        status shouldEqual StatusCodes.Conflict
@@ -237,10 +237,10 @@
 //          override def preHook(formFields: Map[String, String],
 //                               fileInfo: FileInfo,
 //                               fileSource: Source[ByteString, Any],
-//                               requestContext: RequestContext): Future[(GithubPackage, FileInfo, Source[ByteString, Any])] =
+//                               requestContext: RequestContext): Future[(GitHubPackage, FileInfo, Source[ByteString, Any])] =
 //            Future.failed(new Exception("sensitive information and stacktrace"))
 //        })
-//      val uploadRequest = UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage)
+//      val uploadRequest = UploadRequestHelper.postGitHubPackageRequest(validFile, githubPackage)
 //
 //      uploadRequest ~> artifactUpload.releasesPost ~> check {
 //        status shouldEqual StatusCodes.InternalServerError
@@ -254,7 +254,7 @@
 //        au => new DefaultRequestHooks(au.directory, logger) {
 //          override def tmpFileHook(tmp: File, md5Sum: String): Future[File] = Future.failed(new Exception("sensitive information and stacktrace"))
 //        })
-//      val uploadRequest = UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage)
+//      val uploadRequest = UploadRequestHelper.postGitHubPackageRequest(validFile, githubPackage)
 //
 //      uploadRequest ~> artifactUpload.releasesPost ~> check {
 //        status shouldEqual StatusCodes.InternalServerError
@@ -268,7 +268,7 @@
 //        au => new DefaultRequestHooks(au.directory, logger) {
 //          override def postHook(httpResponse: HttpResponse): Future[HttpResponse] = Future.failed(new Exception("sensitive information and stacktrace"))
 //        })
-//      val uploadRequest = UploadRequestHelper.postGithubPackageRequest(validFile, githubPackage)
+//      val uploadRequest = UploadRequestHelper.postGitHubPackageRequest(validFile, githubPackage)
 //
 //      uploadRequest ~> artifactUpload.releasesPost ~> check {
 //        status shouldEqual StatusCodes.InternalServerError

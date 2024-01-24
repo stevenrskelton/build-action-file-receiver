@@ -71,18 +71,19 @@ object Utils {
     byteArrayToHexString(digest.digest)
   }
 
+  def humanFileSize(size: Long): String = {
+    if (size > 1000000) {
+      s"${(size / 1000000).toInt}mb"
+    } else if (size > 1024) {
+      s"${(size / 1024).toInt}kb"
+    } else {
+      s"${size}bytes"
+    }
+  }
+
   def humanFileSize(file: File): String = {
     if (!file.exists) ""
-    else {
-      val size = file.length
-      if (size > 1000000) {
-        s"${(size / 1000000).toInt}mb"
-      } else if (size > 1024) {
-        s"${(size / 1024).toInt}kb"
-      } else {
-        s"${size}bytes"
-      }
-    }
+    else humanFileSize(file.length)
   }
 
   def humanReadableDuration(duration: Duration): String = {

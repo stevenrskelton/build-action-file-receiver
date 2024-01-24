@@ -15,13 +15,12 @@ import java.nio.file.Path
 import java.security.MessageDigest
 import scala.concurrent.ExecutionContext.Implicits.*
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
 
 case class ArtifactUploadRoute(httpExt: HttpExt,
                                directory: Path,
                                createHooks: ArtifactUploadRoute => RequestHooks,
                                maxUploadFileSizeBytes: Long,
-                               allowedGithubUsers: Seq[AllowedGithubUser]
+                               allowedGitHubUsers: Seq[AllowedGitHubUser]
                               )(implicit val logger: Logger) {
 
   implicit val materializer: Materializer = Materializer(httpExt.system)
@@ -31,7 +30,7 @@ case class ArtifactUploadRoute(httpExt: HttpExt,
     HttpResponse(StatusCodes.OK, Nil, HttpEntity(ContentTypes.`text/plain(UTF-8)`, responseBody))
   }
 
-  val releasesPost: Route = put {
+  lazy val releasesPost: Route = put {
     extractClientIP {
       clientIp =>
         withSizeLimit(maxUploadFileSizeBytes) {
@@ -41,9 +40,9 @@ case class ArtifactUploadRoute(httpExt: HttpExt,
               val uploadedF = FileUploadDirectives.parseFormData(formData, ctx).flatMap {
                 o =>
                   logger.info(s"Received request for `${o._2.fileName}` upload from $clientIp")
-                  val requestGithubUser = o._1("githubUser")
-                  val githubUser = allowedGithubUsers.find(_.githubUsername == requestGithubUser).getOrElse {
-                    val message = s"Could not find user `$requestGithubUser``"
+                  val requestGitHubUser = o._1("githubUser")
+                  val githubUser = allowedGitHubUsers.find(_.githubUsername == requestGitHubUser).getOrElse {
+                    val message = s"Could not find user `$requestGitHubUser``"
                     logger.error(message)
                     throw new Exception(message)
                   }
@@ -59,17 +58,13 @@ case class ArtifactUploadRoute(httpExt: HttpExt,
                         })
                         .runWith(FileIO.toPath(tmpFile.toPath))
                         .flatMap { ioResult =>
-                          ioResult.status match {
-                            case Success(_) =>
-                              val uploadMD5 = Utils.byteArrayToHexString(digest.digest)
-                              hooks.tmpFileHook(tmpFile, uploadMD5).flatMap {
-                                dest =>
-                                  val response = successfulResponseBody(fileInfo, dest, uploadMD5)
-                                  githubUser.postHook(dest)(logger).flatMap {
-                                    _ => hooks.postHook(response, githubUser, dest)
-                                  }
+                          val uploadMD5 = Utils.byteArrayToHexString(digest.digest)
+                          hooks.tmpFileHook(tmpFile, uploadMD5).flatMap {
+                            dest =>
+                              val response = successfulResponseBody(fileInfo, dest, uploadMD5)
+                              githubUser.postHook(dest)(logger).flatMap {
+                                _ => hooks.postHook(response, githubUser, dest)
                               }
-                            case Failure(ex) => Future.failed(ex)
                           }
                         }
                         .recoverWith {

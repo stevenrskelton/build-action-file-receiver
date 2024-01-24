@@ -1,18 +1,13 @@
-package ca.stevenskelton.httpmavenreceiver
+package ca.stevenskelton.httpmavenreceiver.customuseractions
 
+import ca.stevenskelton.httpmavenreceiver.AllowedGitHubUser
 import com.typesafe.scalalogging.Logger
 import org.apache.pekko.Done
 
 import java.io.File
 import scala.concurrent.Future
 
-trait PostHook {
-  def postHook(file: File)(implicit logger: Logger): Future[Done]
-}
-
-abstract class AllowedGithubUser(val githubUsername: String) extends PostHook
-
-object StevenrskeltonGithubUser extends AllowedGithubUser("stevenrskelton") {
+object StevenRSkeltonGitHubUser extends AllowedGitHubUser("stevenrskelton") {
 
   private def exec(command: String)(implicit logger: Logger): Unit = {
     val result = sys.process.Process(command).!

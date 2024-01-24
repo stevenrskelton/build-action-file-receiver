@@ -6,7 +6,7 @@ addArtifact(assembly / artifact, assembly)
 
 val javaVersion = "17"
 val pekkoHttpVersion = "1.0.0"
-val pekkoVersion = "1.0.1"
+val pekkoVersion = "1.0.2"
 
 lazy val root = (project in file("."))
   .settings(
@@ -24,7 +24,7 @@ lazy val root = (project in file("."))
         //        "-Yexplicit-nulls",
         "-Ysafe-init",
         //        "-Wvalue-discard",
-        //        "-source:3.0-migration",
+                "-source:3.0-migration",
         // "-Xfatal-warnings"
       )
     },
@@ -48,7 +48,7 @@ lazy val root = (project in file("."))
   )
 
 libraryDependencies ++= Seq(
-  "com.typesafe" % "config" % "1.4.2",
+  "com.typesafe" % "config" % "1.4.3",
   "org.apache.pekko" %% "pekko-http" % pekkoHttpVersion,
   "org.apache.pekko" %% "pekko-stream" % pekkoVersion,
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
@@ -56,5 +56,5 @@ libraryDependencies ++= Seq(
   "org.scala-lang.modules" %% "scala-xml" % "2.1.0",
   "org.apache.pekko" %% "pekko-stream-testkit" % pekkoVersion % Test,
   "org.apache.pekko" %% "pekko-http-testkit" % pekkoHttpVersion % Test,
-  "org.scalatest" %% "scalatest" % "3.2.15" % Test
+  "org.scalatest" %% "scalatest" % "3.2.17" % Test
 )

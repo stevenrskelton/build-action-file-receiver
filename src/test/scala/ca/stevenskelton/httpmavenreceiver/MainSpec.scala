@@ -18,7 +18,7 @@
 //
 //  var largeFile: File = null
 //
-//  val githubPackage = GithubPackage(
+//  val githubPackage = GitHubPackage(
 //    githubUser = "gh-user",
 //    githubRepository = "gh-project",
 //    groupId = "gh-groupId",
@@ -31,7 +31,7 @@
 //    val tempDirWithPrefix = Files.createTempDirectory("http-maven-receiver-specs-")
 //    largeFile = UploadRequestHelper.create50MBFile(tempDirWithPrefix)
 //    val uri = Uri(s"https://maven.pkg.github.com/gh-user/gh-project/gh-groupId/gh.artifact.id/gh.version/${largeFile.getName}.md5")
-//    val uploadRequest = UploadRequestHelper.postGithubPackageRequest(largeFile, githubPackage, Uri("http://127.0.0.1:18180/releases"))
+//    val uploadRequest = UploadRequestHelper.postGitHubPackageRequest(largeFile, githubPackage, Uri("http://127.0.0.1:18180/releases"))
 //    val httpExt = UploadRequestHelper.createHttpExtMock(uri, HttpResponse(entity = HttpEntity("5ef060ec815ed109d822cd3c00be7c83")))
 //    httpExt.newServerAt(any(), any()) shouldReturn UploadRequestHelper.httpExt.newServerAt("127.0.0.1", 18180)
 //

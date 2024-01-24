@@ -35,7 +35,7 @@ object FileUploadDirectives {
     // but instead, we must actively process all the parts, regardless of whether we are interested in the data or not.
     formData.parts
       .mapAsync(parallelism = 1) {
-        case part if !done.isCompleted && part.filename.isDefined && part.name == GithubPackage.FileUploadFieldName =>
+        case part if !done.isCompleted && part.filename.isDefined && part.name == GitHubPackage.FileUploadFieldName =>
           val data = (formFields.toMap, FileInfo(part.name, part.filename.get, part.entity.contentType), part.entity.dataBytes)
           done.success(data)
           Future.successful(Done)
@@ -52,7 +52,7 @@ object FileUploadDirectives {
           if (done.isCompleted)
             () // OK
           else
-            done.failure(UserMessageException(StatusCodes.BadRequest, GithubPackage.FormErrorMessage))
+            done.failure(UserMessageException(StatusCodes.BadRequest, GitHubPackage.FormErrorMessage))
         case Failure(cause) =>
           if (done.isCompleted)
             () // consuming the other parts failed though we already started processing the selected part.

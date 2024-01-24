@@ -34,7 +34,7 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUploadRoute)
                         fileInfo: FileInfo,
                         fileSource: Source[ByteString, Any],
                         requestContext: RequestContext
-                      ): Future[(GithubPackage, FileInfo, Source[ByteString, Any])] = {
+                      ): Future[(GitHubPackage, FileInfo, Source[ByteString, Any])] = {
     super.preHook(formFields, fileInfo, fileSource, requestContext).flatMap {
       case obj@(githubPackage, fileInfo, fileSource) =>
         if (fileInfo.fileName.contains("SNAPSHOT")) {
@@ -53,7 +53,7 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUploadRoute)
                     obj
                 }
               } else {
-                val errorMessage = s"Maven version ${fileInfo.fileName} ${githubPackage.version} does not exist in Github"
+                val errorMessage = s"Maven version ${fileInfo.fileName} ${githubPackage.version} does not exist in GitHub"
                 logger.error(errorMessage)
                 Future.failed(UserMessageException(StatusCodes.BadRequest, errorMessage))
               }
@@ -79,16 +79,16 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUploadRoute)
     }
   }
 
-  override def postHook(httpResponse: HttpResponse, allowedGithubUser: AllowedGithubUser, file: File): Future[HttpResponse] =
-    super.postHook(httpResponse, allowedGithubUser, file)
+  override def postHook(httpResponse: HttpResponse, allowedGitHubUser: AllowedGitHubUser, file: File): Future[HttpResponse] =
+    super.postHook(httpResponse, allowedGitHubUser, file)
 
-  def downloadLatestMavenPackage(githubPackage: GithubPackage): Future[File] = {
+  def downloadLatestMavenPackage(githubPackage: GitHubPackage): Future[File] = {
     fetchLatestMetadata(githubPackage).flatMap {
       metadata => downloadMavenPackage(metadata.head)
     }
   }
 
-  private def fetchLatestMetadata(githubPackage: GithubPackage): Future[Seq[MavenPackage]] = {
+  private def fetchLatestMetadata(githubPackage: GitHubPackage): Future[Seq[MavenPackage]] = {
     val request = withAuthorization(Get(s"${githubPackage.path}/maven-metadata.xml"), githubPackage.githubAuthToken)
     artifactUpload.httpExt.singleRequest(request).map {
       response =>
@@ -98,7 +98,7 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUploadRoute)
             val xml = XML.loadString(bodyString)
             MavenMD5CompareRequestHooks.parseMavenMetadata(githubPackage, xml)
         }.getOrElse {
-          throw new Exception(s"${response.status} Could not fetch Github maven: ${entity.toOption.getOrElse("``")}")
+          throw new Exception(s"${response.status} Could not fetch GitHub maven: ${entity.toOption.getOrElse("``")}")
         }
     }
   }
@@ -120,9 +120,9 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUploadRoute)
   }
 
   private def downloadMavenPackage(mavenPackage: MavenPackage): Future[File] = {
-    val jarfile = new File(s"${directory.toFile.getPath}/${mavenPackage.jarFilename}")
-    if (jarfile.exists) {
-      val msg = s"File ${jarfile.getName} exists"
+    val jarFile = new File(s"${directory.toFile.getPath}/${mavenPackage.jarFilename}")
+    if (jarFile.exists) {
+      val msg = s"File ${jarFile.getName} exists"
       val ex = new Exception(msg)
       logger.error(msg, ex)
       Future.failed(ex)
@@ -137,35 +137,28 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUploadRoute)
           val futureIOResult = artifactUpload.httpExt.singleRequest(request).flatMap {
             response =>
               if (response.status == StatusCodes.OK) {
-                response.entity.dataBytes.runWith(FileIO.toPath(jarfile.toPath, Set(StandardOpenOption.WRITE, StandardOpenOption.CREATE_NEW)))
+                response.entity.dataBytes.runWith(FileIO.toPath(jarFile.toPath, Set(StandardOpenOption.WRITE, StandardOpenOption.CREATE_NEW)))
               } else {
                 response.discardEntityBytes()
-                val ex = new Exception(s"${response.status} Could not fetch Github maven.")
-                logger.error(s"Download ${jarfile.getName} failed", ex)
+                val ex = new Exception(s"${response.status} Could not fetch GitHub maven.")
+                logger.error(s"Download ${jarFile.getName} failed", ex)
                 Future.failed(ex)
               }
           }
           futureIOResult.onComplete {
             case Success(ioResult) =>
-              ioResult.status match {
-                case Success(_) =>
-                  val md5SumOfDownload = Utils.md5sum(jarfile)
-                  if (md5sum != md5SumOfDownload) {
-                    logger.error(s"MD5SUM of ${jarfile.getName} not equal: $md5sum != $md5SumOfDownload")
-                    jarfile.delete
-                    md5file.delete
-                  }
-                case Failure(ioEx) =>
-                  logger.error(s"IOResult ${jarfile.getName} failed", ioEx)
-                  jarfile.delete
-                  md5file.delete
+              val md5SumOfDownload = Utils.md5sum(jarFile)
+              if (md5sum != md5SumOfDownload) {
+                logger.error(s"MD5SUM of ${jarFile.getName} not equal: $md5sum != $md5SumOfDownload")
+                jarFile.delete
+                md5file.delete
               }
             case Failure(ex) =>
-              logger.error(s"Download ${jarfile.getName} failed", ex)
-              jarfile.delete
+              logger.error(s"Download ${jarFile.getName} failed", ex)
+              jarFile.delete
               md5file.delete
           }
-          Future.successful(jarfile)
+          Future.successful(jarFile)
       }
     }
   }
@@ -174,7 +167,7 @@ class MavenMD5CompareRequestHooks(artifactUpload: ArtifactUploadRoute)
 
 object MavenMD5CompareRequestHooks {
 
-  private def parseMavenMetadata(githubPackage: GithubPackage, metadata: Elem): Seq[MavenPackage] = {
+  private def parseMavenMetadata(githubPackage: GitHubPackage, metadata: Elem): Seq[MavenPackage] = {
     (metadata \\ "snapshotVersion").withFilter {
       n => (n \ "extension").text == "jar"
     }.flatMap {
@@ -189,7 +182,7 @@ object MavenMD5CompareRequestHooks {
     }.sortBy(_.updated).reverse
   }
 
-  private case class MavenPackage(githubPackage: GithubPackage, version: String, updated: ZonedDateTime) {
+  private case class MavenPackage(githubPackage: GitHubPackage, version: String, updated: ZonedDateTime) {
     val jarFilename: String = s"${githubPackage.artifactId}-${githubPackage.version}.jar"
     val artifactUrl = s"${githubPackage.path}/$jarFilename"
   }

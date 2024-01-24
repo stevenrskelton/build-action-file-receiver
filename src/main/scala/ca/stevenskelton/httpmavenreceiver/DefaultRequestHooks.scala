@@ -9,7 +9,6 @@ import org.apache.pekko.util.ByteString
 
 import java.io.File
 import java.nio.file.Path
-import java.text.MessageFormat
 import java.time.Duration
 import scala.concurrent.Future
 
@@ -24,7 +23,7 @@ class DefaultRequestHooks(val directory: Path, val logger: Logger) extends Reque
                         fileInfo: FileInfo,
                         fileSource: Source[ByteString, Any],
                         requestContext: RequestContext
-                      ): Future[(GithubPackage, FileInfo, Source[ByteString, Any])] = {
+                      ): Future[(GitHubPackage, FileInfo, Source[ByteString, Any])] = {
     this.fileInfo = fileInfo
     destinationFile = new File(s"${directory.toFile.getAbsolutePath}/${fileInfo.fileName}")
     if (destinationFile.exists) {
@@ -32,11 +31,11 @@ class DefaultRequestHooks(val directory: Path, val logger: Logger) extends Reque
       logger.error(msg)
       Future.failed(UserMessageException(StatusCodes.BadRequest, msg))
     } else {
-      GithubPackage.fromFieldData(formFields).map {
+      GitHubPackage.fromFieldData(formFields).map {
         githubPackage => Future.successful((githubPackage, fileInfo, fileSource))
       }.getOrElse {
-        logger.error(GithubPackage.FormErrorMessage)
-        Future.failed(UserMessageException(StatusCodes.BadRequest, GithubPackage.FormErrorMessage))
+        logger.error(GitHubPackage.FormErrorMessage)
+        Future.failed(UserMessageException(StatusCodes.BadRequest, GitHubPackage.FormErrorMessage))
       }
     }
   }
@@ -51,7 +50,7 @@ class DefaultRequestHooks(val directory: Path, val logger: Logger) extends Reque
     }
   }
 
-  override def postHook(httpResponse: HttpResponse, allowedGithubUser: AllowedGithubUser, file: File): Future[HttpResponse] = Future.successful {
+  override def postHook(httpResponse: HttpResponse, allowedGitHubUser: AllowedGitHubUser, file: File): Future[HttpResponse] = Future.successful {
     val duration = Duration.ofMillis(System.currentTimeMillis - start)
     logger.info(s"Completed ${fileInfo.fileName} in ${Utils.humanReadableDuration(duration)}")
     httpResponse

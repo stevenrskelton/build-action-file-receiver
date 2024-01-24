@@ -1,9 +1,12 @@
 # http-maven-receiver
-Maximizing Github Free Tier as a CI/CD pipeline, using Scala/Java/JVM for almost everything.
 
-- Github for private source repos.
-- Github Actions for building.
-- Github Packages (Maven) for release backups (500MB limit).
+See https://www.stevenskelton.ca/data-transfers-github-actions/
+
+Maximizing GitHub Free Tier as a CI/CD pipeline, using Scala/Java/JVM.
+
+- GitHub for private source repos.
+- GitHub Actions for building.
+- GitHub Packages (Maven) for release backups (500MB limit).
 - Local JVM executes your deployment.
 
 ### Why would you use this?
@@ -12,12 +15,12 @@ Other tools like Ansible is probably better for you. Ansible has secure file upl
 
 If you don't want to create SSH accounts, install clients (other than this one), or want to use Scala instead of custom scripting languages, maybe this is for you.
 
-This project is basically server-side deployment scripts written in Scala, with Akka HTTP receiving builds from Github, so it can easily be integrated as a `Route` of existing Akka HTTP / Play deployments.
+This project is basically server-side deployment scripts written in Scala, with Akka HTTP receiving builds from GitHub, so it can easily be integrated as a `Route` of existing Akka HTTP / Play deployments.
 
 
 ### User Permissions 
 
-Upload permissions are limited to the ability to publish to Github Packages Maven.
+Upload permissions are limited to the ability to publish to GitHub Packages Maven.
 
 Server-side permissions are completely internal to your server.
 
@@ -25,7 +28,7 @@ Server-side permissions are completely internal to your server.
 ## Two Deployment Parts
 
 SBT build tasks
-- publishAssemblyToGithubPackages: pushes compiled code to Github Packages (Maven)
+- publishAssemblyToGitHubPackages: pushes compiled code to GitHub Packages (Maven)
 - uploadAssemblyByPut: pushes compiled code to your server (HTTP PUT)
 
 HTTP Upload Server
@@ -35,18 +38,18 @@ HTTP Upload Server
 
 ![Request Flow](./requests.drawio.svg)
 
-### Github Action Install
+### GitHub Action Install
 
 (These assume you are using _"com.eed3si9n" % "sbt-assembly"_ to create uber jars)
 
-- Copy `publishAssemblyToGithubPackages.sbt` and `uploadAssemblyByPut.sbt` to the root directory of your project.
+- Copy `publishAssemblyToGitHubPackages.sbt` and `uploadAssemblyByPut.sbt` to the root directory of your project.
 - Copy `upload-assembly-to-maven-put.yml` to the `.github/workflows` folder in your project.
 - In `upload-assembly-to-maven-put.yml` set `PUT_URI` to the URL you want to upload to, eg:
 ```
 PUT_URI="http://yourdomain.com:8080/upload"
 ```
 
-Running this Github Action will compile your code, upload the artifact to Github Packages for the project, upload the file to your `PUT_URI` destination, and execute server-side actions all in 1 step.
+Running this GitHub Action will compile your code, upload the artifact to GitHub Packages for the project, upload the file to your `PUT_URI` destination, and execute server-side actions all in 1 step.
 
 ### Server-side Receiver Install
 
@@ -68,9 +71,9 @@ java -Dhttp-maven-receiver.host="192.168.0.1" -jar http-maven-receiver-assembly-
 
 ## Post Upload Tasks
 
-In Main.scala, the ArtifactUploadRoute takes a `Seq[AllowedGithubUser]` as a parameter.
+In Main.scala, the ArtifactUploadRoute takes a `Seq[AllowedGitHubUser]` as a parameter.
 
-Only uploads from these Github userid repositories will be allowed.  AllowedGithubUser defines:
+Only uploads from these GitHub userid repositories will be allowed.  AllowedGitHubUser defines:
 
 ```
 def postHook(file: File): Future[Done]
