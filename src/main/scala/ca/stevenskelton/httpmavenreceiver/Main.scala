@@ -45,15 +45,27 @@ object Main extends App {
 
   logger.info(s"Setting file directory to: ${uploadDirectory.getAbsolutePath} with max upload size: ${Utils.humanFileSize(maxUploadByteSize)}")
 
+  val httpExtImpl = HttpExtImpl(actorSystem)
+  
   private val artifactUpload = ArtifactUploadRoute(
-    Http(actorSystem),
+    httpExtImpl,
     uploadDirectory.toPath,
     new MavenMD5CompareRequestHooks(_),
     maxUploadByteSize,
     allowedGitHubUsers = Seq(StevenRSkeltonGitHubUser)
   )
 
-  bindPublic(artifactUpload, host, port).map {
+  val publicRoutes = path("releases")(artifactUpload.releasesPutRoute)
+
+  httpExtImpl.httpExt.newServerAt(host, port).bind(concat(publicRoutes, Route.seal {
+    extractRequestContext {
+      context =>
+        complete {
+          logger.info(s"404 ${context.request.method.value} ${context.unmatchedPath}")
+          HttpResponse(StatusCodes.NotFound)
+        }
+    }
+  })).map {
     httpBinding =>
       val address = httpBinding.localAddress
       logger.info(s"HTTP server bound to ${address.getHostString}:${address.getPort}")
@@ -70,18 +82,4 @@ object Main extends App {
       System.exit(1)
   }
 
-  private def bindPublic(artifactUpload: ArtifactUploadRoute, host: String, port: Int)(implicit actorSystem: ActorSystem, logger: Logger): Future[Http.ServerBinding] = {
-
-    val publicRoutes = path("releases")(artifactUpload.releasesPost)
-
-    artifactUpload.httpExt.newServerAt(host, port).bind(concat(publicRoutes, Route.seal {
-      extractRequestContext {
-        context =>
-          complete {
-            logger.info(s"404 ${context.request.method.value} ${context.unmatchedPath}")
-            HttpResponse(StatusCodes.NotFound)
-          }
-      }
-    }))
-  }
 }

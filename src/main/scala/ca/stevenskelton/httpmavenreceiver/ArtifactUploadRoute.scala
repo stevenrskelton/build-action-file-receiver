@@ -1,7 +1,6 @@
 package ca.stevenskelton.httpmavenreceiver
 
 import com.typesafe.scalalogging.Logger
-import org.apache.pekko.http.scaladsl.HttpExt
 import org.apache.pekko.http.scaladsl.model.*
 import org.apache.pekko.http.scaladsl.server.Directives.{complete, completeOrRecoverWith, extractClientIP, extractRequestContext, put, withSizeLimit}
 import org.apache.pekko.http.scaladsl.server.Route
@@ -16,21 +15,16 @@ import java.security.MessageDigest
 import scala.concurrent.ExecutionContext.Implicits.*
 import scala.concurrent.Future
 
-case class ArtifactUploadRoute(httpExt: HttpExt,
+case class ArtifactUploadRoute(httpExt: HttpExtInterface,
                                directory: Path,
                                createHooks: ArtifactUploadRoute => RequestHooks,
                                maxUploadFileSizeBytes: Long,
                                allowedGitHubUsers: Seq[AllowedGitHubUser]
                               )(implicit val logger: Logger) {
 
-  implicit val materializer: Materializer = Materializer(httpExt.system)
+  implicit val materializer: Materializer = httpExt.materializer
 
-  private def successfulResponseBody(fileInfo: FileInfo, destinationFile: File, destinationFileMD5: String): HttpResponse = {
-    val responseBody = s"Successfully saved upload of ${fileInfo.fileName}, ${Utils.humanFileSize(destinationFile)}, MD5 $destinationFileMD5"
-    HttpResponse(StatusCodes.OK, Nil, HttpEntity(ContentTypes.`text/plain(UTF-8)`, responseBody))
-  }
-
-  lazy val releasesPost: Route = put {
+  lazy val releasesPutRoute: Route = put {
     extractClientIP {
       clientIp =>
         withSizeLimit(maxUploadFileSizeBytes) {
@@ -39,12 +33,16 @@ case class ArtifactUploadRoute(httpExt: HttpExt,
               val hooks = createHooks(this)
               val uploadedF = FileUploadDirectives.parseFormData(formData, ctx).flatMap {
                 o =>
-                  logger.info(s"Received request for `${o._2.fileName}` upload from $clientIp")
                   val requestGitHubUser = o._1("githubUser")
-                  val githubUser = allowedGitHubUsers.find(_.githubUsername == requestGitHubUser).getOrElse {
-                    val message = s"Could not find user `$requestGitHubUser``"
-                    logger.error(message)
-                    throw new Exception(message)
+                  logger.info(s"Received request for file `${o._2.fileName}` by GitHub user `$requestGitHubUser` upload from IP $clientIp")
+                  val gitHubUser = if (allowedGitHubUsers.isEmpty) {
+                    None
+                  } else {
+                    Some(allowedGitHubUsers.find(_.githubUsername == requestGitHubUser).getOrElse {
+                      val message = s"Could not find user `$requestGitHubUser`"
+                      logger.error(message)
+                      throw new Exception(message)
+                    })
                   }
                   hooks.preHook(o._1, o._2, o._3, ctx).flatMap {
                     case (githubPackage, fileInfo, bytes) =>
@@ -61,10 +59,13 @@ case class ArtifactUploadRoute(httpExt: HttpExt,
                           val uploadMD5 = Utils.byteArrayToHexString(digest.digest)
                           hooks.tmpFileHook(tmpFile, uploadMD5).flatMap {
                             dest =>
-                              val response = successfulResponseBody(fileInfo, dest, uploadMD5)
-                              githubUser.postHook(dest)(logger).flatMap {
-                                _ => hooks.postHook(response, githubUser, dest)
-                              }
+
+                              gitHubUser
+                                .fold(Future.successful(()))(_.postHook(dest)(logger))
+                                .flatMap { _ =>
+                                    val response = successfulResponseBody(fileInfo, dest, uploadMD5)
+                                    hooks.postHook(response, dest)
+                                }
                           }
                         }
                         .recoverWith {
@@ -82,5 +83,10 @@ case class ArtifactUploadRoute(httpExt: HttpExt,
           }
         }
     }
+  }
+
+  private def successfulResponseBody(fileInfo: FileInfo, destinationFile: File, destinationFileMD5: String): HttpResponse = {
+    val responseBody = s"Successfully saved upload of ${fileInfo.fileName}, ${Utils.humanFileSize(destinationFile)}, MD5 $destinationFileMD5"
+    HttpResponse(StatusCodes.OK, Nil, HttpEntity(ContentTypes.`text/plain(UTF-8)`, responseBody))
   }
 }

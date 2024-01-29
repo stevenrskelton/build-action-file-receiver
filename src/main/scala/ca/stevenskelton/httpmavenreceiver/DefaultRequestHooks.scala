@@ -50,7 +50,7 @@ class DefaultRequestHooks(val directory: Path, val logger: Logger) extends Reque
     }
   }
 
-  override def postHook(httpResponse: HttpResponse, allowedGitHubUser: AllowedGitHubUser, file: File): Future[HttpResponse] = Future.successful {
+  override def postHook(httpResponse: HttpResponse, file: File): Future[HttpResponse] = Future.successful {
     val duration = Duration.ofMillis(System.currentTimeMillis - start)
     logger.info(s"Completed ${fileInfo.fileName} in ${Utils.humanReadableDuration(duration)}")
     httpResponse

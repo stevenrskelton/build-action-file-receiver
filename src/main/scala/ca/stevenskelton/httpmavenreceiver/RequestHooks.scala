@@ -38,6 +38,6 @@ trait RequestHooks {
    * @param httpResponse
    * @return
    */
-  def postHook(httpResponse: HttpResponse, allowedGitHubUser: AllowedGitHubUser, file: File): Future[HttpResponse]
+  def postHook(httpResponse: HttpResponse, file: File): Future[HttpResponse]
 }
 

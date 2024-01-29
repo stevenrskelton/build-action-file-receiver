@@ -53,8 +53,8 @@ libraryDependencies ++= Seq(
   "org.apache.pekko" %% "pekko-stream" % pekkoVersion,
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
   "ch.qos.logback" % "logback-classic" % "1.4.7",
-  "org.scala-lang.modules" %% "scala-xml" % "2.1.0",
+  "org.scala-lang.modules" %% "scala-xml" % "2.2.0",
   "org.apache.pekko" %% "pekko-stream-testkit" % pekkoVersion % Test,
   "org.apache.pekko" %% "pekko-http-testkit" % pekkoHttpVersion % Test,
-  "org.scalatest" %% "scalatest" % "3.2.17" % Test
+  "org.scalatest" %% "scalatest" % "3.3.0-alpha.1" % Test
 )
