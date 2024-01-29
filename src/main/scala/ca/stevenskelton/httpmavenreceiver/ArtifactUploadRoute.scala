@@ -33,7 +33,7 @@ case class ArtifactUploadRoute(httpExt: HttpExtInterface,
               val hooks = createHooks(this)
               val uploadedF = FileUploadDirectives.parseFormData(formData, ctx).flatMap {
                 o =>
-                  val requestGitHubUser = o._1("githubUser")
+                  val requestGitHubUser = o._1.getOrElse("githubUser", throw UserMessageException(StatusCodes.Unauthorized, GitHubPackage.FormErrorMessage))
                   logger.info(s"Received request for file `${o._2.fileName}` by GitHub user `$requestGitHubUser` upload from IP $clientIp")
                   val gitHubUser = if (allowedGitHubUsers.isEmpty) {
                     None
@@ -41,7 +41,7 @@ case class ArtifactUploadRoute(httpExt: HttpExtInterface,
                     Some(allowedGitHubUsers.find(_.githubUsername == requestGitHubUser).getOrElse {
                       val message = s"Could not find user `$requestGitHubUser`"
                       logger.error(message)
-                      throw new Exception(message)
+                      throw UserMessageException(StatusCodes.NetworkAuthenticationRequired, message)
                     })
                   }
                   hooks.preHook(o._1, o._2, o._3, ctx).flatMap {
@@ -78,6 +78,9 @@ case class ArtifactUploadRoute(httpExt: HttpExtInterface,
               }
               completeOrRecoverWith(uploadedF) {
                 case UserMessageException(statusCode, userMessage) => complete(statusCode, HttpEntity(ContentTypes.`text/plain(UTF-8)`, userMessage))
+                case ex =>
+                  val t = ex
+                  throw ex
               }
             }
           }
