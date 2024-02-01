@@ -1,85 +1,105 @@
-//package ca.stevenskelton.httpmavenreceiver
-//
-//import ca.stevenskelton.httpmavenreceiver.customuseractions.StevenRSkeltonGitHubUser
-//import org.ekrich.config.ConfigFactory
-//import com.typesafe.scalalogging.Logger
-//import org.apache.pekko.actor.ActorSystem
-//import org.apache.pekko.http.scaladsl.Http
-//import org.apache.pekko.http.scaladsl.model.*
-//import org.apache.pekko.http.scaladsl.server.Directives.*
-//import org.apache.pekko.http.scaladsl.server.Route
-//
-//import java.io.File
-//import scala.concurrent.ExecutionContext.Implicits.global
-//import scala.concurrent.Future
-//import scala.util.Try
-//
-//object Main extends App {
-//
-//  private val DefaultAllowedUploadSize = 1024000L
-//
-//  private val conf = ConfigFactory.load().resolve()
-//
-//  implicit private val actorSystem: ActorSystem = ActorSystem("http", conf)
-//  implicit private val logger: Logger = Logger("http")
-//
-//  private val uploadDirectory: File = new File(conf.getString("http-maven-receiver.file-directory"))
-//
-//  private val host: String = Try(conf.getString("http-maven-receiver.host")).toOption.getOrElse {
-//    logger.warn("No `http-maven-receiver.host` config value found, binding to localhost")
-//    "localhost"
-//  }
-//  private val port: Int = conf.getInt("http-maven-receiver.port")
-//  private val maxUploadByteSize = Try(conf.getBytes("http-maven-receiver.max-upload-size").toLong).getOrElse {
-//    logger.info(s"No `http-maven-receiver.max-upload-size` config value found, setting to default ${Utils.humanFileSize(DefaultAllowedUploadSize)}")
-//    DefaultAllowedUploadSize
-//  }
-//
-//  if (!uploadDirectory.exists) {
-//    logger.info(s"Creating file directory: ${uploadDirectory.getAbsolutePath}")
-//    if (!uploadDirectory.mkdirs) {
-//      logger.error(s"Could not create directory")
-//      System.exit(1)
-//    }
-//  }
-//
-//  logger.info(s"Setting file directory to: ${uploadDirectory.getAbsolutePath} with max upload size: ${Utils.humanFileSize(maxUploadByteSize)}")
-//
-//  val httpExtImpl = HttpExtImpl(actorSystem)
-//  
-//  private val artifactUpload = ArtifactUploadRoute(
-//    httpExtImpl,
-//    uploadDirectory.toPath,
-//    new MavenMD5CompareRequestHooks(_),
-//    maxUploadByteSize,
-//    allowedGitHubUsers = Seq(StevenRSkeltonGitHubUser)
-//  )
-//
-//  val publicRoutes = path("releases")(artifactUpload.releasesPutRoute)
-//
-//  httpExtImpl.httpExt.newServerAt(host, port).bind(concat(publicRoutes, Route.seal {
-//    extractRequestContext {
-//      context =>
-//        complete {
-//          logger.info(s"404 ${context.request.method.value} ${context.unmatchedPath}")
-//          HttpResponse(StatusCodes.NotFound)
-//        }
-//    }
-//  })).map {
-//    httpBinding =>
-//      val address = httpBinding.localAddress
-//      logger.info(s"HTTP server bound to ${address.getHostString}:${address.getPort}")
-//      httpBinding.whenTerminated.onComplete {
-//        _ =>
-//          logger.info(s"Shutting down HTTP server on ${address.getHostString}:${address.getPort}")
-//          actorSystem.terminate()
-//          System.exit(0)
-//      }
-//  }.recover {
-//    ex =>
-//      logger.error("Failed to bind endpoint, terminating system", ex)
-//      actorSystem.terminate()
-//      System.exit(1)
-//  }
-//
-//}
+package ca.stevenskelton.httpmavenreceiver
+
+import ca.stevenskelton.httpmavenreceiver.logging.StdOutLoggerFactory
+import cats.effect.*
+import com.comcast.ip4s.*
+import org.http4s.*
+import org.http4s.dsl.io.*
+import org.http4s.ember.server.*
+import org.http4s.implicits.*
+import org.typelevel.log4cats.*
+
+import java.io.File
+
+object Main extends IOApp {
+
+  implicit val loggerFactory: LoggerFactory[IO] = StdOutLoggerFactory()
+
+  private val logger = loggerFactory.getLoggerFromClass(getClass)
+
+  private val DefaultAllowedUploadSize = 1024000L
+
+  override def run(args: List[String]): IO[ExitCode] = {
+
+    logger.info(s"${SbtBuildInfo.name} ${SbtBuildInfo.version}")
+
+    val argMap = args
+      .filter(_.startsWith("--"))
+      .map {
+        argument =>
+          val equalsChar = argument.indexOf("=")
+          if(equalsChar > -1) {
+            val (key, value) = argument.splitAt(equalsChar)
+            (key.drop(2), value.drop(1))
+          }else {
+            (argument.drop(2), "")
+          }
+      }.toMap
+
+    if(argMap.contains("help")) {
+      logger.info(
+        """
+          |Command line arguments:
+          |  --help
+          |  --directory=[STRING]
+          |  --host=[STRING]
+          |  --port=[INTEGER]
+          |  --maxsize=[INTEGER]
+          |""".stripMargin)
+      return IO.pure(ExitCode.Success)
+    }
+
+    val host: Ipv4Address = Ipv4Address.fromString(argMap.getOrElse("host", "0.0.0.0"))
+      .getOrElse {
+      logger.error(s"Invalid host: ${argMap("host")}")
+      return IO.pure(ExitCode.Error)
+    }
+
+    val port: Port = Port.fromString(argMap.getOrElse("port", "8080"))
+      .getOrElse {
+        logger.error(s"Invalid port: ${argMap("port")}")
+        return IO.pure(ExitCode.Error)
+      }
+
+    val maxUploadByteSize = argMap.get("maxsize").map {
+      _.toLongOption.getOrElse {
+        logger.error(s"Invalid maximum upload size: ${argMap("port")}")
+        return IO.pure(ExitCode.Error)
+      }
+    }.getOrElse(DefaultAllowedUploadSize)
+
+    val uploadDirectory: File = new File(argMap.getOrElse("directory", "."))
+    if (!uploadDirectory.exists) {
+      if (!uploadDirectory.mkdirs) {
+        logger.error(s"Could not create upload directory: ${uploadDirectory.getAbsolutePath}")
+        return IO.pure(ExitCode.Error)
+      } else {
+        logger.info(s"Created upload directory: ${uploadDirectory.getAbsolutePath}")
+      }
+    }
+    if(!uploadDirectory.canWrite){
+      logger.error(s"Can not write to directory: ${uploadDirectory.getAbsolutePath}")
+      return IO.pure(ExitCode.Error)
+    }
+    logger.info(s"Setting file upload directory to: ${uploadDirectory.getAbsolutePath} with max upload size: ${Utils.humanFileSize(maxUploadByteSize)}")
+
+    val http4sArtifactUploadRoute = Http4sArtifactUploadRoute(
+      fs2.io.file.Path.fromNioPath(uploadDirectory.toPath),
+      maxUploadByteSize,
+      PostUploadActions(),
+    )(loggerFactory)
+
+    val httpApp = HttpRoutes.of[IO] {
+      case request@PUT -> Root => http4sArtifactUploadRoute.releasesPut(request)
+    }.orNotFound
+
+    EmberServerBuilder
+      .default[IO]
+      .withHost(host)
+      .withPort(port)
+      .withHttpApp(httpApp)
+      .build
+      .use(_ => IO.never)
+      .as(ExitCode.Success)
+  }
+}

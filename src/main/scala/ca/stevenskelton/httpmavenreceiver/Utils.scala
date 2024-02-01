@@ -1,6 +1,6 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import ca.stevenskelton.httpmavenreceiver.MainHttp4s.loggerFactory.LoggerType
+import ca.stevenskelton.httpmavenreceiver.Main.loggerFactory.LoggerType
 
 import java.io.{BufferedWriter, File, FileInputStream, FileWriter}
 import java.security.MessageDigest

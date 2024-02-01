@@ -1,28 +1,16 @@
+import sbt.TupleSyntax.t3ToTable3
+
 ThisBuild / version := "1.0.2"
 ThisBuild / organization := "ca.stevenskelton"
 ThisBuild / scalaVersion := "3.3.1"
 
-addArtifact(assembly / artifact, assembly)
-
 val javaVersion = "17"
-
-enablePlugins(ScalaNativePlugin)
 
 // set to Debug for compilation details (Info is default)
 logLevel := Level.Info
 
-// import to add Scala Native options
-import scala.scalanative.build._
-
-// defaults set with common options shown
-nativeConfig ~= { c =>
-  c.withLTO(LTO.none) // thin
-    .withMode(Mode.debug) // releaseFast
-    .withGC(GC.immix) // commix
-}
-
-Compile / sourceGenerators += (Compile / sourceManaged).map {
-  sourceDirectory =>
+Compile / sourceGenerators += (Compile / sourceManaged, version, name).map {
+  (sourceDirectory, version, name) =>
     val file = sourceDirectory / "SbtBuildInfo.scala"
     IO.write(file, """package ca.stevenskelton.httpmavenreceiver
                      |object SbtBuildInfo {
@@ -32,6 +20,8 @@ Compile / sourceGenerators += (Compile / sourceManaged).map {
                      |""".stripMargin.format(version, name))
     Seq(file)
 }.taskValue
+
+val http4sVersion = "1.0.0-M40"
 
 lazy val root = (project in file("."))
   .settings(
@@ -49,11 +39,11 @@ lazy val root = (project in file("."))
         //        "-Yexplicit-nulls",
         "-Ysafe-init",
         //        "-Wvalue-discard",
-        "-source:3.0-migration",
         // "-Xfatal-warnings"
       )
     },
     javacOptions ++= Seq("-source", javaVersion, "-target", javaVersion),
+    addArtifact(assembly / artifact, assembly),
     assembly / mainClass := Some ("ca.stevenskelton.httpmavenreceiver.Main"),
     assembly / assemblyMergeStrategy := {
       //Logback
@@ -72,20 +62,43 @@ lazy val root = (project in file("."))
     },
   )
 
+libraryDependencies ++= Seq(
+  "org.http4s"              %% "http4s-ember-client"  % http4sVersion,
+  "org.http4s"              %% "http4s-ember-server"  % http4sVersion,
+  "org.http4s"              %% "http4s-dsl"           % http4sVersion,
+  "org.typelevel"           %% "log4cats-core"        % "2.6.0",
+  "co.fs2"                  %% "fs2-io"               % "3.9.4",
+  "org.scala-lang.modules"  %% "scala-xml"            % "2.2.0",
+  "org.scalatest"           %% "scalatest"            % "3.3.0-alpha.1" % Test
+)
+
+/*
+
 ////required by sconfig native
 //nativeLinkStubs := true
 
 //brew install llvm
 //brew install s2n
-val http4sVersion = "1.0.0-M40"
 
-libraryDependencies ++= Seq(
+enablePlugins(ScalaNativePlugin)
+
+import scala.scalanative.build._
+
+// defaults set with common options shown
+nativeConfig ~= { c =>
+  c.withLTO(LTO.none) // thin
+    .withMode(Mode.debug) // releaseFast
+    .withGC(GC.immix) // commix
+}
+
+libraryDependencies := Seq(
+  "com.armanbilge"          %%% "epollcat"            % "0.1.4",
   "org.http4s"              %%% "http4s-ember-client" % http4sVersion,
   "org.http4s"              %%% "http4s-ember-server" % http4sVersion,
   "org.http4s"              %%% "http4s-dsl"          % http4sVersion,
-  "com.armanbilge"          %%% "epollcat"            % "0.1.4",
   "org.typelevel"           %%% "log4cats-core"       % "2.6.0",
   "co.fs2"                  %%% "fs2-io"              % "3.9.4",
   "org.scala-lang.modules"  %%% "scala-xml"           % "2.2.0",
   "org.scalatest"           %%% "scalatest"           % "3.3.0-alpha.1" % Test
 )
+*/
