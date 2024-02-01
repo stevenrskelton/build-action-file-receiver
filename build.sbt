@@ -1,12 +1,37 @@
-ThisBuild / version := "1.0.1"
+ThisBuild / version := "1.0.2"
 ThisBuild / organization := "ca.stevenskelton"
 ThisBuild / scalaVersion := "3.3.1"
 
 addArtifact(assembly / artifact, assembly)
 
 val javaVersion = "17"
-val pekkoHttpVersion = "1.0.0"
-val pekkoVersion = "1.0.2"
+
+enablePlugins(ScalaNativePlugin)
+
+// set to Debug for compilation details (Info is default)
+logLevel := Level.Info
+
+// import to add Scala Native options
+import scala.scalanative.build._
+
+// defaults set with common options shown
+nativeConfig ~= { c =>
+  c.withLTO(LTO.none) // thin
+    .withMode(Mode.debug) // releaseFast
+    .withGC(GC.immix) // commix
+}
+
+Compile / sourceGenerators += (Compile / sourceManaged).map {
+  sourceDirectory =>
+    val file = sourceDirectory / "SbtBuildInfo.scala"
+    IO.write(file, """package ca.stevenskelton.httpmavenreceiver
+                     |object SbtBuildInfo {
+                     |  val version = "%s"
+                     |  val name = "%s"
+                     |}
+                     |""".stripMargin.format(version, name))
+    Seq(file)
+}.taskValue
 
 lazy val root = (project in file("."))
   .settings(
@@ -24,7 +49,7 @@ lazy val root = (project in file("."))
         //        "-Yexplicit-nulls",
         "-Ysafe-init",
         //        "-Wvalue-discard",
-                "-source:3.0-migration",
+        "-source:3.0-migration",
         // "-Xfatal-warnings"
       )
     },
@@ -44,17 +69,23 @@ lazy val root = (project in file("."))
     assembly / artifact := {
       val art = (assembly / artifact).value
       art.withClassifier(Some("assembly"))
-    }
+    },
   )
 
+////required by sconfig native
+//nativeLinkStubs := true
+
+//brew install llvm
+//brew install s2n
+val http4sVersion = "1.0.0-M40"
+
 libraryDependencies ++= Seq(
-  "com.typesafe" % "config" % "1.4.3",
-  "org.apache.pekko" %% "pekko-http" % pekkoHttpVersion,
-  "org.apache.pekko" %% "pekko-stream" % pekkoVersion,
-  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
-  "ch.qos.logback" % "logback-classic" % "1.4.7",
-  "org.scala-lang.modules" %% "scala-xml" % "2.2.0",
-  "org.apache.pekko" %% "pekko-stream-testkit" % pekkoVersion % Test,
-  "org.apache.pekko" %% "pekko-http-testkit" % pekkoHttpVersion % Test,
-  "org.scalatest" %% "scalatest" % "3.3.0-alpha.1" % Test
+  "org.http4s"              %%% "http4s-ember-client" % http4sVersion,
+  "org.http4s"              %%% "http4s-ember-server" % http4sVersion,
+  "org.http4s"              %%% "http4s-dsl"          % http4sVersion,
+  "com.armanbilge"          %%% "epollcat"            % "0.1.4",
+  "org.typelevel"           %%% "log4cats-core"       % "2.6.0",
+  "co.fs2"                  %%% "fs2-io"              % "3.9.4",
+  "org.scala-lang.modules"  %%% "scala-xml"           % "2.2.0",
+  "org.scalatest"           %%% "scalatest"           % "3.3.0-alpha.1" % Test
 )

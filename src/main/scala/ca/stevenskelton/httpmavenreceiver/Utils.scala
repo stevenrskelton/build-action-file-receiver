@@ -1,27 +1,15 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import com.typesafe.scalalogging.Logger
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.stream.scaladsl.Sink
-import org.apache.pekko.util.ByteString
+import ca.stevenskelton.httpmavenreceiver.MainHttp4s.loggerFactory.LoggerType
 
-import java.io.*
+import java.io.{BufferedWriter, File, FileInputStream, FileWriter}
 import java.security.MessageDigest
 import java.time.Duration
-import scala.concurrent.Future
 import scala.util.{Try, Using}
 
 object Utils {
 
-  private val ByteStringSink = Sink.fold[String, ByteString]("") { case (acc, str) =>
-    acc + str.utf8String
-  }
-
-  def sinkToString(source: org.apache.pekko.stream.scaladsl.Source[ByteString, _])(implicit mat: Materializer): Future[String] = {
-    source.runWith(ByteStringSink)
-  }
-
-  def writeFile(file: File, content: String)(implicit logger: Logger): Try[Unit] = {
+  def writeFile(file: File, content: String)(implicit logger: LoggerType): Try[Unit] = {
     if (file.exists) logger.info(s"Overwriting existing ${file.getAbsolutePath}")
     Using(new BufferedWriter(new FileWriter(file))) {
       _.write(content)

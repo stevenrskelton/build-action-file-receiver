@@ -1,5 +1,5 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import org.apache.pekko.http.scaladsl.model.StatusCode
+import org.http4s.Status
 
-case class UserMessageException(statusCode: StatusCode, message: String) extends Exception(message)
+case class UserMessageException(status: Status, message: String) extends Exception(message)
