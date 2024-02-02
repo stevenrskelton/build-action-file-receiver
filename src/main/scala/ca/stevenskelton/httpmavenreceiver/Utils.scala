@@ -69,11 +69,6 @@ object Utils {
     }
   }
 
-  def humanFileSize(file: File): String = {
-    if (!file.exists) ""
-    else humanFileSize(file.length)
-  }
-
   def humanReadableDuration(duration: Duration): String = {
     val seconds = duration.toSeconds
     if (seconds >= 2592000) {

@@ -1,6 +1,6 @@
 package ca.stevenskelton.httpmavenreceiver.githubmaven
 
-import ca.stevenskelton.httpmavenreceiver.{FileUploadFormData, UserMessageException}
+import ca.stevenskelton.httpmavenreceiver.{FileUploadFormData, ResponseException}
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import org.http4s.*
@@ -15,7 +15,7 @@ object MetadataUtil {
   def fetchMetadata(httpClient: Resource[IO, Client[IO]], fileUploadFormData: FileUploadFormData): IO[MavenPackage] = {
     val gitHubMetadataUri = Uri.fromString(s"${fileUploadFormData.gitHubMavenPath}/maven-metadata.xml").getOrElse {
       val msg = s"Invalid package ${fileUploadFormData.gitHubMavenPath}"
-      return IO.raiseError(UserMessageException(Status.BadGateway, msg))
+      return IO.raiseError(ResponseException(Status.BadGateway, msg))
     }
     httpClient.use {
       client =>
@@ -27,7 +27,7 @@ object MetadataUtil {
         client.expectOr[String](request) {
           errorResponse =>
             val msg = s"${errorResponse.status.code} Could not fetch GitHub maven: $gitHubMetadataUri"
-            IO.raiseError(UserMessageException(errorResponse.status, msg))
+            IO.raiseError(ResponseException(errorResponse.status, msg))
         }.map {
           xmlString =>
             val xml = XML.loadString(xmlString)
@@ -39,9 +39,9 @@ object MetadataUtil {
                 latest =>
                   //TODO: should this be sorted by `updated`?
                   val msg = s"Version ${fileUploadFormData.version} not found, latest is ${latest.version} updated on ${latest.updated.toString}"
-                  throw UserMessageException(Status.BadGateway, msg)
+                  throw ResponseException(Status.BadGateway, msg)
               }.getOrElse {
-                throw UserMessageException(Status.BadGateway, "No release found.")
+                throw ResponseException(Status.BadGateway, "No release found.")
               }
             }
         }

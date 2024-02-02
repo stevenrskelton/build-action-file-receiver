@@ -50,7 +50,7 @@ object FileUploadFormData {
             }
 
             upload.getOrElse {
-              throw UserMessageException(Status.BadRequest, FormErrorMessage)
+              throw ResponseException(Status.BadRequest, FormErrorMessage)
             }
         }
         return io
@@ -66,8 +66,8 @@ object FileUploadFormData {
         }
       case (_, part) =>
         val msg = s"Found unexpected `${part.name.getOrElse("")}` form field of type ${part.contentType.fold("?")(_.toString)}."
-        return IO.raiseError(UserMessageException(Status.BadRequest, msg))
+        return IO.raiseError(ResponseException(Status.BadRequest, msg))
     }
-    IO.raiseError(UserMessageException(Status.BadRequest, FormErrorMessage))
+    IO.raiseError(ResponseException(Status.BadRequest, FormErrorMessage))
   }
 }

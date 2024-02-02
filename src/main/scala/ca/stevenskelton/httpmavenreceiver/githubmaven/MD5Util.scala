@@ -1,6 +1,6 @@
 package ca.stevenskelton.httpmavenreceiver.githubmaven
 
-import ca.stevenskelton.httpmavenreceiver.{FileUploadFormData, UserMessageException}
+import ca.stevenskelton.httpmavenreceiver.{FileUploadFormData, ResponseException}
 import cats.effect.{IO, Resource}
 import org.http4s.*
 import org.http4s.client.Client
@@ -16,7 +16,7 @@ case class MD5Util(httpClient: Resource[IO, Client[IO]])(implicit loggerFactory:
     //    } else {
     val gitHubMD5Uri = Uri.fromString(s"${fileUploadFormData.gitHubMavenPath}/${fileUploadFormData.filename}.md5").getOrElse {
       val msg = s"Invalid filename ${fileUploadFormData.gitHubMavenPath}/${fileUploadFormData.filename}"
-      return IO.raiseError(UserMessageException(Status.BadRequest, msg))
+      return IO.raiseError(ResponseException(Status.BadRequest, msg))
     }
     logger.info(s"Fetching MD5 at $gitHubMD5Uri")
     httpClient.use {
@@ -30,7 +30,7 @@ case class MD5Util(httpClient: Resource[IO, Client[IO]])(implicit loggerFactory:
           errorResponse =>
             val msg = s"Maven version ${fileUploadFormData.filename} ${fileUploadFormData.version} does not exist in GitHub"
             logger.error(msg)
-            IO.raiseError(UserMessageException(errorResponse.status, msg))
+            IO.raiseError(ResponseException(errorResponse.status, msg))
         }
     }
     //    }

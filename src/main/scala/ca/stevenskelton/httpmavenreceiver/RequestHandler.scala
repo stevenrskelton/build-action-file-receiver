@@ -14,10 +14,11 @@ import java.io.File
 import java.security.MessageDigest
 import java.time.Duration
 
-case class UploadRouteHandler(
-                               httpClient: Resource[IO, Client[IO]],
-                               uploadDirectory: Path,
-                               postUploadActions: PostUploadActions,
+case class RequestHandler(
+                           httpClient: Resource[IO, Client[IO]],
+                           uploadDirectory: Path,
+                           isMavenDisabled: Boolean,
+                           postUploadActions: PostUploadActions,
                              )(implicit loggerFactory: LoggerFactory[IO]) {
 
   private val logger = loggerFactory.getLoggerFromClass(getClass)
@@ -38,7 +39,7 @@ case class UploadRouteHandler(
 
           for {
             tmpFile <- createTempFileIfNotExists(fileUploadFormData.filename)
-            expectedMD5 <- gitHubMavenUtil.fetchMavenMD5(fileUploadFormData)
+            expectedMD5 <- if(isMavenDisabled) IO.pure("") else gitHubMavenUtil.fetchMavenMD5(fileUploadFormData)
             _ <- fileUploadFormData.entityBody
               .chunkLimit(65536)
               .map {
@@ -52,7 +53,11 @@ case class UploadRouteHandler(
               .compile
               .drain
             uploadMD5 = Utils.byteArrayToHexString(digest.digest)
-            dest = verifyMD5(tmpFile, fileUploadFormData.filename, uploadMD5, expectedMD5)
+            destinationFile = if(isMavenDisabled){
+              moveTempToDestinationFile(tmpFile, getDestinationFile(fileUploadFormData.filename))
+            } else {
+              verifyMD5(tmpFile, fileUploadFormData.filename, uploadMD5, expectedMD5)
+            }
             response <- successfulResponseBody(fileUploadFormData.filename, fileSize, uploadMD5)
             //            _ <- postUploadActions.run(response)
             _ <- logger.info({
@@ -77,7 +82,7 @@ case class UploadRouteHandler(
     if (destinationFile.exists) {
       val msg = s"${destinationFile.getName} already exists"
       logger.error(msg)
-      IO.raiseError(UserMessageException(Status.Conflict, msg))
+      IO.raiseError(ResponseException(Status.Conflict, msg))
     } else {
       Files[IO].createTempFile(Some(uploadDirectory), System.currentTimeMillis.toString, ".tmp", None)
     }
@@ -93,23 +98,26 @@ case class UploadRouteHandler(
       logger.error(errorMessage)
       tempFile.toNioPath.toFile.delete
       //          Future.failed(UserMessageException(StatusCodes.BadRequest, errorMessage))
-      throw UserMessageException(Status.Conflict, errorMessage)
+      throw ResponseException(Status.Conflict, errorMessage)
     } else {
       logger.info(s"MD5 validated $fileMD5, saving file at ${destinationFile.getName}")
-      if (tempFile.toNioPath.toFile.renameTo(destinationFile)) {
-        destinationFile
-      } else {
-        val msg = s"Could not rename ${tempFile} to ${destinationFile.getAbsolutePath}"
-        throw UserMessageException(Status.InternalServerError, msg)
-      }
+      moveTempToDestinationFile(tempFile, destinationFile)
     }
     //      }
+  }
+  
+  def moveTempToDestinationFile(tempFile: Path, destinationFile: File): File = {
+    if (tempFile.toNioPath.toFile.renameTo(destinationFile)) {
+      destinationFile
+    } else {
+      val msg = s"Could not rename ${tempFile} to ${destinationFile.getAbsolutePath}"
+      throw ResponseException(Status.InternalServerError, msg)
+    }
   }
 
   private def successfulResponseBody(filename: String, fileSize: Long, destinationFileMD5: String): IO[Response[IO]] = {
     val responseBody = s"Successfully saved upload of $filename, ${Utils.humanFileSize(fileSize)}, MD5 $destinationFileMD5"
     Ok(responseBody).map(_.withContentType(`Content-Type`(MediaType.text.plain)))
   }
-
 
 }

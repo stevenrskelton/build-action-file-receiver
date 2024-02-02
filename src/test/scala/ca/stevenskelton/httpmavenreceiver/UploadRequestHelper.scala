@@ -36,16 +36,17 @@ object UploadRequestHelper {
   //                                uri: Uri = Uri.Path.Root
   //                              ): Request[IO] = multipartFilePutRequest(resource, toMap(githubPackage), uri)
 
-  def httpApp(responses: Map[Uri, Response[IO]]): IO[HttpApp[IO]] = for {
+  def httpApp(responses: Map[Uri, Response[IO]], isMavenDisabled: Boolean = false): IO[HttpApp[IO]] = for {
     tmpDir <- Files[IO].createTempDirectory(None, "http-maven-receiver-specs-", None)
   } yield {
-    Main.httpApp(UploadRouteHandler(
+    Main.httpApp(RequestHandler(
       Resource.pure(Client(request => Resource.pure(responses.getOrElse(request.uri, Response.notFound)))),
       uploadDirectory = tmpDir,
+      isMavenDisabled = isMavenDisabled,
       postUploadActions = PostUploadActions(),
     ))
   }
-  
+
   def successResponse(file: File): Response[IO] = {
     val bodyBytes = Option(getClass.getResourceAsStream(file.getAbsolutePath)).map(_.readAllBytes).getOrElse {
       java.nio.file.Files.readAllBytes(file.toPath)

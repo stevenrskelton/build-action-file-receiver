@@ -38,7 +38,7 @@ class ArtifactUploadSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       assert(resp1.unsafeRunSync() == "Successfully saved upload of testfile-1.0.1.png, 7kb, MD5 5c55838e6a9fb7bb5470cb222fd3b1f3")
 
       val resp2: IO[String] = client.expect[String](request)
-      val ex = intercept[UserMessageException](resp2.unsafeRunSync())
+      val ex = intercept[ResponseException](resp2.unsafeRunSync())
       assert(ex.status == Status.Conflict)
       assert(ex.message == "testfile-1.0.1.png already exists")
     }
@@ -51,7 +51,7 @@ class ArtifactUploadSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       val client: Client[IO] = Client.fromHttpApp(httpApp)
 
       val resp1: IO[String] = client.expect[String](request)
-      val ex = intercept[UserMessageException](resp1.unsafeRunSync())
+      val ex = intercept[ResponseException](resp1.unsafeRunSync())
       assert(ex.status == Status.BadRequest)
       assert(ex.message == FileUploadFormData.FormErrorMessage)
     }
@@ -67,7 +67,7 @@ class ArtifactUploadSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       val client: Client[IO] = Client.fromHttpApp(httpApp)
 
       val resp1: IO[String] = client.expect[String](request)
-      val ex = intercept[UserMessageException](resp1.unsafeRunSync())
+      val ex = intercept[ResponseException](resp1.unsafeRunSync())
       assert(ex.status == Status.Conflict)
       assert(ex.message == "Upload testfile-1.0.1.png MD5 not equal, 36a9ba7d32ad98d518f67bd6b1787233 expected != 5c55838e6a9fb7bb5470cb222fd3b1f3 of upload.")
     }
@@ -80,7 +80,7 @@ class ArtifactUploadSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       val client: Client[IO] = Client.fromHttpApp(httpApp)
 
       val resp1: IO[String] = client.expect[String](request)
-      val ex = intercept[UserMessageException](resp1.unsafeRunSync())
+      val ex = intercept[ResponseException](resp1.unsafeRunSync())
       assert(ex.status == Status.NotFound)
       assert(ex.message == "Maven version testfile-1.0.1.png 1.0.1 does not exist in GitHub")
     }

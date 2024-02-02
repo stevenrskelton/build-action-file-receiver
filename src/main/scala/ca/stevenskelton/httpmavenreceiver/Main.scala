@@ -21,7 +21,7 @@ object Main extends IOApp {
 
   private val DefaultAllowedUploadSize = 5 * 1024 * 1024
 
-  def httpApp(handler: UploadRouteHandler): HttpApp[IO] = HttpRoutes.of[IO] {
+  def httpApp(handler: RequestHandler): HttpApp[IO] = HttpRoutes.of[IO] {
     case request@PUT -> Root => handler.releasesPut(request)
   }.orNotFound
 
@@ -47,14 +47,17 @@ object Main extends IOApp {
         """
           |Command line arguments:
           |  --help
-          |  --directory=[STRING]
+          |  --disable-maven
           |  --host=[STRING]
           |  --port=[INTEGER]
           |  --maxsize=[INTEGER]
+          |  --directory=[STRING]
           |""".stripMargin)
       return IO.pure(ExitCode.Success)
     }
 
+    val disableMaven: Boolean = argMap.contains("disable-maven")
+    
     val host: Ipv4Address = Ipv4Address.fromString(argMap.getOrElse("host", "0.0.0.0"))
       .getOrElse {
         logger.error(s"Invalid host: ${argMap("host")}")
@@ -93,9 +96,10 @@ object Main extends IOApp {
       .default[IO]
       .build
 
-    val handler = UploadRouteHandler(
+    val handler = RequestHandler(
       httpClient,
       fs2.io.file.Path.fromNioPath(uploadDirectory.toPath),
+      disableMaven,
       PostUploadActions(),
     )(loggerFactory)
 
