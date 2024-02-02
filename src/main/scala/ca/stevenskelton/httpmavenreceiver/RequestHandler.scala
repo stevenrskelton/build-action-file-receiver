@@ -10,7 +10,6 @@ import org.http4s.headers.`Content-Type`
 import org.http4s.multipart.Multipart
 import org.typelevel.log4cats.LoggerFactory
 
-import java.io.File
 import java.security.MessageDigest
 import java.time.Duration
 
@@ -19,7 +18,7 @@ case class RequestHandler(
                            uploadDirectory: Path,
                            isMavenDisabled: Boolean,
                            postUploadActions: PostUploadActions,
-                             )(implicit loggerFactory: LoggerFactory[IO]) {
+                         )(implicit loggerFactory: LoggerFactory[IO]) {
 
   private val logger = loggerFactory.getLoggerFromClass(getClass)
 
@@ -39,7 +38,7 @@ case class RequestHandler(
 
           for {
             tmpFile <- createTempFileIfNotExists(fileUploadFormData.filename)
-            expectedMD5 <- if(isMavenDisabled) IO.pure("") else gitHubMavenUtil.fetchMavenMD5(fileUploadFormData)
+            expectedMD5 <- if (isMavenDisabled) IO.pure("") else gitHubMavenUtil.fetchMavenMD5(fileUploadFormData)
             _ <- fileUploadFormData.entityBody
               .chunkLimit(65536)
               .map {
@@ -53,7 +52,7 @@ case class RequestHandler(
               .compile
               .drain
             uploadMD5 = Utils.byteArrayToHexString(digest.digest)
-            destinationFile = if(isMavenDisabled){
+            destinationFile <- if (isMavenDisabled) {
               moveTempToDestinationFile(tmpFile, getDestinationFile(fileUploadFormData.filename))
             } else {
               verifyMD5(tmpFile, fileUploadFormData.filename, uploadMD5, expectedMD5)
@@ -71,47 +70,45 @@ case class RequestHandler(
     }
   }
 
-  private def getDestinationFile(filename: String): File = {
-    new File(s"${uploadDirectory.toNioPath.toFile.getAbsolutePath}/$filename")
-  }
+  private inline def getDestinationFile(filename: String): Path = uploadDirectory / filename
 
   private def createTempFileIfNotExists(filename: String): IO[Path] = {
     //TODO: check if another temp file exists
     //TODO: verify MD5 of existing file?
     val destinationFile = getDestinationFile(filename)
-    if (destinationFile.exists) {
-      val msg = s"${destinationFile.getName} already exists"
-      logger.error(msg)
-      IO.raiseError(ResponseException(Status.Conflict, msg))
-    } else {
-      Files[IO].createTempFile(Some(uploadDirectory), System.currentTimeMillis.toString, ".tmp", None)
+    Files[IO].exists(destinationFile).flatMap {
+      exists =>
+        if (exists) {
+          val msg = s"${destinationFile.fileName} already exists"
+          logger.error(msg)
+          IO.raiseError(ResponseException(Status.Conflict, msg))
+        } else {
+          Files[IO].createTempFile(Some(uploadDirectory), System.currentTimeMillis.toString, ".tmp", None)
+        }
     }
   }
 
-  private def verifyMD5(tempFile: Path, filename: String, fileMD5: String, mavenMD5: String): File = {
+  private def verifyMD5(tempFile: Path, filename: String, fileMD5: String, mavenMD5: String): IO[Path] = {
     //      if (fileInfo.fileName.contains("SNAPSHOT")) {
     //        super.tmpFileHook(tmp, md5Sum)
     //      } else {
     val destinationFile = getDestinationFile(filename)
     if (fileMD5 != mavenMD5) {
-      val errorMessage = s"Upload ${destinationFile.getName} MD5 not equal, $mavenMD5 expected != $fileMD5 of upload."
+      val errorMessage = s"Upload ${destinationFile.fileName} MD5 not equal, $mavenMD5 expected != $fileMD5 of upload."
       logger.error(errorMessage)
-      tempFile.toNioPath.toFile.delete
-      //          Future.failed(UserMessageException(StatusCodes.BadRequest, errorMessage))
-      throw ResponseException(Status.Conflict, errorMessage)
+      Files[IO].delete(tempFile) *> IO.raiseError(ResponseException(Status.Conflict, errorMessage))
     } else {
-      logger.info(s"MD5 validated $fileMD5, saving file at ${destinationFile.getName}")
+      logger.info(s"MD5 validated $fileMD5, saving file at ${destinationFile.fileName}")
       moveTempToDestinationFile(tempFile, destinationFile)
     }
     //      }
   }
-  
-  def moveTempToDestinationFile(tempFile: Path, destinationFile: File): File = {
-    if (tempFile.toNioPath.toFile.renameTo(destinationFile)) {
-      destinationFile
-    } else {
-      val msg = s"Could not rename ${tempFile} to ${destinationFile.getAbsolutePath}"
-      throw ResponseException(Status.InternalServerError, msg)
+
+  def moveTempToDestinationFile(tempFile: Path, destinationFile: Path): IO[Path] = {
+    Files[IO].move(tempFile, destinationFile).as(destinationFile).handleErrorWith {
+      ex =>
+        val msg = s"Could not rename ${tempFile} to ${destinationFile.toString}"
+        IO.raiseError(ResponseException(Status.InternalServerError, msg, Some(ex)))
     }
   }
 

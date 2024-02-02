@@ -1,13 +1,22 @@
 lazy val publishAssemblyToGitHubPackages = taskKey[Unit]("Publish Über Jar to GitHub Packages")
-publishAssemblyToGitHubPackages := {
-  val githubRepository = sys.env.getOrElse("GITHUB_REPOSITORY", throw new Exception("You must set environmental variable GITHUB_REPOSITORY, eg: owner/repository"))
-  if(!sys.env.keySet.contains("GITHUB_REPOSITORY_OWNER")) throw new Exception("You must set environmental variable GITHUB_REPOSITORY_OWNER, eg: your username")
-  if(!sys.env.keySet.contains("GITHUB_TOKEN")) throw new Exception("You must set environmental variable GITHUB_TOKEN")
+publishAssemblyToGitHubPackages := Def.taskDyn(publishToGitHubPackages(assembly.value)).value
 
-  val settingsXMLFile = new File("target/settings.xml")
-  if(!settingsXMLFile.exists){
-    println("File missing, creating settings.xml")
-    val settingsXML = """<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+lazy val publishNativeToGitHubPackages = taskKey[Unit]("Publish Native to GitHub Packages")
+publishNativeToGitHubPackages := Def.taskDyn(publishToGitHubPackages((Compile / nativeLink).value)).value
+
+def publishToGitHubPackages(fileToPublish: File): Def.Initialize[Task[Unit]] = Def.task {
+
+  println(s"Publishing ${fileToPublish.getName} to GitHub Maven")
+
+  val githubRepository = sys.env.getOrElse("GITHUB_REPOSITORY", throw new Exception("You must set environmental variable GITHUB_REPOSITORY, eg: owner/repository"))
+  if (!sys.env.keySet.contains("GITHUB_REPOSITORY_OWNER")) throw new Exception("You must set environmental variable GITHUB_REPOSITORY_OWNER, eg: your username")
+  if (!sys.env.keySet.contains("GITHUB_TOKEN")) throw new Exception("You must set environmental variable GITHUB_TOKEN")
+
+  val settingsXMLFile = new File(s"target/${fileToPublish.getName}-settings.xml")
+  if (!settingsXMLFile.exists) {
+    println(s"File missing, creating ${fileToPublish.getName}-settings.xml")
+    val settingsXML =
+      """<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
               xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
                       http://maven.apache.org/xsd/settings-1.0.0.xsd">
@@ -42,17 +51,24 @@ publishAssemblyToGitHubPackages := {
     IO.write(settingsXMLFile, settingsXML)
   }
 
-  val exe = s"""mvn deploy:deploy-file
+  val artifactId: String = {
+    if (fileToPublish.getName.contains("-assembly-")) s"${name.value}-assembly"
+    else if (fileToPublish.getName.endsWith("-out")) s"${name.value}-linux"
+    else name.value
+  }
+
+  val exe =
+    s"""mvn deploy:deploy-file
     -Durl=https://maven.pkg.github.com/$githubRepository
     -DrepositoryId=github
-    -Dfile=${assembly.value}
+    -Dfile=${fileToPublish.getName}
     -DgroupId=${organization.value}
-    -DartifactId=${name.value}-assembly
+    -DartifactId=$artifactId
     -Dversion=${version.value}
-    --settings=target/settings.xml
+    --settings=target/${fileToPublish.getName}-settings.xml
   """.stripLineEnd
 
   println(s"Executing shell command $exe")
   import scala.sys.process._
-  if(exe.! != 0) throw new Exception("publishAssemblyToGitHubPackages failed")
+  if (exe.! != 0) throw new Exception("publishAssemblyToGitHubPackages failed")
 }

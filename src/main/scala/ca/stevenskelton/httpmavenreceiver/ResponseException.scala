@@ -1,6 +1,6 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import org.http4s.{Charset, Entity, HttpVersion, MessageFailure, Response, Status}
+import org.http4s.*
 
 case class ResponseException(status: Status, message: String, override val cause: Option[Throwable] = None)
   extends RuntimeException(message, cause.orNull) with MessageFailure {

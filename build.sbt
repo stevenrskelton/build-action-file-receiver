@@ -44,6 +44,7 @@ lazy val root = (project in file("."))
     },
     javacOptions ++= Seq("-source", javaVersion, "-target", javaVersion),
     addArtifact(assembly / artifact, assembly),
+//    addArtifact(nativeLink / artifact, nativeLink),
     assembly / mainClass := Some ("ca.stevenskelton.httpmavenreceiver.Main"),
     assembly / assemblyMergeStrategy := {
       //Logback
@@ -73,9 +74,7 @@ libraryDependencies ++= Seq(
   "org.typelevel"           %% "cats-effect-testing-scalatest" % "1.5.0"  % Test,
 )
 
-/*
-
-////required by sconfig native
+//required by sconfig native
 //nativeLinkStubs := true
 
 //brew install llvm
@@ -91,8 +90,8 @@ nativeConfig ~= { c =>
     .withMode(Mode.debug) // releaseFast
     .withGC(GC.immix) // commix
 }
-
-libraryDependencies := Seq(
+/*
+libraryDependencies ++= Seq(
   "com.armanbilge"          %%% "epollcat"            % "0.1.4",
   "org.http4s"              %%% "http4s-ember-client" % http4sVersion,
   "org.http4s"              %%% "http4s-ember-server" % http4sVersion,

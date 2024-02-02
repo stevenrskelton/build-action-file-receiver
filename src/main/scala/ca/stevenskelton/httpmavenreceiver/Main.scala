@@ -57,7 +57,7 @@ object Main extends IOApp {
     }
 
     val disableMaven: Boolean = argMap.contains("disable-maven")
-    
+
     val host: Ipv4Address = Ipv4Address.fromString(argMap.getOrElse("host", "0.0.0.0"))
       .getOrElse {
         logger.error(s"Invalid host: ${argMap("host")}")
