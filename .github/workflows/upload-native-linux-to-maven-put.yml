@@ -1,4 +1,4 @@
-name: Publish Über Assembly to GitHub Packages
+name: Publish Native Linux to GitHub Packages
 
 on:
   workflow_dispatch:
