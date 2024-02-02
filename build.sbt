@@ -69,7 +69,8 @@ libraryDependencies ++= Seq(
   "org.typelevel"           %% "log4cats-core"        % "2.6.0",
   "co.fs2"                  %% "fs2-io"               % "3.9.4",
   "org.scala-lang.modules"  %% "scala-xml"            % "2.2.0",
-  "org.scalatest"           %% "scalatest"            % "3.3.0-alpha.1" % Test
+  "org.scalatest"           %% "scalatest"            % "3.3.0-alpha.1"   % Test,
+  "org.typelevel"           %% "cats-effect-testing-scalatest" % "1.5.0"  % Test,
 )
 
 /*

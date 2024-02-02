@@ -1,10 +1,9 @@
 package ca.stevenskelton.httpmavenreceiver
 
 import cats.effect.IO
-import cats.effect.unsafe.IORuntime
 import org.http4s.headers.`Content-Type`
 import org.http4s.multipart.Multipart
-import org.http4s.{EntityBody, MediaType}
+import org.http4s.{EntityBody, MediaType, Status}
 
 import scala.collection.mutable
 
@@ -16,7 +15,6 @@ case class FileUploadFormData(
                                artifactId: String,
                                version: String,
                                filename: String,
-                               fileSize: Long,
                                entityBody: EntityBody[IO]
                              ) {
   val gitHubMavenPath: String = s"https://maven.pkg.github.com/$githubUser/$githubRepository/${groupId.replace(".", "/")}/$artifactId/$version"
@@ -45,15 +43,14 @@ object FileUploadFormData {
               artifactId <- fields.get("artifactId")
               version <- fields.get("version")
               filename <- part.filename
-              fileSize <- part.entity.length
             } yield {
               FileUploadFormData(
                 githubAuthToken, githubUser, githubRepository, groupId, artifactId, version,
-                filename, fileSize, part.body)
+                filename, part.body)
             }
 
             upload.getOrElse {
-              throw new Exception(s"File entity invalid")
+              throw UserMessageException(Status.BadRequest, FormErrorMessage)
             }
         }
         return io
@@ -68,8 +65,9 @@ object FileUploadFormData {
             }
         }
       case (_, part) =>
-        return IO.raiseError(new Exception(s"Found unexpected `${part.name}` form field of type ${part.contentType.fold("?")(_.toString)}."))
+        val msg = s"Found unexpected `${part.name.getOrElse("")}` form field of type ${part.contentType.fold("?")(_.toString)}."
+        return IO.raiseError(UserMessageException(Status.BadRequest, msg))
     }
-    IO.raiseError(new Exception(FormErrorMessage))
+    IO.raiseError(UserMessageException(Status.BadRequest, FormErrorMessage))
   }
 }

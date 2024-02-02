@@ -4,28 +4,23 @@ import ca.stevenskelton.httpmavenreceiver.githubmaven.MD5Util
 import cats.effect.*
 import fs2.io.file.{Files, Path}
 import org.http4s.*
+import org.http4s.client.Client
 import org.http4s.dsl.io.*
-import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.headers.`Content-Type`
 import org.http4s.multipart.Multipart
 import org.typelevel.log4cats.LoggerFactory
 
 import java.io.File
+import java.security.MessageDigest
 import java.time.Duration
 
-import java.security.MessageDigest
-
-case class Http4sArtifactUploadRoute(
-                                      uploadDirectory: Path,
-                                      maxUploadFileSizeBytes: Long,
-                                      postUploadActions: PostUploadActions,
-                                    )(implicit loggerFactory: LoggerFactory[IO]) {
+case class UploadRouteHandler(
+                               httpClient: Resource[IO, Client[IO]],
+                               uploadDirectory: Path,
+                               postUploadActions: PostUploadActions,
+                             )(implicit loggerFactory: LoggerFactory[IO]) {
 
   private val logger = loggerFactory.getLoggerFromClass(getClass)
-
-  private val httpClient = EmberClientBuilder
-    .default[IO]
-    .build
 
   def releasesPut(request: Request[IO]): IO[Response[IO]] = {
     val clientIp = request.remoteAddr
@@ -35,14 +30,15 @@ case class Http4sArtifactUploadRoute(
           logger.info(s"Received request for file `${fileUploadFormData.filename}` by GitHub user `${fileUploadFormData.githubUser}` upload from IP $clientIp")
           val start = System.currentTimeMillis
 
+
           val digest = MessageDigest.getInstance("MD5")
           var fileSize = 0L
 
-          val gitHubMavenUtil = MD5Util()
+          val gitHubMavenUtil = MD5Util(httpClient)
 
           for {
+            tmpFile <- createTempFileIfNotExists(fileUploadFormData.filename)
             expectedMD5 <- gitHubMavenUtil.fetchMavenMD5(fileUploadFormData)
-            tmpFile <- Files[IO].createTempFile(Some(uploadDirectory), System.currentTimeMillis.toString, ".tmp", None)
             _ <- fileUploadFormData.entityBody
               .chunkLimit(65536)
               .map {
@@ -70,23 +66,41 @@ case class Http4sArtifactUploadRoute(
     }
   }
 
-  private def verifyMD5(tmp: Path, filename: String, fileMD5: String, mavenMD5: String): File = {
+  private def getDestinationFile(filename: String): File = {
+    new File(s"${uploadDirectory.toNioPath.toFile.getAbsolutePath}/$filename")
+  }
+
+  private def createTempFileIfNotExists(filename: String): IO[Path] = {
+    //TODO: check if another temp file exists
+    //TODO: verify MD5 of existing file?
+    val destinationFile = getDestinationFile(filename)
+    if (destinationFile.exists) {
+      val msg = s"${destinationFile.getName} already exists"
+      logger.error(msg)
+      IO.raiseError(UserMessageException(Status.Conflict, msg))
+    } else {
+      Files[IO].createTempFile(Some(uploadDirectory), System.currentTimeMillis.toString, ".tmp", None)
+    }
+  }
+
+  private def verifyMD5(tempFile: Path, filename: String, fileMD5: String, mavenMD5: String): File = {
     //      if (fileInfo.fileName.contains("SNAPSHOT")) {
     //        super.tmpFileHook(tmp, md5Sum)
     //      } else {
-    val destinationFile = new File(s"${uploadDirectory.toNioPath.toFile.getAbsolutePath}/$filename")
+    val destinationFile = getDestinationFile(filename)
     if (fileMD5 != mavenMD5) {
       val errorMessage = s"Upload ${destinationFile.getName} MD5 not equal, $mavenMD5 expected != $fileMD5 of upload."
       logger.error(errorMessage)
-      tmp.toNioPath.toFile.delete
+      tempFile.toNioPath.toFile.delete
       //          Future.failed(UserMessageException(StatusCodes.BadRequest, errorMessage))
-      throw new Exception(errorMessage)
+      throw UserMessageException(Status.Conflict, errorMessage)
     } else {
       logger.info(s"MD5 validated $fileMD5, saving file at ${destinationFile.getName}")
-      if (tmp.toNioPath.toFile.renameTo(destinationFile)) {
+      if (tempFile.toNioPath.toFile.renameTo(destinationFile)) {
         destinationFile
       } else {
-        throw new Exception(s"Could not rename ${tmp} to ${destinationFile.getAbsolutePath}")
+        val msg = s"Could not rename ${tempFile} to ${destinationFile.getAbsolutePath}"
+        throw UserMessageException(Status.InternalServerError, msg)
       }
     }
     //      }

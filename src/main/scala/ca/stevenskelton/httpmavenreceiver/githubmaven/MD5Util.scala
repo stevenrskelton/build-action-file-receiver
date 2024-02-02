@@ -1,30 +1,22 @@
 package ca.stevenskelton.httpmavenreceiver.githubmaven
 
-import ca.stevenskelton.httpmavenreceiver.{FileUploadFormData, UserMessageException, Utils}
-import cats.effect.IO
+import ca.stevenskelton.httpmavenreceiver.{FileUploadFormData, UserMessageException}
+import cats.effect.{IO, Resource}
 import org.http4s.*
-import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.client.Client
 import org.typelevel.log4cats.LoggerFactory
 
-import java.io.File
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import scala.xml.Elem
-
-case class MD5Util()(implicit loggerFactory: LoggerFactory[IO]) {
+case class MD5Util(httpClient: Resource[IO, Client[IO]])(implicit loggerFactory: LoggerFactory[IO]) {
 
   private val logger = loggerFactory.getLoggerFromClass(getClass)
-
-  private val httpClient = EmberClientBuilder
-    .default[IO]
-    .build
 
   def fetchMavenMD5(fileUploadFormData: FileUploadFormData): IO[String] = {
     //    if (filename.contains("SNAPSHOT")) {
     //      IO.pure((gitHubPackage, filename))
     //    } else {
     val gitHubMD5Uri = Uri.fromString(s"${fileUploadFormData.gitHubMavenPath}/${fileUploadFormData.filename}.md5").getOrElse {
-      throw new Exception(s"Invalid filename ${fileUploadFormData.gitHubMavenPath}/${fileUploadFormData.filename}")
+      val msg = s"Invalid filename ${fileUploadFormData.gitHubMavenPath}/${fileUploadFormData.filename}"
+      return IO.raiseError(UserMessageException(Status.BadRequest, msg))
     }
     logger.info(s"Fetching MD5 at $gitHubMD5Uri")
     httpClient.use {

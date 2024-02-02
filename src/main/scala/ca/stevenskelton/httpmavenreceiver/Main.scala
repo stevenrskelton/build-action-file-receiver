@@ -1,10 +1,12 @@
 package ca.stevenskelton.httpmavenreceiver
 
+import ca.stevenskelton.httpmavenreceiver.Main.loggerFactory.LoggerType
 import ca.stevenskelton.httpmavenreceiver.logging.StdOutLoggerFactory
 import cats.effect.*
 import com.comcast.ip4s.*
 import org.http4s.*
 import org.http4s.dsl.io.*
+import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.*
 import org.http4s.implicits.*
 import org.typelevel.log4cats.*
@@ -15,9 +17,13 @@ object Main extends IOApp {
 
   implicit val loggerFactory: LoggerFactory[IO] = StdOutLoggerFactory()
 
-  private val logger = loggerFactory.getLoggerFromClass(getClass)
+  val logger: LoggerType = loggerFactory.getLoggerFromClass(getClass)
 
-  private val DefaultAllowedUploadSize = 1024000L
+  private val DefaultAllowedUploadSize = 5 * 1024 * 1024
+
+  def httpApp(handler: UploadRouteHandler): HttpApp[IO] = HttpRoutes.of[IO] {
+    case request@PUT -> Root => handler.releasesPut(request)
+  }.orNotFound
 
   override def run(args: List[String]): IO[ExitCode] = {
 
@@ -28,15 +34,15 @@ object Main extends IOApp {
       .map {
         argument =>
           val equalsChar = argument.indexOf("=")
-          if(equalsChar > -1) {
+          if (equalsChar > -1) {
             val (key, value) = argument.splitAt(equalsChar)
             (key.drop(2), value.drop(1))
-          }else {
+          } else {
             (argument.drop(2), "")
           }
       }.toMap
 
-    if(argMap.contains("help")) {
+    if (argMap.contains("help")) {
       logger.info(
         """
           |Command line arguments:
@@ -51,9 +57,9 @@ object Main extends IOApp {
 
     val host: Ipv4Address = Ipv4Address.fromString(argMap.getOrElse("host", "0.0.0.0"))
       .getOrElse {
-      logger.error(s"Invalid host: ${argMap("host")}")
-      return IO.pure(ExitCode.Error)
-    }
+        logger.error(s"Invalid host: ${argMap("host")}")
+        return IO.pure(ExitCode.Error)
+      }
 
     val port: Port = Port.fromString(argMap.getOrElse("port", "8080"))
       .getOrElse {
@@ -62,8 +68,8 @@ object Main extends IOApp {
       }
 
     val maxUploadByteSize = argMap.get("maxsize").map {
-      _.toLongOption.getOrElse {
-        logger.error(s"Invalid maximum upload size: ${argMap("port")}")
+      _.toIntOption.getOrElse {
+        logger.error(s"Invalid maximum upload size: ${argMap("maxsize")}")
         return IO.pure(ExitCode.Error)
       }
     }.getOrElse(DefaultAllowedUploadSize)
@@ -77,27 +83,28 @@ object Main extends IOApp {
         logger.info(s"Created upload directory: ${uploadDirectory.getAbsolutePath}")
       }
     }
-    if(!uploadDirectory.canWrite){
+    if (!uploadDirectory.canWrite) {
       logger.error(s"Can not write to directory: ${uploadDirectory.getAbsolutePath}")
       return IO.pure(ExitCode.Error)
     }
     logger.info(s"Setting file upload directory to: ${uploadDirectory.getAbsolutePath} with max upload size: ${Utils.humanFileSize(maxUploadByteSize)}")
 
-    val http4sArtifactUploadRoute = Http4sArtifactUploadRoute(
+    val httpClient = EmberClientBuilder
+      .default[IO]
+      .build
+
+    val handler = UploadRouteHandler(
+      httpClient,
       fs2.io.file.Path.fromNioPath(uploadDirectory.toPath),
-      maxUploadByteSize,
       PostUploadActions(),
     )(loggerFactory)
 
-    val httpApp = HttpRoutes.of[IO] {
-      case request@PUT -> Root => http4sArtifactUploadRoute.releasesPut(request)
-    }.orNotFound
-
     EmberServerBuilder
       .default[IO]
+      .withReceiveBufferSize(maxUploadByteSize)
       .withHost(host)
       .withPort(port)
-      .withHttpApp(httpApp)
+      .withHttpApp(httpApp(handler))
       .build
       .use(_ => IO.never)
       .as(ExitCode.Success)
