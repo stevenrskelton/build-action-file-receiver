@@ -62,7 +62,7 @@ lazy val root = (project in file("."))
       art.withClassifier(Some("assembly"))
     },
   )
-
+/*
 libraryDependencies ++= Seq(
   "org.http4s"              %% "http4s-ember-client"  % http4sVersion,
   "org.http4s"              %% "http4s-ember-server"  % http4sVersion,
@@ -73,7 +73,7 @@ libraryDependencies ++= Seq(
   "org.scalatest"           %% "scalatest"            % "3.3.0-alpha.1"   % Test,
   "org.typelevel"           %% "cats-effect-testing-scalatest" % "1.5.0"  % Test,
 )
-
+*/
 //required by sconfig native
 //nativeLinkStubs := true
 
@@ -90,7 +90,7 @@ nativeConfig ~= { c =>
     .withMode(Mode.debug) // releaseFast
     .withGC(GC.immix) // commix
 }
-/*
+
 libraryDependencies ++= Seq(
   "com.armanbilge"          %%% "epollcat"            % "0.1.4",
   "org.http4s"              %%% "http4s-ember-client" % http4sVersion,
@@ -101,4 +101,3 @@ libraryDependencies ++= Seq(
   "org.scala-lang.modules"  %%% "scala-xml"           % "2.2.0",
   "org.scalatest"           %%% "scalatest"           % "3.3.0-alpha.1" % Test
 )
-*/

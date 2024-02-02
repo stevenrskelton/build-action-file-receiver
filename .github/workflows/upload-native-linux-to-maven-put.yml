@@ -1,0 +1,30 @@
+name: Publish Über Assembly to GitHub Packages
+
+on:
+  workflow_dispatch:
+   push:
+     branches: [ main ]
+
+env:
+  GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  PUT_URI: ${{vars.PUT_URI}}
+  SBT_OPTS: "-Xmx6G -XX:+UseSerialGC"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    - name: Publish Native Linux & Deploy
+      run: sbt publishNativeToGitHubPackages uploadNativeByPut

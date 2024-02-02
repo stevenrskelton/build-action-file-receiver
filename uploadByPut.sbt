@@ -6,7 +6,15 @@ import scala.util.Try
 import scala.xml.XML
 
 lazy val uploadAssemblyByPut = taskKey[Unit](s"Upload Jar via HTTP PUT")
-uploadAssemblyByPut := {
+uploadAssemblyByPut := Def.taskDyn(uploadByPut(assembly.value)).value
+
+lazy val uploadNativeByPut = taskKey[Unit](s"Upload Native via HTTP PUT")
+uploadNativeByPut := Def.taskDyn(uploadByPut((Compile / nativeLink).value)).value
+
+def uploadByPut(fileToUpload: File): Def.Initialize[Task[Unit]] = Def.task {
+
+  println(s"Uploading ${fileToUpload.getName}")
+
   val githubToken = sys.env.getOrElse("GITHUB_TOKEN", throw new Exception("You must set environmental variable GITHUB_TOKEN"))
   val githubUser = sys.env.getOrElse("GITHUB_REPOSITORY_OWNER", throw new Exception("You must set environmental variable GITHUB_REPOSITORY_OWNER, eg: your GitHub username"))
   val url = sys.env.getOrElse("PUT_URI", throw new Exception("You must set environmental variable PUT_URI to the PUT destination"))
