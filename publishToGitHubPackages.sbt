@@ -61,7 +61,7 @@ def publishToGitHubPackages(fileToPublish: File): Def.Initialize[Task[Unit]] = D
     s"""mvn deploy:deploy-file
     -Durl=https://maven.pkg.github.com/$githubRepository
     -DrepositoryId=github
-    -Dfile=${fileToPublish.getName}
+    -Dfile=${fileToPublish.getAbsolutePath}
     -DgroupId=${organization.value}
     -DartifactId=$artifactId
     -Dversion=${version.value}
