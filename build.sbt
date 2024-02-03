@@ -80,6 +80,10 @@ libraryDependencies ++= Seq(
 //brew install llvm
 //brew install s2n
 
+//https://fs2.io/#/io?id=tls
+
+
+
 enablePlugins(ScalaNativePlugin)
 
 import scala.scalanative.build._
