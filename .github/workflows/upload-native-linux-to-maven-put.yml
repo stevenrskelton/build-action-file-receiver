@@ -9,6 +9,7 @@ env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
   PUT_URI: ${{vars.PUT_URI}}
   SBT_OPTS: "-Xmx6G -XX:+UseSerialGC"
+  LD_LIBRARY_PATH: ${{ github.workspace }}/http-maven-receiver/s2n-tls/s2n-tls-install/lib
 
 permissions:
   contents: read
@@ -29,7 +30,7 @@ jobs:
     - name: Compile and Install AWS S2N-TLS
       run: |
         # clone s2n-tls
-        git clone https://github.com/aws/s2n-tls.git
+        git clone --depth 1 https://github.com/aws/s2n-tls.git
         cd s2n-tls
         # build s2n-tls
         cmake . -Bbuild \
@@ -38,5 +39,6 @@ jobs:
         cmake --build build -j $(nproc)
         CTEST_PARALLEL_LEVEL=$(nproc) ctest --test-dir build
         cmake --install build
+        echo $LD_LIBRARY_PATH
     - name: Publish Native Linux & Deploy
       run: sbt publishNativeToGitHubPackages uploadNativeByPut
