@@ -51,10 +51,10 @@ def publishToGitHubPackages(fileToPublish: File): Def.Initialize[Task[Unit]] = D
     IO.write(settingsXMLFile, settingsXML)
   }
 
-  val artifactId: String = {
-    if (fileToPublish.getName.contains("-assembly-")) s"${name.value}-assembly"
-    else if (fileToPublish.getName.endsWith("-out")) s"${name.value}-linux"
-    else name.value
+  val (artifactId: String, packaging: String) = {
+    if (fileToPublish.getName.contains("-assembly-")) (s"${name.value}-assembly", "jar")
+    else if (fileToPublish.getName.endsWith("-out")) (s"${name.value}-linux", "native-linux")
+    else (name.value, "jar")
   }
 
   val exe =
@@ -64,6 +64,7 @@ def publishToGitHubPackages(fileToPublish: File): Def.Initialize[Task[Unit]] = D
     -Dfile=${fileToPublish.getAbsolutePath}
     -DgroupId=${organization.value}
     -DartifactId=$artifactId
+    -Dpackaging=$packaging
     -Dversion=${version.value}
     --settings=target/${fileToPublish.getName}-settings.xml
   """.stripLineEnd
