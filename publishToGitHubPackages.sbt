@@ -53,7 +53,7 @@ def publishToGitHubPackages(fileToPublish: File): Def.Initialize[Task[Unit]] = D
 
   val (artifactId: String, packaging: String) = {
     if (fileToPublish.getName.contains("-assembly-")) (s"${name.value}-assembly", "jar")
-    else if (fileToPublish.getName.endsWith("-out")) (s"${name.value}-linux", "native-linux")
+    else if (fileToPublish.getName.endsWith("-out")) (s"${name.value}-linux", "bin")
     else (name.value, "jar")
   }
 
