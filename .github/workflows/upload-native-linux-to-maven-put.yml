@@ -9,7 +9,7 @@ env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
   PUT_URI: ${{vars.PUT_URI}}
   SBT_OPTS: "-Xmx6G -XX:+UseSerialGC"
-  LD_LIBRARY_PATH: ${{ github.workspace }}/s2n-tls/s2n-tls-install/lib
+  CMAKE_EXE_LINKER_FLAGS: "-L${{ github.workspace }}/s2n-tls/s2n-tls-install/lib"
 
 permissions:
   contents: read
@@ -39,6 +39,6 @@ jobs:
         cmake --build build -j $(nproc)
         CTEST_PARALLEL_LEVEL=$(nproc) ctest --test-dir build
         cmake --install build
-        echo $LD_LIBRARY_PATH
+        echo $CMAKE_EXE_LINKER_FLAGS
     - name: Publish Native Linux & Deploy
       run: sbt publishNativeToGitHubPackages uploadNativeByPut
