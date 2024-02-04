@@ -1,13 +1,13 @@
 package ca.stevenskelton.httpmavenreceiver
 
 import ca.stevenskelton.httpmavenreceiver.githubmaven.MD5Util
-import cats.effect.*
+import cats.effect.{IO, Resource}
 import fs2.io.file.{Files, Path}
-import org.http4s.*
 import org.http4s.client.Client
 import org.http4s.dsl.io.*
 import org.http4s.headers.`Content-Type`
 import org.http4s.multipart.Multipart
+import org.http4s.{MediaType, Request, Response, Status}
 import org.typelevel.log4cats.LoggerFactory
 
 import java.security.MessageDigest
@@ -27,7 +27,7 @@ case class RequestHandler(
     request.decode[IO, Multipart[IO]] { multipart =>
       FileUploadFormData.fromFormData(multipart).flatMap {
         fileUploadFormData =>
-          logger.info(s"Received request for file `${fileUploadFormData.filename}` by GitHub user `${fileUploadFormData.githubUser}` upload from IP $clientIp")
+          logger.info(s"Received request for file `${fileUploadFormData.filename}` by GitHub user `${fileUploadFormData.user}` upload from IP $clientIp")
           val start = System.currentTimeMillis
 
 

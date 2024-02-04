@@ -27,10 +27,10 @@ def uploadByPut(fileToUpload: File): Def.Initialize[Task[Unit]] = Def.task {
 
   val repository = name.value
   val groupId = organization.value.replace(".", "/")
-  val artifactId = {
-    if (fileToUpload.getName.contains("-assembly-")) s"${name.value}-assembly"
-    else if (fileToUpload.getName.endsWith("-out")) s"${name.value}-linux"
-    else name.value
+  val (artifactId: String, packaging: String) = {
+    if (fileToUpload.getName.contains("-assembly-")) (s"${name.value}-assembly", "jar")
+    else if (fileToUpload.getName.endsWith("-out")) (s"${name.value}-linux", "bin")
+    else (name.value, "jar")
   }
 
   val destinationFile = if (version.value.contains("SNAPSHOT")) {
@@ -67,13 +67,14 @@ def uploadByPut(fileToUpload: File): Def.Initialize[Task[Unit]] = Def.task {
   }
 
   val builder = asyncHttpClient.preparePut(url)
-    .addBodyPart(new StringPart("githubAuthToken", githubToken))
-    .addBodyPart(new StringPart("githubUser", githubUser))
-    .addBodyPart(new StringPart("githubRepository", repository))
+    .addBodyPart(new StringPart("authToken", githubToken))
+    .addBodyPart(new StringPart("user", githubUser))
+    .addBodyPart(new StringPart("repository", repository))
     .addBodyPart(new StringPart("groupId", groupId))
     .addBodyPart(new StringPart("artifactId", artifactId))
+    .addBodyPart(new StringPart("packaging", packaging))
     .addBodyPart(new StringPart("version", version.value))
-    .addBodyPart(new FilePart("jar", destinationFile))
+    .addBodyPart(new FilePart("file", destinationFile))
 
   println(s"Uploading ${fileToUpload.getName} to $url as filename ${destinationFile.getName}")
   val response = asyncHttpClient.executeRequest(builder.build()).toCompletableFuture.get(5, TimeUnit.MINUTES)

@@ -22,7 +22,7 @@ object MetadataUtil {
         val request = Request[IO](
           Method.GET,
           gitHubMetadataUri,
-          headers = Headers(Header.ToRaw.keyValuesToRaw("Authorization" -> s"token ${fileUploadFormData.githubAuthToken}")),
+          headers = Headers(Header.ToRaw.keyValuesToRaw("Authorization" -> s"token ${fileUploadFormData.authToken}")),
         )
         client.expectOr[String](request) {
           errorResponse =>
@@ -50,7 +50,7 @@ object MetadataUtil {
 
   private def parseMavenMetadata(fileUploadFormData: FileUploadFormData, metadata: Elem): Seq[MavenPackage] = {
     (metadata \\ "snapshotVersion").withFilter {
-      n => (n \ "extension").text == "jar"
+      node => (node \ "extension").text == fileUploadFormData.packaging
     }.flatMap {
       n =>
         for {
@@ -59,10 +59,11 @@ object MetadataUtil {
         } yield {
           val updatedTime = LocalDateTime.parse(updated.text, DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
           MavenPackage(
-            githubUser = fileUploadFormData.githubUser,
-            githubRepository = fileUploadFormData.githubRepository,
+            user = fileUploadFormData.user,
+            repository = fileUploadFormData.repository,
             groupId = fileUploadFormData.groupId,
             artifactId = fileUploadFormData.artifactId,
+            packaging = fileUploadFormData.packaging,
             version = value.text,
             updated = updatedTime.atZone(ZoneId.of("UTC"))
           )

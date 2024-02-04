@@ -8,7 +8,7 @@ def publishToGitHubPackages(fileToPublish: File): Def.Initialize[Task[Unit]] = D
 
   println(s"Publishing ${fileToPublish.getName} to GitHub Maven")
 
-  val githubRepository = sys.env.getOrElse("GITHUB_REPOSITORY", throw new Exception("You must set environmental variable GITHUB_REPOSITORY, eg: owner/repository"))
+  val repository = sys.env.getOrElse("GITHUB_REPOSITORY", throw new Exception("You must set environmental variable GITHUB_REPOSITORY, eg: owner/repository"))
   if (!sys.env.keySet.contains("GITHUB_REPOSITORY_OWNER")) throw new Exception("You must set environmental variable GITHUB_REPOSITORY_OWNER, eg: your username")
   if (!sys.env.keySet.contains("GITHUB_TOKEN")) throw new Exception("You must set environmental variable GITHUB_TOKEN")
 
@@ -59,7 +59,7 @@ def publishToGitHubPackages(fileToPublish: File): Def.Initialize[Task[Unit]] = D
 
   val exe =
     s"""mvn deploy:deploy-file
-    -Durl=https://maven.pkg.github.com/$githubRepository
+    -Durl=https://maven.pkg.github.com/$repository
     -DrepositoryId=github
     -Dfile=${fileToPublish.getAbsolutePath}
     -DgroupId=${organization.value}

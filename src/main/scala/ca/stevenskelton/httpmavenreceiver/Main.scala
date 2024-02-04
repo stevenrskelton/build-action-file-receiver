@@ -2,14 +2,13 @@ package ca.stevenskelton.httpmavenreceiver
 
 import ca.stevenskelton.httpmavenreceiver.Main.loggerFactory.LoggerType
 import ca.stevenskelton.httpmavenreceiver.logging.StdOutLoggerFactory
-import cats.effect.*
-import com.comcast.ip4s.*
-import org.http4s.*
-import org.http4s.dsl.io.*
+import cats.effect.{ExitCode, IO, IOApp}
+import com.comcast.ip4s.{Ipv4Address, Port}
+import org.http4s.dsl.io.{->, PUT, Root}
 import org.http4s.ember.client.EmberClientBuilder
-import org.http4s.ember.server.*
-import org.http4s.implicits.*
-import org.typelevel.log4cats.*
+import org.http4s.ember.server.EmberServerBuilder
+import org.http4s.{HttpApp, HttpRoutes}
+import org.typelevel.log4cats.LoggerFactory
 
 import java.io.File
 

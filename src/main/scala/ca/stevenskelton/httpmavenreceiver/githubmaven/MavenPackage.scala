@@ -3,14 +3,15 @@ package ca.stevenskelton.httpmavenreceiver.githubmaven
 import java.time.ZonedDateTime
 
 private case class MavenPackage(
-                                 githubUser: String,
-                                 githubRepository: String,
+                                 user: String,
+                                 repository: String,
                                  groupId: String,
                                  artifactId: String,
+                                 packaging: String,
                                  version: String,
                                  updated: ZonedDateTime
                                ) {
-  val jarFilename: String = s"$artifactId-$version.jar"
-  val gitHubMavenPath: String = s"https://maven.pkg.github.com/$githubUser/$githubRepository/${groupId.replace(".", "/")}/$artifactId/$version"
-  val artifactUrl: String = s"$gitHubMavenPath/$jarFilename"
+  val filename: String = s"$artifactId-$version.$packaging"
+  val gitHubMavenPath: String = s"https://maven.pkg.github.com/$user/$repository/${groupId.replace(".", "/")}/$artifactId/$version"
+  val artifactUrl: String = s"$gitHubMavenPath/$filename"
 }

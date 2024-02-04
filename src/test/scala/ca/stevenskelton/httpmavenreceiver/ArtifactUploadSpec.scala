@@ -17,11 +17,12 @@ class ArtifactUploadSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
   private val uploadFileMD5uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh-groupId/testfile/1.0.1/${uploadFile.getName}.md5")
   private val uploadFileMD5File = new File("/testfile/testfile-1.0.1.png.md5")
   private val uploadFileForm = Map(
-    "githubAuthToken" -> "",
-    "githubUser" -> "gh-user",
-    "githubRepository" -> "gh-project",
+    "authToken" -> "",
+    "user" -> "gh-user",
+    "repository" -> "gh-project",
     "groupId" -> "gh-groupId",
     "artifactId" -> "testfile",
+    "packaging" -> "extension",
     "version" -> "1.0.1"
   )
 

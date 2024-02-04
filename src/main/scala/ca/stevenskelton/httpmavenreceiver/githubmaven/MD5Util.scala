@@ -24,7 +24,7 @@ case class MD5Util(httpClient: Resource[IO, Client[IO]])(implicit loggerFactory:
         val request = Request[IO](
           Method.GET,
           gitHubMD5Uri,
-          headers = Headers(Header.ToRaw.keyValuesToRaw("Authorization" -> s"token ${fileUploadFormData.githubAuthToken}")),
+          headers = Headers(Header.ToRaw.keyValuesToRaw("Authorization" -> s"token ${fileUploadFormData.authToken}")),
         )
         client.expectOr[String](request) {
           errorResponse =>

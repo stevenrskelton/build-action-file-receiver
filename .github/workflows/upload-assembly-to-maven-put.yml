@@ -8,7 +8,7 @@ on:
 env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
   PUT_URI: ${{vars.PUT_URI}}
-  SBT_OPTS: "-Xmx6G -XX:+UseSerialGC"
+  SBT_OPTS: "-Xmx1G -XX:+UseSerialGC"
 
 permissions:
   contents: read

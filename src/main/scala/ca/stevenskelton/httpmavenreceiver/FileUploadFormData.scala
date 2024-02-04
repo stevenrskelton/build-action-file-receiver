@@ -8,27 +8,28 @@ import org.http4s.{EntityBody, MediaType, Status}
 import scala.collection.mutable
 
 case class FileUploadFormData(
-                               githubAuthToken: String,
-                               githubUser: String,
-                               githubRepository: String,
+                               authToken: String,
+                               user: String,
+                               repository: String,
                                groupId: String,
                                artifactId: String,
+                               packaging: String,
                                version: String,
                                filename: String,
                                entityBody: EntityBody[IO]
                              ) {
-  val gitHubMavenPath: String = s"https://maven.pkg.github.com/$githubUser/$githubRepository/${groupId.replace(".", "/")}/$artifactId/$version"
+  val gitHubMavenPath: String = s"https://maven.pkg.github.com/$user/$repository/${groupId.replace(".", "/")}/$artifactId/$version"
 }
 
 object FileUploadFormData {
 
   val FileUploadFields: Set[String] = Set(
-    "githubAuthToken", "githubUser", "githubRepository", "groupId", "artifactId", "version"
+    "authToken", "user", "repository", "groupId", "artifactId", "packaging", "version"
   )
 
-  val FileUploadFieldName = "jar"
+  val FileUploadFieldName = "file"
 
-  val FormErrorMessage = s"PUT body should include fields: githubUser, githubRepository, groupId, artifactId, version, and $FileUploadFieldName"
+  val FormErrorMessage = s"PUT body should include fields: ${FileUploadFields.mkString(",")}, and $FileUploadFieldName"
 
   def fromFormData(formData: Multipart[IO]): IO[FileUploadFormData] = {
     formData.parts.foldLeft(IO.pure(new mutable.HashMap[String, String])) {
@@ -36,17 +37,18 @@ object FileUploadFormData {
         val io = fieldsIO.map {
           fields =>
             val upload = for {
-              githubAuthToken <- fields.get("githubAuthToken")
-              githubUser <- fields.get("githubUser")
-              githubRepository <- fields.get("githubRepository")
+              authToken <- fields.get("authToken")
+              user <- fields.get("user")
+              repository <- fields.get("repository")
               groupId <- fields.get("groupId")
               artifactId <- fields.get("artifactId")
+              packaging <- fields.get("packaging")
               version <- fields.get("version")
               filename <- part.filename
             } yield {
               FileUploadFormData(
-                githubAuthToken, githubUser, githubRepository, groupId, artifactId, version,
-                filename, part.body)
+                authToken, user, repository, groupId, artifactId, packaging, version, filename, part.body
+              )
             }
 
             upload.getOrElse {
