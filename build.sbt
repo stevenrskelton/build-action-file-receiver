@@ -95,6 +95,8 @@ nativeConfig ~= { c =>
     .withGC(GC.immix) // commix
 }
 
+nativeLinkingOptions += s"-L/home/runner/work/http-maven-receiver/http-maven-receiver/s2n-tls/s2n-tls-install/lib"
+
 libraryDependencies ++= Seq(
   "com.armanbilge"          %%% "epollcat"            % "0.1.4",
   "org.http4s"              %%% "http4s-ember-client" % http4sVersion,
