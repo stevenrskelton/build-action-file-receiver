@@ -13,8 +13,8 @@ import scala.xml.{Elem, XML}
 object MetadataUtil {
 
   def fetchMetadata(httpClient: Resource[IO, Client[IO]], fileUploadFormData: FileUploadFormData): IO[MavenPackage] = {
-    val gitHubMetadataUri = Uri.fromString(s"${fileUploadFormData.gitHubMavenPath}/maven-metadata.xml").getOrElse {
-      val msg = s"Invalid package ${fileUploadFormData.gitHubMavenPath}"
+    val gitHubMetadataUri = Uri.fromString(s"${MavenPackage.gitHubMavenPath(fileUploadFormData)}/maven-metadata.xml").getOrElse {
+      val msg = s"Invalid package ${MavenPackage.gitHubMavenPath(fileUploadFormData)}"
       return IO.raiseError(ResponseException(Status.BadGateway, msg))
     }
     httpClient.use {

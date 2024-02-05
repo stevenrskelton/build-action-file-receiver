@@ -16,8 +16,8 @@ case class MD5Util(httpClient: Resource[IO, Client[IO]])(implicit loggerFactory:
     //    if (filename.contains("SNAPSHOT")) {
     //      IO.pure((gitHubPackage, filename))
     //    } else {
-    val gitHubMD5Uri = Uri.fromString(s"${fileUploadFormData.gitHubMavenPath}/${fileUploadFormData.filename}.md5").getOrElse {
-      val msg = s"Invalid filename ${fileUploadFormData.gitHubMavenPath}/${fileUploadFormData.filename}"
+    val gitHubMD5Uri = Uri.fromString(s"${MavenPackage.artifactUrl(fileUploadFormData)}.md5").getOrElse {
+      val msg = s"Invalid package filename ${MavenPackage.artifactUrl(fileUploadFormData)}"
       return IO.raiseError(ResponseException(Status.BadRequest, msg))
     }
     logger.info(s"Fetching MD5 at $gitHubMD5Uri")

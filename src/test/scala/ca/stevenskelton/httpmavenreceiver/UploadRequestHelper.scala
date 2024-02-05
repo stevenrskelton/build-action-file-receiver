@@ -40,7 +40,10 @@ object UploadRequestHelper {
     tmpDir <- Files[IO].createTempDirectory(None, "http-maven-receiver-specs-", None)
   } yield {
     Main.httpApp(RequestHandler(
-      Resource.pure(Client(request => Resource.pure(responses.getOrElse(request.uri, Response.notFound)))),
+      Resource.pure(Client(request => Resource.pure(responses.getOrElse(request.uri, {
+        logger.error(s"Uri 404: ${request.uri}")
+        Response.notFound
+      })))),
       uploadDirectory = tmpDir,
       isMavenDisabled = isMavenDisabled,
       postUploadActions = PostUploadActions(),
