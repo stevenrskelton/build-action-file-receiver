@@ -4,6 +4,7 @@ import ca.stevenskelton.httpmavenreceiver.Main.loggerFactory.LoggerType
 import ca.stevenskelton.httpmavenreceiver.logging.StdOutLoggerFactory
 import cats.effect.{ExitCode, IO, IOApp}
 import com.comcast.ip4s.{Ipv4Address, Port}
+import org.http4s.dsl.impl./
 import org.http4s.dsl.io.{->, PUT, Root}
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
@@ -21,7 +22,7 @@ object Main extends IOApp {
   private val DefaultAllowedUploadSize = 5 * 1024 * 1024
 
   def httpApp(handler: RequestHandler): HttpApp[IO] = HttpRoutes.of[IO] {
-    case request@PUT -> Root => handler.releasesPut(request)
+    case request@PUT -> Root / "releases" => handler.releasesPut(request)
   }.orNotFound
 
   override def run(args: List[String]): IO[ExitCode] = {
@@ -77,7 +78,7 @@ object Main extends IOApp {
         }
     }.getOrElse(DefaultAllowedUploadSize)
 
-    val uploadDirectory: File = new File(argMap.getOrElse("directory", "."))
+    val uploadDirectory: File = new File(argMap.getOrElse("directory", ""))
     if (!uploadDirectory.exists) {
       if (!uploadDirectory.mkdirs) {
         logger.error(s"Could not create upload directory: ${uploadDirectory.getAbsolutePath}")
