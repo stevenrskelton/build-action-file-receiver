@@ -51,7 +51,7 @@ object Main extends IOApp {
           |  --host=[STRING]
           |  --port=[INTEGER]
           |  --max-upload-size=[STRING]
-          |  --directory=[STRING]
+          |  --upload-directory=[STRING]
           |""".stripMargin)
       return IO.pure(ExitCode.Success)
     }
@@ -78,7 +78,7 @@ object Main extends IOApp {
         }
     }.getOrElse(DefaultAllowedUploadSize)
 
-    val uploadDirectory: File = new File(argMap.getOrElse("directory", ""))
+    val uploadDirectory: File = new File(argMap.getOrElse("upload-directory", ""))
     if (!uploadDirectory.exists) {
       if (!uploadDirectory.mkdirs) {
         logger.error(s"Could not create upload directory: ${uploadDirectory.getAbsolutePath}")
