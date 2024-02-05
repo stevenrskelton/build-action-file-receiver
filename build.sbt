@@ -1,6 +1,6 @@
 import sbt.TupleSyntax.t3ToTable3
 
-ThisBuild / version := "1.0.9"
+ThisBuild / version := "1.0.10"
 ThisBuild / organization := "ca.stevenskelton"
 ThisBuild / scalaVersion := "3.3.1"
 
@@ -62,7 +62,7 @@ lazy val root = (project in file("."))
       art.withClassifier(Some("assembly"))
     },
   )
-/*
+
 libraryDependencies ++= Seq(
   "org.http4s"              %% "http4s-ember-client"  % http4sVersion,
   "org.http4s"              %% "http4s-ember-server"  % http4sVersion,
@@ -75,9 +75,9 @@ libraryDependencies ++= Seq(
 )
 
 enablePlugins(DisabledScalaNativePlugin)
-*/
 
 
+/*
 //required by sconfig native
 //nativeLinkStubs := true
 
@@ -113,3 +113,4 @@ libraryDependencies ++= Seq(
   "org.scala-lang.modules"  %%% "scala-xml"           % "2.2.0",
   "org.scalatest"           %%% "scalatest"           % "3.3.0-alpha.1" % Test
 )
+*/
