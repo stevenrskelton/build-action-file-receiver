@@ -95,6 +95,7 @@ object Main extends IOApp {
 
     val httpClient = EmberClientBuilder
       .default[IO]
+      .withLogger(logger)
       .build
 
     val handler = RequestHandler(
@@ -110,6 +111,7 @@ object Main extends IOApp {
       .withHost(host)
       .withPort(port)
       .withHttpApp(httpApp(handler))
+      .withLogger(logger)
       .build
       .use(_ => IO.never)
       .as(ExitCode.Success)
