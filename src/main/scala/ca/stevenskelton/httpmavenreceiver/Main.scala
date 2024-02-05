@@ -49,7 +49,7 @@ object Main extends IOApp {
           |  --disable-maven
           |  --host=[STRING]
           |  --port=[INTEGER]
-          |  --maxsize=[INTEGER]
+          |  --max-upload-size=[STRING]
           |  --directory=[STRING]
           |""".stripMargin)
       return IO.pure(ExitCode.Success)
@@ -69,11 +69,12 @@ object Main extends IOApp {
         return IO.pure(ExitCode.Error)
       }
 
-    val maxUploadByteSize = argMap.get("maxsize").map {
-      _.toIntOption.getOrElse {
-        logger.error(s"Invalid maximum upload size: ${argMap("maxsize")}")
-        return IO.pure(ExitCode.Error)
-      }
+    val maxUploadByteSize = argMap.get("max-upload-size").map {
+      userValue =>
+        Utils.humanReadableToBytes(userValue).getOrElse {
+          logger.error(s"Invalid maximum upload size: ${argMap("max-upload-size")}")
+          return IO.pure(ExitCode.Error)
+        }
     }.getOrElse(DefaultAllowedUploadSize)
 
     val uploadDirectory: File = new File(argMap.getOrElse("directory", "."))
@@ -89,7 +90,7 @@ object Main extends IOApp {
       logger.error(s"Can not write to directory: ${uploadDirectory.getAbsolutePath}")
       return IO.pure(ExitCode.Error)
     }
-    logger.info(s"Setting file upload directory to: ${uploadDirectory.getAbsolutePath} with max upload size: ${Utils.humanFileSize(maxUploadByteSize)}")
+    logger.info(s"Setting file upload directory to: ${uploadDirectory.getAbsolutePath} with max upload size: ${Utils.humanReadableBytes(maxUploadByteSize)}")
 
     val httpClient = EmberClientBuilder
       .default[IO]

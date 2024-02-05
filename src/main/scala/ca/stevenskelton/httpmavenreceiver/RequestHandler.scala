@@ -113,7 +113,7 @@ case class RequestHandler(
   }
 
   private def successfulResponseBody(filename: String, fileSize: Long, destinationFileMD5: String): IO[Response[IO]] = {
-    val responseBody = s"Successfully saved upload of $filename, ${Utils.humanFileSize(fileSize)}, MD5 $destinationFileMD5"
+    val responseBody = s"Successfully saved upload of $filename, ${Utils.humanReadableBytes(fileSize)}, MD5 $destinationFileMD5"
     Ok(responseBody).map(_.withContentType(`Content-Type`(MediaType.text.plain)))
   }
 

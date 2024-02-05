@@ -59,13 +59,24 @@ object Utils {
     byteArrayToHexString(digest.digest)
   }
 
-  def humanFileSize(size: Long): String = {
-    if (size > 1000000) {
-      s"${(size / 1000000).toInt}mb"
-    } else if (size > 1024) {
-      s"${(size / 1024).toInt}kb"
+  def humanReadableToBytes(size: String): Option[Int] = {
+    val digits = size.takeWhile(c => c.isDigit | c == '.')
+    val text = size.drop(digits.length).toLowerCase
+    text match {
+      case "" | "b" => Some(text.toInt)
+      case "kb" | "k" => Some((text.toFloat * 1024).toInt)
+      case "mb" | "m" => Some((text.toFloat * 1024 * 1024).toInt)
+      case _ => None
+    }
+  }
+
+  def humanReadableBytes(bytes: Long): String = {
+    if (bytes > 1000000) {
+      s"${(bytes / 1000000).toInt}mb"
+    } else if (bytes > 1024) {
+      s"${(bytes / 1024).toInt}kb"
     } else {
-      s"${size}bytes"
+      s"${bytes}bytes"
     }
   }
 
