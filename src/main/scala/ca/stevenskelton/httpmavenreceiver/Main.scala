@@ -4,6 +4,7 @@ import ca.stevenskelton.httpmavenreceiver.Main.loggerFactory.LoggerType
 import ca.stevenskelton.httpmavenreceiver.logging.StdOutLoggerFactory
 import cats.effect.{ExitCode, IO, IOApp}
 import com.comcast.ip4s.{Ipv4Address, Port}
+import epollcat.EpollApp
 import org.http4s.dsl.impl./
 import org.http4s.dsl.io.{->, PUT, Root}
 import org.http4s.ember.client.EmberClientBuilder
@@ -13,7 +14,7 @@ import org.typelevel.log4cats.LoggerFactory
 
 import java.io.File
 
-object Main extends IOApp {
+object Main extends EpollApp /*IOApp*/ {
 
   implicit val loggerFactory: LoggerFactory[IO] = StdOutLoggerFactory()
 
@@ -108,12 +109,13 @@ object Main extends IOApp {
     EmberServerBuilder
       .default[IO]
       .withReceiveBufferSize(maxUploadByteSize)
+//      .withHttp2
       .withHost(host)
       .withPort(port)
       .withHttpApp(httpApp(handler))
       .withLogger(logger)
       .build
-      .use(_ => IO.never)
+      .useForever
       .as(ExitCode.Success)
   }
 }

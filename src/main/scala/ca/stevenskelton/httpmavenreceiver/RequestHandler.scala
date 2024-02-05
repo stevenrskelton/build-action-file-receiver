@@ -23,13 +23,13 @@ case class RequestHandler(
   private val logger = loggerFactory.getLoggerFromClass(getClass)
 
   def releasesPut(request: Request[IO]): IO[Response[IO]] = {
+    logger.info("Starting releasesPut handler")
+    val start = System.currentTimeMillis
     val clientIp = request.remoteAddr
     request.decode[IO, Multipart[IO]] { multipart =>
       FileUploadFormData.fromFormData(multipart).flatMap {
         fileUploadFormData =>
           logger.info(s"Received request for file `${fileUploadFormData.filename}` by GitHub user `${fileUploadFormData.user}` upload from IP $clientIp")
-          val start = System.currentTimeMillis
-
 
           val digest = MessageDigest.getInstance("MD5")
           var fileSize = 0L
