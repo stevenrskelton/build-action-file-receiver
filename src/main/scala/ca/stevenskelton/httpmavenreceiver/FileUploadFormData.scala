@@ -1,9 +1,8 @@
 package ca.stevenskelton.httpmavenreceiver
 
 import cats.effect.IO
-import org.http4s.headers.`Content-Type`
 import org.http4s.multipart.Multipart
-import org.http4s.{EntityBody, MediaType, Status}
+import org.http4s.{EntityBody, Status}
 
 import scala.collection.mutable
 
@@ -57,7 +56,7 @@ object FileUploadFormData {
         }
         return io
         fieldsIO
-      case (fieldsIO, part) if FileUploadFields.contains(part.name.getOrElse("")) && part.contentType.contains(`Content-Type`(MediaType.text.plain)) =>
+      case (fieldsIO, part) if FileUploadFields.contains(part.name.getOrElse("")) =>
         fieldsIO.flatMap {
           fields =>
             part.bodyText.compile.string.map {

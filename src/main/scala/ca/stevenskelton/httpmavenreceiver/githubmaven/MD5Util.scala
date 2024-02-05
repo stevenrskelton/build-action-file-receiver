@@ -6,6 +6,8 @@ import org.http4s.*
 import org.http4s.client.Client
 import org.typelevel.log4cats.LoggerFactory
 
+import scala.util.Try
+
 case class MD5Util(httpClient: Resource[IO, Client[IO]])(implicit loggerFactory: LoggerFactory[IO]) {
 
   private val logger = loggerFactory.getLoggerFromClass(getClass)
@@ -28,7 +30,12 @@ case class MD5Util(httpClient: Resource[IO, Client[IO]])(implicit loggerFactory:
         )
         client.expectOr[String](request) {
           errorResponse =>
-            val msg = s"Maven version ${fileUploadFormData.filename} ${fileUploadFormData.version} does not exist in GitHub"
+            val msg = if (errorResponse.status.code == Status.NotFound.code) {
+              s"Maven ${fileUploadFormData.filename} does not exist in GitHub"
+            } else {
+              val errorBody = Try(errorResponse.entity.body.bufferAll.compile.toString).toOption.getOrElse("[error reading body]")
+              s"Error reading Maven (${errorResponse.status.code}):\n$errorBody"
+            }
             logger.error(msg)
             IO.raiseError(ResponseException(errorResponse.status, msg))
         }

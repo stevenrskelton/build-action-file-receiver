@@ -19,7 +19,7 @@ object Main extends IOApp {
 
   val logger: LoggerType = loggerFactory.getLoggerFromClass(getClass)
 
-  private val DefaultAllowedUploadSize = 5 * 1024 * 1024
+  private val DefaultAllowedUploadSize = 30 * 1024 * 1024
 
   def httpApp(handler: RequestHandler): HttpApp[IO] = HttpRoutes.of[IO] {
     case request@PUT -> Root / "releases" => handler.releasesPut(request)
@@ -78,7 +78,7 @@ object Main extends IOApp {
         }
     }.getOrElse(DefaultAllowedUploadSize)
 
-    val uploadDirectory: File = new File(argMap.getOrElse("upload-directory", ""))
+    val uploadDirectory: File = new File(argMap.getOrElse("upload-directory", "files"))
     if (!uploadDirectory.exists) {
       if (!uploadDirectory.mkdirs) {
         logger.error(s"Could not create upload directory: ${uploadDirectory.getAbsolutePath}")

@@ -11,7 +11,7 @@ import java.io.File
 
 class ArtifactUploadSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
 
-  private val requestUri = Uri.unsafeFromString("https://localhost/releases")
+  private val requestUri = Uri.unsafeFromString("http://localhost/releases")
 
   private val uploadFile = new File("/testfile/testfile-1.0.1.png")
   private val uploadFileMD5uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh-groupId/testfile/1.0.1/${uploadFile.getName}.md5")
