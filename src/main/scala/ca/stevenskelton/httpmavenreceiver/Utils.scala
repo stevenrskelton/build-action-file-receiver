@@ -71,8 +71,8 @@ object Utils {
   }
 
   def humanReadableBytes(bytes: Long): String = {
-    if (bytes > 1000000) {
-      s"${(bytes / 1000000).toInt}mb"
+    if (bytes > (1024 * 1024)) {
+      s"${(bytes / (1024 * 1024)).toInt}mb"
     } else if (bytes > 1024) {
       s"${(bytes / 1024).toInt}kb"
     } else {
