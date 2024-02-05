@@ -61,7 +61,7 @@ case class RequestHandler(
             //            _ <- postUploadActions.run(response)
             _ <- logger.info({
               val duration = Duration.ofMillis(System.currentTimeMillis - start)
-              s"Completed ${fileUploadFormData.filename} in ${Utils.humanReadableDuration(duration)}"
+              s"Completed ${fileUploadFormData.filename} (${Utils.humanReadableBytes(fileSize)}) in ${Utils.humanReadableDuration(duration)}"
             })
           } yield {
             response

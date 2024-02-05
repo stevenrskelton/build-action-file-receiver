@@ -83,7 +83,7 @@ class ArtifactUploadSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       val resp1: IO[String] = client.expect[String](request)
       val ex = intercept[ResponseException](resp1.unsafeRunSync())
       assert(ex.status == Status.NotFound)
-      assert(ex.message == "Maven version testfile-1.0.1.png 1.0.1 does not exist in GitHub")
+      assert(ex.message == "Maven testfile-1.0.1.png does not exist in GitHub")
     }
 
   }
