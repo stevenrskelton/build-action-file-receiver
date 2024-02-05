@@ -63,9 +63,9 @@ object Utils {
     val digits = size.takeWhile(c => c.isDigit | c == '.')
     val text = size.drop(digits.length).toLowerCase
     text match {
-      case "" | "b" => Some(text.toInt)
-      case "kb" | "k" => Some((text.toFloat * 1024).toInt)
-      case "mb" | "m" => Some((text.toFloat * 1024 * 1024).toInt)
+      case "" | "b" => Some(digits.toInt)
+      case "kb" | "k" => Some((digits.toFloat * 1024).toInt)
+      case "mb" | "m" => Some((digits.toFloat * 1024 * 1024).toInt)
       case _ => None
     }
   }
