@@ -1,5 +1,7 @@
 # http-maven-receiver
 
+Written in Scala 3, and supports [Scala Native](https://github.com/stevenrskelton/http-maven-receiver/tree/main#scala-native).
+
 Simple HTTP server that accepts HTTP PUT requests which are validated against GitHub Packages.
 This allows for GitHub Actions to upload artifacts using unmetered bandwidth.
 
@@ -70,6 +72,8 @@ java -Dhost="192.168.0.1" -jar http-maven-receiver-assembly-0.1.0-SNAPSHOT.jar
 ## Post Upload Tasks
 
 TODO: document param
+
+
 
 
 # Scala Native
