@@ -1,6 +1,7 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import ca.stevenskelton.httpmavenreceiver.Main.loggerFactory.LoggerType
+import cats.effect.IO
+import org.typelevel.log4cats.Logger
 
 import java.io.{BufferedWriter, File, FileInputStream, FileWriter}
 import java.security.MessageDigest
@@ -9,7 +10,7 @@ import scala.util.{Try, Using}
 
 object Utils {
 
-  def writeFile(file: File, content: String)(implicit logger: LoggerType): Try[Unit] = {
+  def writeFile(file: File, content: String)(implicit logger: Logger[IO]): Try[Unit] = {
     if (file.exists) logger.info(s"Overwriting existing ${file.getAbsolutePath}")
     Using(new BufferedWriter(new FileWriter(file))) {
       _.write(content)

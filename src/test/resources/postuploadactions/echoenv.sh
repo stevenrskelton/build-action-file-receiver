@@ -1,0 +1,8 @@
+pwd
+echo $HMV_USER
+echo $HMV_REPOSITORY
+echo $HMV_GROUPID
+echo $HMV_ARTIFACTID
+echo $HMV_PACKAGING
+echo $HMV_VERSION
+echo $HMV_FILENAME

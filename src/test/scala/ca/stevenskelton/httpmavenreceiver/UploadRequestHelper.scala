@@ -1,15 +1,14 @@
 package ca.stevenskelton.httpmavenreceiver
 
 import ca.stevenskelton.httpmavenreceiver.FileUploadFormData.FileUploadFieldName
-import ca.stevenskelton.httpmavenreceiver.Main.loggerFactory.LoggerType
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import fs2.io.file.{Files, Path}
-import org.http4s.client.Client
-import org.http4s.multipart.{Boundary, Multipart, Part}
 import org.http4s.*
+import org.http4s.client.Client
 import org.http4s.headers.`Content-Type`
-import org.typelevel.log4cats.LoggerFactory
+import org.http4s.multipart.{Boundary, Multipart, Part}
+import org.typelevel.log4cats.{Logger, LoggerFactory}
 import org.typelevel.vault.Vault
 import scodec.bits.ByteVector
 
@@ -19,7 +18,7 @@ import scala.util.Using
 object UploadRequestHelper {
 
   implicit val loggerFactory: LoggerFactory[IO] = Main.loggerFactory
-  implicit val logger: LoggerType = Main.logger
+  implicit val logger: Logger[IO] = Main.logger
   //
   //  def toMap(githubPackage: GitHubPackage): Map[String, String] = Map(
   //    "githubAuthToken" -> githubPackage.githubAuthToken,
@@ -46,7 +45,7 @@ object UploadRequestHelper {
       })))),
       uploadDirectory = tmpDir,
       isMavenDisabled = isMavenDisabled,
-      postUploadActions = PostUploadActions(),
+      postUploadActions = None,
     ))
   }
 

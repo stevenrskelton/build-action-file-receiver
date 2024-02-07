@@ -16,9 +16,7 @@ case class FileUploadFormData(
                                version: String,
                                filename: String,
                                entityBody: EntityBody[IO]
-                             ) {
-  val gitHubMavenPath: String = s"https://maven.pkg.github.com/$user/$repository/${groupId.replace(".", "/")}/$artifactId/$version"
-}
+                             )
 
 object FileUploadFormData {
 

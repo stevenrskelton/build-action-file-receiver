@@ -1,0 +1,57 @@
+package ca.stevenskelton.httpmavenreceiver
+
+import cats.effect.testing.scalatest.AsyncIOSpec
+import fs2.Stream
+import fs2.io.file.Path
+import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
+
+import java.io.File
+
+class PostUploadActionSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec /*extends AnyWordSpec */ {
+
+  private val destinationFile = Path("src/test/resources/postuploadactions/destinationfile.jar")
+  private val fileUploadFormData = new FileUploadFormData(
+    authToken = "authToken",
+    user = "gh-user",
+    repository = "gh-project",
+    groupId = "gh-groupId",
+    artifactId = "testfile",
+    packaging = "extension",
+    version = "1.0.1",
+    filename = "sourcefile.jar",
+    entityBody = Stream.empty
+  )
+
+  "run" - {
+    "populate environmental variables" in {
+      val logger = new RecordingLogger
+      val postUploadAction = PostUploadAction("./echoenv.sh")
+      postUploadAction.run(destinationFile, fileUploadFormData, logger).unsafeRunSync()
+      val log = logger.lines
+      assert(log.length == 10)
+      assert(log(0) == "Starting post upload action for destinationfile.jar")
+      assert(log(1) == new File("").getAbsolutePath + "/src/test/resources/postuploadactions")
+      assert(log(2) == fileUploadFormData.user)
+      assert(log(3) == fileUploadFormData.repository)
+      assert(log(4) == fileUploadFormData.groupId)
+      assert(log(5) == fileUploadFormData.artifactId)
+      assert(log(6) == fileUploadFormData.packaging)
+      assert(log(7) == fileUploadFormData.version)
+      assert(log(8) == "destinationfile.jar")
+      assert(log(9) == "Completed post upload action for destinationfile.jar")
+    }
+
+    "handle error" in {
+      val logger = new RecordingLogger
+      val postUploadAction = PostUploadAction("./error.sh")
+      postUploadAction.run(destinationFile, fileUploadFormData, logger).unsafeRunSync()
+      val log = logger.lines
+      assert(log.length == 3)
+      assert(log(0) == "Starting post upload action for destinationfile.jar")
+      assert(log(1) == "./error.sh: line 1: cd: hi: No such file or directory")
+      assert(log(2) == "java.lang.Exception: Failed post upload action for destinationfile.jar")
+    }
+  }
+
+}

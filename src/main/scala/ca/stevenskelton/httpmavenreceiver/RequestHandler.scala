@@ -17,7 +17,7 @@ case class RequestHandler(
                            httpClient: Resource[IO, Client[IO]],
                            uploadDirectory: Path,
                            isMavenDisabled: Boolean,
-                           postUploadActions: PostUploadActions,
+                           postUploadActions: Option[PostUploadAction],
                          )(implicit loggerFactory: LoggerFactory[IO]) {
 
   private val logger = loggerFactory.getLoggerFromClass(getClass)
@@ -58,7 +58,9 @@ case class RequestHandler(
               verifyMD5(tmpFile, fileUploadFormData.filename, uploadMD5, expectedMD5)
             }
             response <- successfulResponseBody(fileUploadFormData.filename, fileSize, uploadMD5)
-            //            _ <- postUploadActions.run(response)
+            _ <- postUploadActions.fold(IO.pure(0))(
+              action => action.run(destinationFile, fileUploadFormData, loggerFactory.getLoggerFromClass(action.getClass))
+            )
             _ <- logger.info({
               val duration = Duration.ofMillis(System.currentTimeMillis - start)
               s"Completed ${fileUploadFormData.filename} (${Utils.humanReadableBytes(fileSize)}) in ${Utils.humanReadableDuration(duration)}"
@@ -107,7 +109,7 @@ case class RequestHandler(
   def moveTempToDestinationFile(tempFile: Path, destinationFile: Path): IO[Path] = {
     Files[IO].move(tempFile, destinationFile).as(destinationFile).handleErrorWith {
       ex =>
-        val msg = s"Could not rename ${tempFile} to ${destinationFile.toString}"
+        val msg = s"Could not rename $tempFile to ${destinationFile.toString}"
         IO.raiseError(ResponseException(Status.InternalServerError, msg, Some(ex)))
     }
   }

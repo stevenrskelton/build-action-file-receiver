@@ -1,10 +1,10 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import ca.stevenskelton.httpmavenreceiver.Main.loggerFactory.LoggerType
 import ca.stevenskelton.httpmavenreceiver.logging.StdOutLoggerFactory
 import cats.effect.{ExitCode, IO, IOApp}
 import com.comcast.ip4s.{Ipv4Address, Port}
-import epollcat.EpollApp
+import org.typelevel.log4cats.Logger
+//import epollcat.EpollApp
 import org.http4s.dsl.impl./
 import org.http4s.dsl.io.{->, PUT, Root}
 import org.http4s.ember.client.EmberClientBuilder
@@ -14,11 +14,11 @@ import org.typelevel.log4cats.LoggerFactory
 
 import java.io.File
 
-object Main extends EpollApp /*IOApp*/ {
+object Main extends IOApp /*EpollApp IOApp*/ {
 
   implicit val loggerFactory: LoggerFactory[IO] = StdOutLoggerFactory()
 
-  val logger: LoggerType = loggerFactory.getLoggerFromClass(getClass)
+  val logger: Logger[IO] = loggerFactory.getLoggerFromClass(getClass)
 
   private val DefaultAllowedUploadSize = 30 * 1024 * 1024
 
@@ -52,6 +52,7 @@ object Main extends EpollApp /*IOApp*/ {
           |  --host=[STRING]
           |  --port=[INTEGER]
           |  --max-upload-size=[STRING]
+          |  --exec=[STRING]
           |  --upload-directory=[STRING]
           |""".stripMargin)
       return IO.pure(ExitCode.Success)
@@ -79,6 +80,8 @@ object Main extends EpollApp /*IOApp*/ {
         }
     }.getOrElse(DefaultAllowedUploadSize)
 
+    val postUploadAction = argMap.get("exec").map(PostUploadAction.apply)
+
     val uploadDirectory: File = new File(argMap.getOrElse("upload-directory", "files"))
     if (!uploadDirectory.exists) {
       if (!uploadDirectory.mkdirs) {
@@ -103,13 +106,13 @@ object Main extends EpollApp /*IOApp*/ {
       httpClient,
       fs2.io.file.Path.fromNioPath(uploadDirectory.toPath),
       disableMaven,
-      PostUploadActions(),
+      postUploadAction,
     )(loggerFactory)
 
     EmberServerBuilder
       .default[IO]
       .withReceiveBufferSize(maxUploadByteSize)
-//      .withHttp2
+      //      .withHttp2
       .withHost(host)
       .withPort(port)
       .withHttpApp(httpApp(handler))
