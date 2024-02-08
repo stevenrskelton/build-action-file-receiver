@@ -49,6 +49,7 @@ object Main extends IOApp /*EpollApp IOApp*/ {
           |Command line arguments:
           |  --help
           |  --disable-maven
+          |  --allow-all-versions
           |  --host=[STRING]
           |  --port=[INTEGER]
           |  --max-upload-size=[STRING]
@@ -59,6 +60,8 @@ object Main extends IOApp /*EpollApp IOApp*/ {
     }
 
     val disableMaven: Boolean = argMap.contains("disable-maven")
+
+    val allowAllVersions: Boolean = argMap.contains("allow-all-versions")
 
     val host: Ipv4Address = Ipv4Address.fromString(argMap.getOrElse("host", "0.0.0.0"))
       .getOrElse {
@@ -103,11 +106,11 @@ object Main extends IOApp /*EpollApp IOApp*/ {
       .build
 
     val handler = RequestHandler(
-      httpClient,
       fs2.io.file.Path.fromNioPath(uploadDirectory.toPath),
+      allowAllVersions,
       disableMaven,
       postUploadAction,
-    )(loggerFactory)
+    )(httpClient, loggerFactory)
 
     EmberServerBuilder
       .default[IO]

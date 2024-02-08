@@ -38,15 +38,16 @@ object UploadRequestHelper {
   def httpApp(responses: Map[Uri, Response[IO]], isMavenDisabled: Boolean = false): IO[HttpApp[IO]] = for {
     tmpDir <- Files[IO].createTempDirectory(None, "http-maven-receiver-specs-", None)
   } yield {
+    val httpClient: Resource[IO, Client[IO]] = Resource.pure(Client(request => Resource.pure(responses.getOrElse(request.uri, {
+      logger.error(s"Uri 404: ${request.uri}")
+      Response.notFound
+    }))))
     Main.httpApp(RequestHandler(
-      Resource.pure(Client(request => Resource.pure(responses.getOrElse(request.uri, {
-        logger.error(s"Uri 404: ${request.uri}")
-        Response.notFound
-      })))),
       uploadDirectory = tmpDir,
+      allowAllVersions = false,
       isMavenDisabled = isMavenDisabled,
       postUploadActions = None,
-    ))
+    )(httpClient, loggerFactory))
   }
 
   def successResponse(file: File): Response[IO] = {
@@ -99,14 +100,5 @@ object UploadRequestHelper {
     file.deleteOnExit()
     file
   }
-
-  //  def createHttpExtMock(uri: Uri, httpResponse: HttpResponse, headers: Seq[(String, String)] = Nil): HttpExtInterface = {
-  //
-  //    new HttpExtInterface {
-  //
-  //      override val materializer: Materializer = Materializer(actorSystem)
-  //
-  //      override def singleRequest(request: HttpRequest): Future[HttpResponse] = Future.successful(httpResponse)
-  //    }
-  //  }
+  
 }

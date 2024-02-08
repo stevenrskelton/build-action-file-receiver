@@ -18,7 +18,7 @@
 //    githubAuthToken = "",
 //    githubUser = "gh-user",
 //    githubRepository = "gh-project",
-//    groupId = "gh-groupId",
+//    groupId = "gh.groupid",
 //    artifactId = "gh.artifact.id",
 //    version = "gh.version"
 //  )

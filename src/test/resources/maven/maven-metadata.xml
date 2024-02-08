@@ -1,6 +1,6 @@
 <metadata>
-    <groupId>ca.stevenskelton</groupId>
-    <artifactId>http-maven-receiver-assembly</artifactId>
+    <groupId>gh.groupid</groupId>
+    <artifactId>test-file</artifactId>
     <versioning>
         <latest>1.0.10</latest>
         <versions>

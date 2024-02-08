@@ -1,6 +1,6 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import ca.stevenskelton.httpmavenreceiver.githubmaven.MD5Util
+import ca.stevenskelton.httpmavenreceiver.githubmaven.{MD5Util, MavenPackage, MetadataUtil}
 import cats.effect.{IO, Resource}
 import fs2.io.file.{Files, Path}
 import org.http4s.client.Client
@@ -14,11 +14,11 @@ import java.security.MessageDigest
 import java.time.Duration
 
 case class RequestHandler(
-                           httpClient: Resource[IO, Client[IO]],
                            uploadDirectory: Path,
+                           allowAllVersions: Boolean,
                            isMavenDisabled: Boolean,
                            postUploadActions: Option[PostUploadAction],
-                         )(implicit loggerFactory: LoggerFactory[IO]) {
+                         )(implicit httpClient: Resource[IO, Client[IO]], loggerFactory: LoggerFactory[IO]) {
 
   private val logger = loggerFactory.getLoggerFromClass(getClass)
 
@@ -33,12 +33,15 @@ case class RequestHandler(
 
           val digest = MessageDigest.getInstance("MD5")
           var fileSize = 0L
-
-          val gitHubMavenUtil = MD5Util(httpClient)
-
+          
           for {
+            mavenPackage <-
+              if (isMavenDisabled || allowAllVersions) IO.pure(MavenPackage.unverified(fileUploadFormData))
+              else MetadataUtil.fetchMetadata(fileUploadFormData)
             tmpFile <- createTempFileIfNotExists(fileUploadFormData.filename)
-            expectedMD5 <- if (isMavenDisabled) IO.pure("") else gitHubMavenUtil.fetchMavenMD5(fileUploadFormData)
+            expectedMD5 <-
+              if (isMavenDisabled) IO.pure("")
+              else MD5Util.fetchMavenMD5(mavenPackage, fileUploadFormData.authToken)
             _ <- fileUploadFormData.entityBody
               .chunkLimit(65536)
               .map {

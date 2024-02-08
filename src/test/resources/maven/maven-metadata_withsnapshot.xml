@@ -1,0 +1,11 @@
+<metadata>
+    <groupId>gh.groupid</groupId>
+    <artifactId>test-file</artifactId>
+    <versioning>
+        <latest>0.1.0-SNAPSHOT</latest>
+        <versions>
+            <version>0.1.0-SNAPSHOT</version>
+        </versions>
+        <lastUpdated>20240205021805</lastUpdated>
+    </versioning>
+</metadata>

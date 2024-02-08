@@ -8,30 +8,26 @@ import org.typelevel.log4cats.LoggerFactory
 
 import scala.util.Try
 
-case class MD5Util(httpClient: Resource[IO, Client[IO]])(implicit loggerFactory: LoggerFactory[IO]) {
+object MD5Util {
+  
+  def fetchMavenMD5(mavenPackage: MavenPackage, authToken: String)(implicit httpClient: Resource[IO, Client[IO]], loggerFactory: LoggerFactory[IO]): IO[String] = {
 
-  private val logger = loggerFactory.getLoggerFromClass(getClass)
-
-  def fetchMavenMD5(fileUploadFormData: FileUploadFormData): IO[String] = {
-    //    if (filename.contains("SNAPSHOT")) {
-    //      IO.pure((gitHubPackage, filename))
-    //    } else {
-    val gitHubMD5Uri = Uri.fromString(s"${MavenPackage.artifactUrl(fileUploadFormData)}.md5").getOrElse {
-      val msg = s"Invalid package filename ${MavenPackage.artifactUrl(fileUploadFormData)}"
-      return IO.raiseError(ResponseException(Status.BadRequest, msg))
-    }
+    val logger = loggerFactory.getLoggerFromClass(getClass)
+    
+    val gitHubMD5Uri = mavenPackage.gitHubMavenArtifactPath / mavenPackage.version / s"${mavenPackage.filename}.md5"
     logger.info(s"Fetching MD5 at $gitHubMD5Uri")
+    
     httpClient.use {
       client =>
         val request = Request[IO](
           Method.GET,
           gitHubMD5Uri,
-          headers = Headers(Header.ToRaw.keyValuesToRaw("Authorization" -> s"token ${fileUploadFormData.authToken}")),
+          headers = Headers(Header.ToRaw.keyValuesToRaw("Authorization" -> s"token $authToken")),
         )
         client.expectOr[String](request) {
           errorResponse =>
             val msg = if (errorResponse.status.code == Status.NotFound.code) {
-              s"Maven ${fileUploadFormData.filename} does not exist in GitHub"
+              s"Maven ${mavenPackage.filename} does not exist in GitHub"
             } else {
               val errorBody = Try(errorResponse.entity.body.bufferAll.compile.toString).toOption.getOrElse("[error reading body]")
               s"Error reading Maven (${errorResponse.status.code}):\n$errorBody"
@@ -40,7 +36,6 @@ case class MD5Util(httpClient: Resource[IO, Client[IO]])(implicit loggerFactory:
             IO.raiseError(ResponseException(errorResponse.status, msg))
         }
     }
-    //    }
   }
 
   //
