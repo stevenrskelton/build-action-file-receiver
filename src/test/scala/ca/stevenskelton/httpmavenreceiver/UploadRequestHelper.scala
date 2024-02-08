@@ -19,35 +19,27 @@ object UploadRequestHelper {
 
   implicit val loggerFactory: LoggerFactory[IO] = Main.loggerFactory
   implicit val logger: Logger[IO] = Main.logger
-  //
-  //  def toMap(githubPackage: GitHubPackage): Map[String, String] = Map(
-  //    "githubAuthToken" -> githubPackage.githubAuthToken,
-  //    "githubUser" -> githubPackage.githubUser,
-  //    "githubRepository" -> githubPackage.githubRepository,
-  //    "groupId" -> githubPackage.groupId,
-  //    "artifactId" -> githubPackage.artifactId,
-  //    "version" -> githubPackage.version
-  //  )
-  //
-  //  def gitHubPackagePutRequest(
-  //                                resource: File,
-  ////                                githubPackage: GitHubPackage,
-  //                                uri: Uri = Uri.Path.Root
-  //                              ): Request[IO] = multipartFilePutRequest(resource, toMap(githubPackage), uri)
 
-  def httpApp(responses: Map[Uri, Response[IO]], isMavenDisabled: Boolean = false): IO[HttpApp[IO]] = for {
-    tmpDir <- Files[IO].createTempDirectory(None, "http-maven-receiver-specs-", None)
-  } yield {
-    val httpClient: Resource[IO, Client[IO]] = Resource.pure(Client(request => Resource.pure(responses.getOrElse(request.uri, {
-      logger.error(s"Uri 404: ${request.uri}")
-      Response.notFound
-    }))))
-    Main.httpApp(RequestHandler(
-      uploadDirectory = tmpDir,
-      allowAllVersions = false,
-      isMavenDisabled = isMavenDisabled,
-      postUploadActions = None,
-    )(httpClient, loggerFactory))
+  def httpApp(
+               responses: Map[Uri, Response[IO]],
+               allowAllVersions: Boolean = false,
+               isMavenDisabled: Boolean = false,
+               postUploadActions: Option[PostUploadAction] = None,
+             ): IO[HttpApp[IO]] = {
+
+    for {
+      tmpDir <- Files[IO].createTempDirectory(None, "http-maven-receiver-specs-", None)
+    } yield {
+      val httpClient: Resource[IO, Client[IO]] = Resource.pure {
+        Client(request => Resource.pure(responses.getOrElse(request.uri, Response.notFound)))
+      }
+      Main.httpApp(RequestHandler(
+        uploadDirectory = tmpDir,
+        allowAllVersions = allowAllVersions,
+        isMavenDisabled = isMavenDisabled,
+        postUploadActions = postUploadActions,
+      )(httpClient, loggerFactory))
+    }
   }
 
   def successResponse(file: File): Response[IO] = {
@@ -67,13 +59,6 @@ object UploadRequestHelper {
     val bodyBytes = Option(getClass.getResourceAsStream(resource.getAbsolutePath)).map(_.readAllBytes).getOrElse {
       java.nio.file.Files.readAllBytes(resource.toPath)
     }
-    //    val requestEntity = HttpEntity(ContentTypes.`application/octet-stream`, bodyBytes)
-    //    val filePart = Multipart.FormData.BodyPart.Strict(GitHubPackage.FileUploadFieldName, requestEntity, Map("filename" -> resource.getName))
-    //    val parts = formFields.toSeq.map(keyValue => Multipart.FormData.BodyPart.Strict.apply(keyValue._1, HttpEntity(keyValue._2))) :+ filePart
-    //    val multipartForm = Multipart.FormData(parts: _*)
-    //val m = Multipart(Vector.from(Seq(
-    //
-    //))
 
     val formParts = formFields.toSeq.map((k, v) => Part.formData(k, v, Headers(`Content-Type`(MediaType.text.plain))))
     val entityPart = Part.fileData(FileUploadFieldName, resource.getName, Entity.strict(ByteVector(bodyBytes)))
@@ -100,5 +85,5 @@ object UploadRequestHelper {
     file.deleteOnExit()
     file
   }
-  
+
 }

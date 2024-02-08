@@ -9,14 +9,14 @@ import org.typelevel.log4cats.LoggerFactory
 import scala.util.Try
 
 object MD5Util {
-  
+
   def fetchMavenMD5(mavenPackage: MavenPackage, authToken: String)(implicit httpClient: Resource[IO, Client[IO]], loggerFactory: LoggerFactory[IO]): IO[String] = {
 
     val logger = loggerFactory.getLoggerFromClass(getClass)
-    
+
     val gitHubMD5Uri = mavenPackage.gitHubMavenArtifactPath / mavenPackage.version / s"${mavenPackage.filename}.md5"
     logger.info(s"Fetching MD5 at $gitHubMD5Uri")
-    
+
     httpClient.use {
       client =>
         val request = Request[IO](

@@ -33,11 +33,11 @@ case class RequestHandler(
 
           val digest = MessageDigest.getInstance("MD5")
           var fileSize = 0L
-          
+
           for {
             mavenPackage <-
-              if (isMavenDisabled || allowAllVersions) IO.pure(MavenPackage.unverified(fileUploadFormData))
-              else MetadataUtil.fetchMetadata(fileUploadFormData)
+              if (isMavenDisabled) IO.pure(MavenPackage.unverified(fileUploadFormData))
+              else MetadataUtil.fetchMetadata(fileUploadFormData, allowAllVersions)
             tmpFile <- createTempFileIfNotExists(fileUploadFormData.filename)
             expectedMD5 <-
               if (isMavenDisabled) IO.pure("")

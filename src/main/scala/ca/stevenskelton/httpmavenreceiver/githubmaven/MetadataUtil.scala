@@ -30,25 +30,24 @@ object MetadataUtil {
     }
   }
 
-  private def verifyLatestVersion(fileUploadFormData: FileUploadFormData, mavenPackage: MavenPackage): MavenPackage = {
-    if (fileUploadFormData.version != mavenPackage.version) {
-      val msg = s"Version ${fileUploadFormData.version} not found, latest is ${mavenPackage.version} updated on ${mavenPackage.updated.toString}"
-      throw ResponseException(Status.BadGateway, msg)
-    } else {
-      mavenPackage
-    }
-  }
-
-  def fetchMetadata(fileUploadFormData: FileUploadFormData)(implicit httpClient: Resource[IO, Client[IO]], loggerFactory: LoggerFactory[IO]): IO[MavenPackage] = {
+  def fetchMetadata(fileUploadFormData: FileUploadFormData, allowAllVersions: Boolean)(implicit httpClient: Resource[IO, Client[IO]], loggerFactory: LoggerFactory[IO]): IO[MavenPackage] = {
     MavenPackage.gitHubMavenArtifactPath(fileUploadFormData).map {
       gitHubMavenArtifactPath =>
         fetchXML(gitHubMavenArtifactPath / "maven-metadata.xml", fileUploadFormData.authToken)
-          .map(parseLatestVersionMetadata(fileUploadFormData, _))
+          .map { xml =>
+            if (allowAllVersions) {
+              parseAllVersionMetadata(fileUploadFormData, xml).getOrElse {
+                parseLatestVersionMetadata(fileUploadFormData, xml)
+              }
+            } else {
+              parseLatestVersionMetadata(fileUploadFormData, xml)
+            }
+          }
           .flatMap {
             mavenPackage =>
               if (fileUploadFormData.version != mavenPackage.version) {
-                val msg = s"Version ${fileUploadFormData.version} not found, latest is ${mavenPackage.version} updated on ${mavenPackage.updated.toString}"
-                IO.raiseError(ResponseException(Status.NotFound, msg))
+                val msg = s"Version ${fileUploadFormData.version} requested. Latest is ${mavenPackage.version}${mavenPackage.updated.fold("")(z => s" updated on ${z.toString}")}"
+                IO.raiseError(ResponseException(Status.Conflict, msg))
               } else if (fileUploadFormData.version.endsWith("-SNAPSHOT")) {
                 fetchXML(gitHubMavenArtifactPath / fileUploadFormData.version / "maven-metadata.xml", fileUploadFormData.authToken)
                   .map(parseLatestSnapshotVersionMetadata(fileUploadFormData, _))
@@ -66,6 +65,37 @@ object MetadataUtil {
     LocalDateTime.parse(xmlText, DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).atZone(ZoneId.of("UTC"))
   }
 
+  private def parseLatestVersionMetadata(fileUploadFormData: FileUploadFormData, metadata: Elem): MavenPackage = {
+    MavenPackage(
+      user = fileUploadFormData.user,
+      repository = fileUploadFormData.repository,
+      groupId = fileUploadFormData.groupId,
+      artifactId = fileUploadFormData.artifactId,
+      packaging = fileUploadFormData.packaging,
+      version = (metadata \ "versioning" \ "latest").text,
+      snapshot = None,
+      updated = Some(lastUpdated((metadata \ "versioning" \ "lastUpdated").text)),
+    )
+  }
+
+  private def parseAllVersionMetadata(fileUploadFormData: FileUploadFormData, metadata: Elem): Option[MavenPackage] = {
+    (metadata \ "versioning" \ "versions" \ "version")
+      .find(_.text == fileUploadFormData.version)
+      .map {
+        version =>
+          MavenPackage(
+            user = fileUploadFormData.user,
+            repository = fileUploadFormData.repository,
+            groupId = fileUploadFormData.groupId,
+            artifactId = fileUploadFormData.artifactId,
+            packaging = fileUploadFormData.packaging,
+            version = fileUploadFormData.version,
+            snapshot = None,
+            updated = None,
+          )
+      }
+  }
+
   private def parseLatestSnapshotVersionMetadata(fileUploadFormData: FileUploadFormData, metadata: Elem): MavenPackage = {
     val node = (metadata \ "versioning" \ "snapshot").head
     val versionString = s"${(node \ "timestamp").text}-${(node \ "buildNumber").text}"
@@ -77,44 +107,31 @@ object MetadataUtil {
       artifactId = fileUploadFormData.artifactId,
       packaging = fileUploadFormData.packaging,
       version = fileUploadFormData.version,
-      filename = s"${fileUploadFormData.artifactId}-$snapshotVersion.${fileUploadFormData.packaging}",
-      updated = lastUpdated((metadata \ "versioning" \ "lastUpdated").text)
+      snapshot = Some(snapshotVersion),
+      updated = Some(lastUpdated((metadata \ "versioning" \ "lastUpdated").text)),
     )
   }
 
-  private def parseLatestVersionMetadata(fileUploadFormData: FileUploadFormData, metadata: Elem): MavenPackage = {
-    MavenPackage(
-      user = fileUploadFormData.user,
-      repository = fileUploadFormData.repository,
-      groupId = fileUploadFormData.groupId,
-      artifactId = fileUploadFormData.artifactId,
-      packaging = fileUploadFormData.packaging,
-      version = (metadata \ "versioning" \ "latest").text,
-      filename = s"${fileUploadFormData.artifactId}-${fileUploadFormData.version}.${fileUploadFormData.packaging}",
-      updated = lastUpdated((metadata \ "versioning" \ "lastUpdated").text)
-    )
-  }
-
-  //  private def parseMavenSnapshotMetadata(fileUploadFormData: FileUploadFormData, metadata: Elem): Seq[MavenPackage] = {
-  //    (metadata \\ "snapshotVersion").withFilter {
-  //      node => (node \ "extension").text == fileUploadFormData.packaging
-  //    }.flatMap {
-  //      n =>
-  //        for {
-  //          value <- n \ "value"
-  //          updated <- n \ "updated"
-  //        } yield {
-  //          val updatedTime = LocalDateTime.parse(updated.text, DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
-  //          MavenPackage(
-  //            user = fileUploadFormData.user,
-  //            repository = fileUploadFormData.repository,
-  //            groupId = fileUploadFormData.groupId,
-  //            artifactId = fileUploadFormData.artifactId,
-  //            packaging = fileUploadFormData.packaging,
-  //            version = value.text,
-  //            updated = updatedTime.atZone(ZoneId.of("UTC"))
-  //          )
-  //        }
-  //    }.sortBy(_.updated).reverse
-  //  }
+  //    private def parseAllSnapshotMetadata(fileUploadFormData: FileUploadFormData, metadata: Elem): MavenPackage = {
+  //      (metadata \\ "snapshotVersion").withFilter {
+  //        node => (node \ "extension").text == fileUploadFormData.packaging
+  //      }.flatMap {
+  //        n =>
+  //          for {
+  //            value <- n \ "value"
+  //            updated <- n \ "updated"
+  //          } yield {
+  //            val updatedTime = LocalDateTime.parse(updated.text, DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
+  //            MavenPackage(
+  //              user = fileUploadFormData.user,
+  //              repository = fileUploadFormData.repository,
+  //              groupId = fileUploadFormData.groupId,
+  //              artifactId = fileUploadFormData.artifactId,
+  //              packaging = fileUploadFormData.packaging,
+  //              version = value.text,
+  //              updated = updatedTime.atZone(ZoneId.of("UTC"))
+  //            )
+  //          }
+  //      }.sortBy(_.updated).reverse
+  //    }
 }
