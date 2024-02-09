@@ -2,7 +2,7 @@ package ca.stevenskelton.httpmavenreceiver
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
-import org.http4s.*
+import org.http4s.{Uri, Request, Response, Entity, Status}
 import org.http4s.client.Client
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers

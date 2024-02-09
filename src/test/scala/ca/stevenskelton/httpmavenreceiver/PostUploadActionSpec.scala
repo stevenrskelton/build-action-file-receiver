@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 
 import java.io.File
 
-class PostUploadActionSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec /*extends AnyWordSpec */ {
+class PostUploadActionSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
 
   private val destinationFile = Path("src/test/resources/postuploadactions/destinationfile.jar")
   private val mavenPackage = new MavenPackage(

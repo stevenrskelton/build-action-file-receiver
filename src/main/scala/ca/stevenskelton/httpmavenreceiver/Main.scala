@@ -4,19 +4,17 @@ import ca.stevenskelton.httpmavenreceiver.logging.StdOutLoggerFactory
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.comcast.ip4s.{Ipv4Address, Port}
 import org.http4s.client.Client
-import org.typelevel.log4cats.Logger
-//import epollcat.EpollApp
 import org.http4s.dsl.impl./
 import org.http4s.dsl.io.{->, PUT, Root}
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.{HttpApp, HttpRoutes}
-import org.typelevel.log4cats.LoggerFactory
+import org.typelevel.log4cats.{Logger, LoggerFactory}
 
 import java.io.File
 import scala.util.boundary
 
-object Main extends IOApp /*EpollApp IOApp*/ {
+object Main extends /*epollcat.EpollApp */ IOApp {
 
   given loggerFactory: LoggerFactory[IO] = StdOutLoggerFactory()
 

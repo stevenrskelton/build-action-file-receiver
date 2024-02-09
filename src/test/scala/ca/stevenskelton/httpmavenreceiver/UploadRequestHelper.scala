@@ -4,7 +4,7 @@ import ca.stevenskelton.httpmavenreceiver.FileUploadFormData.FileUploadFieldName
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import fs2.io.file.{Files, Path}
-import org.http4s.*
+import org.http4s.{Uri,Response, HttpApp, Entity,Request,Headers,EntityEncoder,Method,MediaType}
 import org.http4s.client.Client
 import org.http4s.headers.`Content-Type`
 import org.http4s.multipart.{Boundary, Multipart, Part}

@@ -4,7 +4,6 @@ import ca.stevenskelton.httpmavenreceiver.githubmaven.{MD5Util, MavenPackage, Me
 import cats.effect.{IO, Resource}
 import fs2.io.file.{Files, Path}
 import org.http4s.client.Client
-import org.http4s.dsl.io.*
 import org.http4s.multipart.Multipart
 import org.http4s.{EntityBody, Request, Response}
 import org.typelevel.log4cats.Logger
