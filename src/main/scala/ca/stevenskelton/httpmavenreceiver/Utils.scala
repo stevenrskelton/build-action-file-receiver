@@ -10,13 +10,6 @@ import scala.util.{Try, Using}
 
 object Utils {
 
-  def writeFile(file: File, content: String)(implicit logger: Logger[IO]): Try[Unit] = {
-    if (file.exists) logger.info(s"Overwriting existing ${file.getAbsolutePath}")
-    Using(new BufferedWriter(new FileWriter(file))) {
-      _.write(content)
-    }
-  }
-
   def byteArrayToHexString(bytes: Array[Byte]): String = {
     // this array of bytes has bytes in decimal format
     // so we need to convert it into hexadecimal format

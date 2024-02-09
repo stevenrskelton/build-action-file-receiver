@@ -7,7 +7,7 @@ import org.http4s.{EntityBody, Status}
 import scala.collection.mutable
 
 case class FileUploadFormData(
-                               authToken: String,
+                               authToken: AuthToken,
                                user: String,
                                repository: String,
                                groupId: String,
@@ -44,7 +44,7 @@ object FileUploadFormData {
               filename <- part.filename
             } yield {
               FileUploadFormData(
-                authToken, user, repository, groupId, artifactId, packaging, version, filename, part.body
+                AuthToken(authToken), user, repository, groupId, artifactId, packaging, version, filename, part.body
               )
             }
 

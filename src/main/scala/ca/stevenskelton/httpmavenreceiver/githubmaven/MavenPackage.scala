@@ -5,16 +5,16 @@ import org.http4s.{ParseResult, Uri}
 
 import java.time.{ZoneId, ZonedDateTime}
 
-private case class MavenPackage(
-                                 user: String,
-                                 repository: String,
-                                 groupId: String,
-                                 artifactId: String,
-                                 packaging: String,
-                                 version: String,
-                                 snapshot: Option[String],
-                                 updated: Option[ZonedDateTime],
-                               ) {
+case class MavenPackage(
+                         user: String,
+                         repository: String,
+                         groupId: String,
+                         artifactId: String,
+                         packaging: String,
+                         version: String,
+                         snapshot: Option[String],
+                         updated: Option[ZonedDateTime],
+                       ) {
 
   val filename: String = s"$artifactId-${snapshot.getOrElse(version)}.$packaging"
 

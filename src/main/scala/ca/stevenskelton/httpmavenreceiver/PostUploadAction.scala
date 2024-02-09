@@ -1,5 +1,6 @@
 package ca.stevenskelton.httpmavenreceiver
 
+import ca.stevenskelton.httpmavenreceiver.githubmaven.MavenPackage
 import cats.effect.IO
 import fs2.io.file.Path
 import org.typelevel.log4cats.Logger
@@ -7,16 +8,16 @@ import org.typelevel.log4cats.Logger
 import scala.sys.process.ProcessLogger
 
 case class PostUploadAction(command: String) {
-  def run(destinationFile: Path, fileUploadFormData: FileUploadFormData, logger: Logger[IO]): IO[_] = {
+  def run(destinationFile: Path, mavenPackage: MavenPackage, logger: Logger[IO]): IO[_] = {
     logger.info(s"Starting post upload action for ${destinationFile.fileName}")
     val file = destinationFile.toNioPath.toFile
     val env = Seq(
-      "HMV_USER" -> fileUploadFormData.user,
-      "HMV_REPOSITORY" -> fileUploadFormData.repository,
-      "HMV_GROUPID" -> fileUploadFormData.groupId,
-      "HMV_ARTIFACTID" -> fileUploadFormData.artifactId,
-      "HMV_PACKAGING" -> fileUploadFormData.packaging,
-      "HMV_VERSION" -> fileUploadFormData.version,
+      "HMV_USER" -> mavenPackage.user,
+      "HMV_REPOSITORY" -> mavenPackage.repository,
+      "HMV_GROUPID" -> mavenPackage.groupId,
+      "HMV_ARTIFACTID" -> mavenPackage.artifactId,
+      "HMV_PACKAGING" -> mavenPackage.packaging,
+      "HMV_VERSION" -> mavenPackage.version,
       "HMV_FILENAME" -> file.getName
     )
     val processLogger = ProcessLogger(logger.info(_))

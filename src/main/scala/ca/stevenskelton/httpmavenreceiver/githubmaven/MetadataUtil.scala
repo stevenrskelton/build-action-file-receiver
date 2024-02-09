@@ -1,6 +1,6 @@
 package ca.stevenskelton.httpmavenreceiver.githubmaven
 
-import ca.stevenskelton.httpmavenreceiver.{FileUploadFormData, ResponseException}
+import ca.stevenskelton.httpmavenreceiver.{AuthToken, FileUploadFormData, ResponseException}
 import cats.effect.kernel.Resource
 import cats.effect.{IO, Resource}
 import org.http4s.*
@@ -13,13 +13,13 @@ import scala.xml.{Elem, XML}
 
 object MetadataUtil {
 
-  private def fetchXML(uri: Uri, authToken: String)(implicit httpClient: Resource[IO, Client[IO]], loggerFactory: LoggerFactory[IO]): IO[Elem] = {
+  private def fetchXML(uri: Uri, authToken: AuthToken)(implicit httpClient: Resource[IO, Client[IO]], loggerFactory: LoggerFactory[IO]): IO[Elem] = {
     httpClient.use {
       client =>
         val request = Request[IO](
           Method.GET,
           uri,
-          headers = Headers(Header.ToRaw.keyValuesToRaw("Authorization" -> s"token $authToken")),
+          headers = Headers(Header.ToRaw.keyValuesToRaw("Authorization" -> s"token ${authToken.value}")),
         )
         client.expectOr[String](request) {
             errorResponse =>
