@@ -5,7 +5,7 @@ import org.typelevel.log4cats.SelfAwareStructuredLogger
 
 class StdOutLogger[F[_] : Applicative] extends SelfAwareStructuredLogger[F] {
 
-  val yes: F[Boolean] = Applicative[F].pure(true)
+  private val yes: F[Boolean] = Applicative[F].pure(true)
 
   private def void(arg: => Any): F[Unit] = Applicative[F].pure {
     println(arg)

@@ -19,7 +19,7 @@ class PostUploadActionSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec 
     artifactId = "test-file",
     packaging = "extension",
     version = "1.0.1",
-    snapshot = None,
+    snapshotTimeIncrement = None,
     updated = None,
   )
 

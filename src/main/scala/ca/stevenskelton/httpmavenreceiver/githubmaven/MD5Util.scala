@@ -19,22 +19,25 @@ object MD5Util {
 
     httpClient.use {
       client =>
+        
         val request = Request[IO](
           Method.GET,
           gitHubMD5Uri,
-          headers = Headers(Header.ToRaw.keyValuesToRaw("Authorization" -> s"token ${authToken.value}")),
+          headers = Headers(Header.ToRaw.keyValuesToRaw("Authorization" -> s"token $authToken")),
         )
-        client.expectOr[String](request) {
-          errorResponse =>
-            val msg = if (errorResponse.status.code == Status.NotFound.code) {
-              s"Maven ${mavenPackage.filename} does not exist in GitHub"
-            } else {
-              val errorBody = Try(errorResponse.entity.body.bufferAll.compile.toString).toOption.getOrElse("[error reading body]")
-              s"Error reading Maven (${errorResponse.status.code}):\n$errorBody"
-            }
-            logger.error(msg)
-            IO.raiseError(ResponseException(errorResponse.status, msg))
-        }.map(MD5Hash.apply)
+        
+        client
+          .expectOr[String](request) {
+            errorResponse =>
+              val msg = if (errorResponse.status.code == Status.NotFound.code) {
+                s"Maven ${mavenPackage.filename} does not exist in GitHub"
+              } else {
+                val errorBody = Try(errorResponse.entity.body.bufferAll.compile.toString).toOption.getOrElse("[error reading body]")
+                s"Error reading Maven (${errorResponse.status.code}):\n$errorBody"
+              }
+              logger.error(msg)
+              IO.raiseError(ResponseException(errorResponse.status, msg))
+          }
     }
   }
 

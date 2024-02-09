@@ -45,7 +45,15 @@ object FileUploadFormData {
               filename <- part.filename
             } yield {
               FileUploadFormData(
-                AuthToken(authToken), user, repository, groupId, artifactId, packaging, version, filename, part.body
+                authToken = authToken,
+                user = user,
+                repository = repository,
+                groupId = groupId,
+                artifactId = artifactId,
+                packaging = packaging,
+                version = version,
+                filename = filename, 
+                entityBody = part.body
               )
             }
 

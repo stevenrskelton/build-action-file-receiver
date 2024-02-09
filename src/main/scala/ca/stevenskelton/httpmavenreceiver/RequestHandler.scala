@@ -24,19 +24,24 @@ case class RequestHandler(
 
   def releasesPut(request: Request[IO]): IO[Response[IO]] = {
     logger.info("Starting releasesPut handler")
+    
     val start = System.currentTimeMillis
     val clientIp = request.remoteAddr
     val fileUtils = FileUtils()
+    
     request.decode[IO, Multipart[IO]] { multipart =>
       FileUploadFormData.fromFormData(multipart).flatMap {
         fileUploadFormData =>
           logger.info(s"Received request for file `${fileUploadFormData.filename}` by GitHub user `${fileUploadFormData.user}` upload from IP $clientIp")
 
           for {
+
             mavenPackage <-
               if (isMavenDisabled) IO.pure(MavenPackage.unverified(fileUploadFormData))
               else MetadataUtil.fetchMetadata(fileUploadFormData, allowAllVersions)
-            tempFile <- fileUtils.createTempFileIfNotExists(fileUploadFormData.filename, uploadDirectory / mavenPackage.filename)
+
+            tempFile <- fileUtils.createTempFileIfNotExists(uploadDirectory / mavenPackage.filename)
+
             successfulUpload <- handleUpload(
               tempFile,
               mavenPackage,
@@ -49,11 +54,14 @@ case class RequestHandler(
                   case false => IO.pure(())
                 } *> IO.raiseError(ex)
             }
+
             response <- successfulUpload.responseBody()
+
             _ <- logger.info({
               val duration = Duration.ofMillis(System.currentTimeMillis - start)
               s"Completed ${mavenPackage.filename} (${Utils.humanReadableBytes(successfulUpload.fileSize)}) in ${Utils.humanReadableDuration(duration)}"
             })
+
           } yield {
             response
           }
@@ -67,9 +75,11 @@ case class RequestHandler(
 
     val fileUtils = FileUtils()
     for {
+
       expectedMD5 <-
-        if (isMavenDisabled) IO.pure(MD5Hash.Empty)
-        else MD5Util.fetchMavenMD5(mavenPackage, authToken)
+        if (isMavenDisabled) IO.pure(None)
+        else MD5Util.fetchMavenMD5(mavenPackage, authToken).map(Some.apply)
+
       _ <- entityBody
         .chunkLimit(65536)
         .map {
@@ -82,16 +92,20 @@ case class RequestHandler(
         .through(Files[IO].writeAll(tempFile))
         .compile
         .drain
-      uploadMD5 = MD5Hash(Utils.byteArrayToHexString(digest.digest))
+
+      uploadMD5 = Utils.byteArrayToHexString(digest.digest)
+
       destinationFile <-
-        if (isMavenDisabled) {
+        expectedMD5.fold(
           fileUtils.moveTempToDestinationFile(tempFile, uploadDirectory / mavenPackage.filename)
-        } else {
-          fileUtils.verifyMD5(tempFile, uploadDirectory / mavenPackage.filename, uploadMD5, expectedMD5)
-        }
+        )(
+          fileUtils.verifyMD5(tempFile, uploadDirectory / mavenPackage.filename, uploadMD5, _)
+        )
+
       _ <- postUploadActions.fold(IO.pure(0))(
         action => action.run(destinationFile, mavenPackage, loggerFactory.getLoggerFromClass(action.getClass))
       )
+
     } yield {
       SuccessfulUpload(mavenPackage.filename, fileSize, uploadMD5)
     }

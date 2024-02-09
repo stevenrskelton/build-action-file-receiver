@@ -16,10 +16,11 @@ object MetadataUtil {
   private def fetchXML(uri: Uri, authToken: AuthToken)(implicit httpClient: Resource[IO, Client[IO]], loggerFactory: LoggerFactory[IO]): IO[Elem] = {
     httpClient.use {
       client =>
+        
         val request = Request[IO](
           Method.GET,
           uri,
-          headers = Headers(Header.ToRaw.keyValuesToRaw("Authorization" -> s"token ${authToken.value}")),
+          headers = Headers(Header.ToRaw.keyValuesToRaw("Authorization" -> s"token $authToken")),
         )
         client.expectOr[String](request) {
             errorResponse =>
@@ -73,7 +74,7 @@ object MetadataUtil {
       artifactId = fileUploadFormData.artifactId,
       packaging = fileUploadFormData.packaging,
       version = (metadata \ "versioning" \ "latest").text,
-      snapshot = None,
+      snapshotTimeIncrement = None,
       updated = Some(lastUpdated((metadata \ "versioning" \ "lastUpdated").text)),
     )
   }
@@ -90,7 +91,7 @@ object MetadataUtil {
             artifactId = fileUploadFormData.artifactId,
             packaging = fileUploadFormData.packaging,
             version = fileUploadFormData.version,
-            snapshot = None,
+            snapshotTimeIncrement = None,
             updated = None,
           )
       }
@@ -107,7 +108,7 @@ object MetadataUtil {
       artifactId = fileUploadFormData.artifactId,
       packaging = fileUploadFormData.packaging,
       version = fileUploadFormData.version,
-      snapshot = Some(snapshotVersion),
+      snapshotTimeIncrement = Some(snapshotVersion),
       updated = Some(lastUpdated((metadata \ "versioning" \ "lastUpdated").text)),
     )
   }

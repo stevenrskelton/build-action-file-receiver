@@ -9,7 +9,7 @@ class FileUtils()(implicit val loggerFactory: LoggerFactory[IO]) {
 
   private val logger = loggerFactory.getLoggerFromClass(getClass)
 
-  def createTempFileIfNotExists(filename: String, destinationFile: Path): IO[Path] = {
+  def createTempFileIfNotExists(destinationFile: Path): IO[Path] = {
     Files[IO].exists(destinationFile).flatMap {
       exists =>
         if (exists) {
@@ -24,11 +24,11 @@ class FileUtils()(implicit val loggerFactory: LoggerFactory[IO]) {
 
   def verifyMD5(tempFile: Path, destinationFile: Path, md5: MD5Hash, expectedMd5: MD5Hash): IO[Path] = {
     if (md5 != expectedMd5) {
-      val errorMessage = s"Upload ${destinationFile.fileName} MD5 not equal, ${expectedMd5.value} expected != ${md5.value} of upload."
+      val errorMessage = s"Upload ${destinationFile.fileName} MD5 not equal, $expectedMd5 expected != $md5 of upload."
       logger.error(errorMessage)
       Files[IO].delete(tempFile) *> IO.raiseError(ResponseException(Status.Conflict, errorMessage))
     } else {
-      logger.info(s"MD5 validated ${md5.value}, saving file at ${destinationFile.fileName}")
+      logger.info(s"MD5 validated $md5, saving file at ${destinationFile.fileName}")
       moveTempToDestinationFile(tempFile, destinationFile)
     }
   }

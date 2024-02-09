@@ -15,7 +15,7 @@ import java.time.Duration
 case class SuccessfulUpload(filename: String, fileSize: Long, md5: MD5Hash) {
 
   def responseBody(): IO[Response[IO]] = {
-    val responseBody = s"Successfully saved upload of $filename, ${Utils.humanReadableBytes(fileSize)}, MD5 ${md5.value}"
+    val responseBody = s"Successfully saved upload of $filename, ${Utils.humanReadableBytes(fileSize)}, MD5 $md5"
     Ok(responseBody).map(_.withContentType(`Content-Type`(MediaType.text.plain)))
   }
 
