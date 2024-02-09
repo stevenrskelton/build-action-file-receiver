@@ -3,7 +3,7 @@ package ca.stevenskelton.httpmavenreceiver.githubmaven
 import ca.stevenskelton.httpmavenreceiver.FileUploadFormData
 import org.http4s.{ParseResult, Uri}
 
-import java.time.{ZoneId, ZonedDateTime}
+import java.time.ZonedDateTime
 
 case class MavenPackage(
                          user: String,
@@ -18,14 +18,14 @@ case class MavenPackage(
 
   val filename: String = s"$artifactId-${snapshotTimeIncrement.getOrElse(version)}.$packaging"
 
-//  val gitHubMavenArtifactPath: Uri = MavenPackage.gitHubMavenArtifactPath(
-//    user = user,
-//    repository = repository,
-//    groupId = groupId,
-//    artifactId = artifactId,
-//  )
+  //  val gitHubMavenArtifactPath: Uri = MavenPackage.gitHubMavenArtifactPath(
+  //    user = user,
+  //    repository = repository,
+  //    groupId = groupId,
+  //    artifactId = artifactId,
+  //  )
 
-  val gitHubMavenArtifactPath: Uri =Uri.unsafeFromString(s"https://maven.pkg.github.com/$user/$repository/${groupId.replace(".", "/")}/$artifactId")
+  val gitHubMavenArtifactPath: Uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/$user/$repository/${groupId.replace(".", "/")}/$artifactId")
 
 }
 

@@ -1,8 +1,9 @@
 package ca.stevenskelton.httpmavenreceiver
 
 import ca.stevenskelton.httpmavenreceiver.logging.StdOutLoggerFactory
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.comcast.ip4s.{Ipv4Address, Port}
+import org.http4s.client.Client
 import org.typelevel.log4cats.Logger
 //import epollcat.EpollApp
 import org.http4s.dsl.impl./
@@ -17,9 +18,9 @@ import scala.util.boundary
 
 object Main extends IOApp /*EpollApp IOApp*/ {
 
-  implicit val loggerFactory: LoggerFactory[IO] = StdOutLoggerFactory()
+  given loggerFactory: LoggerFactory[IO] = StdOutLoggerFactory()
 
-  val logger: Logger[IO] = loggerFactory.getLoggerFromClass(getClass)
+  given logger: Logger[IO] = loggerFactory.getLoggerFromClass(getClass)
 
   private val DefaultAllowedUploadSize = 30 * 1024 * 1024
 
@@ -101,7 +102,7 @@ object Main extends IOApp /*EpollApp IOApp*/ {
     }
     logger.info(s"Setting file upload directory to: ${uploadDirectory.getAbsolutePath} with max upload size: ${Utils.humanReadableBytes(maxUploadByteSize)}")
 
-    val httpClient = EmberClientBuilder
+    given httpClient: Resource[IO, Client[IO]] = EmberClientBuilder
       .default[IO]
       .withLogger(logger)
       .build
@@ -111,7 +112,7 @@ object Main extends IOApp /*EpollApp IOApp*/ {
       allowAllVersions,
       disableMaven,
       postUploadAction,
-    )(httpClient, loggerFactory)
+    )
 
     EmberServerBuilder
       .default[IO]

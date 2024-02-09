@@ -8,7 +8,7 @@ import org.typelevel.log4cats.Logger
 import scala.sys.process.ProcessLogger
 
 case class PostUploadAction(command: String) {
-  def run(destinationFile: Path, mavenPackage: MavenPackage, logger: Logger[IO]): IO[_] = {
+  def run(destinationFile: Path, mavenPackage: MavenPackage)(using logger: Logger[IO]): IO[_] = {
     logger.info(s"Starting post upload action for ${destinationFile.fileName}")
     val file = destinationFile.toNioPath.toFile
     val env = Seq(

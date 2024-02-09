@@ -1,31 +1,29 @@
 package ca.stevenskelton.httpmavenreceiver.githubmaven
 
-import ca.stevenskelton.httpmavenreceiver.{AuthToken, FileUploadFormData, MD5Hash, ResponseException}
+import ca.stevenskelton.httpmavenreceiver.{AuthToken, MD5Hash, ResponseException}
 import cats.effect.{IO, Resource}
-import org.http4s.*
 import org.http4s.client.Client
-import org.typelevel.log4cats.LoggerFactory
+import org.http4s.*
+import org.typelevel.log4cats.Logger
 
 import scala.util.Try
 
 object MD5Util {
 
-  def fetchMavenMD5(mavenPackage: MavenPackage, authToken: AuthToken)(implicit httpClient: Resource[IO, Client[IO]], loggerFactory: LoggerFactory[IO]): IO[MD5Hash] = {
-
-    val logger = loggerFactory.getLoggerFromClass(getClass)
+  def fetchMavenMD5(mavenPackage: MavenPackage, authToken: AuthToken)(using httpClient: Resource[IO, Client[IO]], logger: Logger[IO]): IO[MD5Hash] = {
 
     val gitHubMD5Uri = mavenPackage.gitHubMavenArtifactPath / mavenPackage.version / s"${mavenPackage.filename}.md5"
     logger.info(s"Fetching MD5 at $gitHubMD5Uri")
 
     httpClient.use {
       client =>
-        
+
         val request = Request[IO](
           Method.GET,
           gitHubMD5Uri,
           headers = Headers(Header.ToRaw.keyValuesToRaw("Authorization" -> s"token $authToken")),
         )
-        
+
         client
           .expectOr[String](request) {
             errorResponse =>

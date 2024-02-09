@@ -2,7 +2,6 @@ package ca.stevenskelton.httpmavenreceiver
 
 import ca.stevenskelton.httpmavenreceiver.githubmaven.MavenPackage
 import cats.effect.testing.scalatest.AsyncIOSpec
-import fs2.Stream
 import fs2.io.file.Path
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
@@ -25,9 +24,10 @@ class PostUploadActionSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec 
 
   "run" - {
     "populate environmental variables" in {
-      val logger = new RecordingLogger
+      given logger: RecordingLogger = RecordingLogger()
+
       val postUploadAction = PostUploadAction("./echoenv.sh")
-      postUploadAction.run(destinationFile, mavenPackage, logger).unsafeRunSync()
+      postUploadAction.run(destinationFile, mavenPackage).unsafeRunSync()
       val log = logger.lines
       assert(log.length == 10)
       assert(log(0) == "Starting post upload action for destinationfile.jar")
@@ -43,9 +43,10 @@ class PostUploadActionSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec 
     }
 
     "handle error" in {
-      val logger = new RecordingLogger
+      given logger: RecordingLogger = RecordingLogger()
+
       val postUploadAction = PostUploadAction("./error.sh")
-      postUploadAction.run(destinationFile, mavenPackage, logger).unsafeRunSync()
+      postUploadAction.run(destinationFile, mavenPackage).unsafeRunSync()
       val log = logger.lines
       assert(log.length == 3)
       assert(log(0) == "Starting post upload action for destinationfile.jar")

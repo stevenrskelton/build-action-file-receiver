@@ -1,12 +1,9 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import cats.effect.IO
-import org.typelevel.log4cats.Logger
-
-import java.io.{BufferedWriter, File, FileInputStream, FileWriter}
+import java.io.{File, FileInputStream}
 import java.security.MessageDigest
 import java.time.Duration
-import scala.util.{Try, Using}
+import scala.util.Using
 
 object Utils {
 

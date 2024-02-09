@@ -52,7 +52,7 @@ object FileUploadFormData {
                 artifactId = artifactId,
                 packaging = packaging,
                 version = version,
-                filename = filename, 
+                filename = filename,
                 entityBody = part.body
               )
             }

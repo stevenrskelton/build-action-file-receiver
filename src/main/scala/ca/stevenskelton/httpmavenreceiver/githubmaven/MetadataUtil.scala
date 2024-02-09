@@ -3,9 +3,9 @@ package ca.stevenskelton.httpmavenreceiver.githubmaven
 import ca.stevenskelton.httpmavenreceiver.{AuthToken, FileUploadFormData, ResponseException}
 import cats.effect.kernel.Resource
 import cats.effect.{IO, Resource}
-import org.http4s.*
 import org.http4s.client.Client
-import org.typelevel.log4cats.LoggerFactory
+import org.http4s.*
+import org.typelevel.log4cats.Logger
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
@@ -13,10 +13,10 @@ import scala.xml.{Elem, XML}
 
 object MetadataUtil {
 
-  private def fetchXML(uri: Uri, authToken: AuthToken)(implicit httpClient: Resource[IO, Client[IO]], loggerFactory: LoggerFactory[IO]): IO[Elem] = {
+  private def fetchXML(uri: Uri, authToken: AuthToken)(using httpClient: Resource[IO, Client[IO]], logger: Logger[IO]): IO[Elem] = {
     httpClient.use {
       client =>
-        
+
         val request = Request[IO](
           Method.GET,
           uri,
@@ -31,7 +31,7 @@ object MetadataUtil {
     }
   }
 
-  def fetchMetadata(fileUploadFormData: FileUploadFormData, allowAllVersions: Boolean)(implicit httpClient: Resource[IO, Client[IO]], loggerFactory: LoggerFactory[IO]): IO[MavenPackage] = {
+  def fetchMetadata(fileUploadFormData: FileUploadFormData, allowAllVersions: Boolean)(using httpClient: Resource[IO, Client[IO]], logger: Logger[IO]): IO[MavenPackage] = {
     MavenPackage.gitHubMavenArtifactPath(fileUploadFormData).map {
       gitHubMavenArtifactPath =>
         fetchXML(gitHubMavenArtifactPath / "maven-metadata.xml", fileUploadFormData.authToken)

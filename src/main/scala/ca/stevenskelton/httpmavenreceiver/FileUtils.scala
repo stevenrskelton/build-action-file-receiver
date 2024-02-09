@@ -3,13 +3,11 @@ package ca.stevenskelton.httpmavenreceiver
 import cats.effect.IO
 import fs2.io.file.{Files, Path}
 import org.http4s.Status
-import org.typelevel.log4cats.LoggerFactory
+import org.typelevel.log4cats.Logger
 
-class FileUtils()(implicit val loggerFactory: LoggerFactory[IO]) {
+object FileUtils {
 
-  private val logger = loggerFactory.getLoggerFromClass(getClass)
-
-  def createTempFileIfNotExists(destinationFile: Path): IO[Path] = {
+  def createTempFileIfNotExists(destinationFile: Path)(using logger: Logger[IO]): IO[Path] = {
     Files[IO].exists(destinationFile).flatMap {
       exists =>
         if (exists) {
@@ -22,7 +20,7 @@ class FileUtils()(implicit val loggerFactory: LoggerFactory[IO]) {
     }
   }
 
-  def verifyMD5(tempFile: Path, destinationFile: Path, md5: MD5Hash, expectedMd5: MD5Hash): IO[Path] = {
+  def verifyMD5(tempFile: Path, destinationFile: Path, md5: MD5Hash, expectedMd5: MD5Hash)(using logger: Logger[IO]): IO[Path] = {
     if (md5 != expectedMd5) {
       val errorMessage = s"Upload ${destinationFile.fileName} MD5 not equal, $expectedMd5 expected != $md5 of upload."
       logger.error(errorMessage)
@@ -33,11 +31,12 @@ class FileUtils()(implicit val loggerFactory: LoggerFactory[IO]) {
     }
   }
 
-  def moveTempToDestinationFile(tempFile: Path, destinationFile: Path): IO[Path] = {
+  def moveTempToDestinationFile(tempFile: Path, destinationFile: Path)(using logger: Logger[IO]): IO[Path] = {
     Files[IO].move(tempFile, destinationFile).as(destinationFile).handleErrorWith {
       ex =>
-        val msg = s"Could not rename $tempFile to ${destinationFile.fileName}"
-        IO.raiseError(ResponseException(Status.InternalServerError, msg, Some(ex)))
+        val errorMessage = s"Could not rename $tempFile to ${destinationFile.fileName}"
+        logger.error(errorMessage)
+        IO.raiseError(ResponseException(Status.InternalServerError, errorMessage, Some(ex)))
     }
   }
 

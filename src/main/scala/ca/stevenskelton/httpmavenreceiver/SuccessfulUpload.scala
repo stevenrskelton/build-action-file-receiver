@@ -1,16 +1,9 @@
 package ca.stevenskelton.httpmavenreceiver
 
-import cats.effect.{IO, Resource}
-import fs2.io.file.{Files, Path}
-import org.http4s.*
-import org.http4s.client.Client
+import cats.effect.IO
 import org.http4s.dsl.io.*
 import org.http4s.headers.`Content-Type`
-import org.http4s.multipart.Multipart
-import org.typelevel.log4cats.LoggerFactory
-
-import java.security.MessageDigest
-import java.time.Duration
+import org.http4s.{MediaType, Response}
 
 case class SuccessfulUpload(filename: String, fileSize: Long, md5: MD5Hash) {
 

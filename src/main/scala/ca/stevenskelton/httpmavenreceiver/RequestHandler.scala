@@ -3,12 +3,11 @@ package ca.stevenskelton.httpmavenreceiver
 import ca.stevenskelton.httpmavenreceiver.githubmaven.{MD5Util, MavenPackage, MetadataUtil}
 import cats.effect.{IO, Resource}
 import fs2.io.file.{Files, Path}
-import org.http4s.*
 import org.http4s.client.Client
 import org.http4s.dsl.io.*
-import org.http4s.headers.`Content-Type`
 import org.http4s.multipart.Multipart
-import org.typelevel.log4cats.LoggerFactory
+import org.http4s.{EntityBody, Request, Response}
+import org.typelevel.log4cats.Logger
 
 import java.security.MessageDigest
 import java.time.Duration
@@ -18,17 +17,14 @@ case class RequestHandler(
                            allowAllVersions: Boolean,
                            isMavenDisabled: Boolean,
                            postUploadActions: Option[PostUploadAction],
-                         )(implicit httpClient: Resource[IO, Client[IO]], loggerFactory: LoggerFactory[IO]) {
-
-  private val logger = loggerFactory.getLoggerFromClass(getClass)
+                         )(using httpClient: Resource[IO, Client[IO]], logger: Logger[IO]) {
 
   def releasesPut(request: Request[IO]): IO[Response[IO]] = {
     logger.info("Starting releasesPut handler")
-    
+
     val start = System.currentTimeMillis
     val clientIp = request.remoteAddr
-    val fileUtils = FileUtils()
-    
+
     request.decode[IO, Multipart[IO]] { multipart =>
       FileUploadFormData.fromFormData(multipart).flatMap {
         fileUploadFormData =>
@@ -40,7 +36,7 @@ case class RequestHandler(
               if (isMavenDisabled) IO.pure(MavenPackage.unverified(fileUploadFormData))
               else MetadataUtil.fetchMetadata(fileUploadFormData, allowAllVersions)
 
-            tempFile <- fileUtils.createTempFileIfNotExists(uploadDirectory / mavenPackage.filename)
+            tempFile <- FileUtils.createTempFileIfNotExists(uploadDirectory / mavenPackage.filename)
 
             successfulUpload <- handleUpload(
               tempFile,
@@ -73,7 +69,6 @@ case class RequestHandler(
     val digest = MessageDigest.getInstance("MD5")
     var fileSize = 0L
 
-    val fileUtils = FileUtils()
     for {
 
       expectedMD5 <-
@@ -97,13 +92,13 @@ case class RequestHandler(
 
       destinationFile <-
         expectedMD5.fold(
-          fileUtils.moveTempToDestinationFile(tempFile, uploadDirectory / mavenPackage.filename)
+          FileUtils.moveTempToDestinationFile(tempFile, uploadDirectory / mavenPackage.filename)
         )(
-          fileUtils.verifyMD5(tempFile, uploadDirectory / mavenPackage.filename, uploadMD5, _)
+          FileUtils.verifyMD5(tempFile, uploadDirectory / mavenPackage.filename, uploadMD5, _)
         )
 
       _ <- postUploadActions.fold(IO.pure(0))(
-        action => action.run(destinationFile, mavenPackage, loggerFactory.getLoggerFromClass(action.getClass))
+        action => action.run(destinationFile, mavenPackage)
       )
 
     } yield {

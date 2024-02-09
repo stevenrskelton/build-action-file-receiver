@@ -8,7 +8,7 @@ import org.http4s.*
 import org.http4s.client.Client
 import org.http4s.headers.`Content-Type`
 import org.http4s.multipart.{Boundary, Multipart, Part}
-import org.typelevel.log4cats.{Logger, LoggerFactory}
+import org.typelevel.log4cats.Logger
 import org.typelevel.vault.Vault
 import scodec.bits.ByteVector
 
@@ -17,8 +17,7 @@ import scala.util.Using
 
 object UploadRequestHelper {
 
-  implicit val loggerFactory: LoggerFactory[IO] = Main.loggerFactory
-  implicit val logger: Logger[IO] = Main.logger
+  given logger: Logger[IO] = Main.logger
 
   def httpApp(
                responses: Map[Uri, Response[IO]],
@@ -30,15 +29,16 @@ object UploadRequestHelper {
     for {
       tmpDir <- Files[IO].createTempDirectory(None, "http-maven-receiver-specs-", None)
     } yield {
-      val httpClient: Resource[IO, Client[IO]] = Resource.pure {
+      given httpClient: Resource[IO, Client[IO]] = Resource.pure {
         Client(request => Resource.pure(responses.getOrElse(request.uri, Response.notFound)))
       }
+
       Main.httpApp(RequestHandler(
         uploadDirectory = tmpDir,
         allowAllVersions = allowAllVersions,
         isMavenDisabled = isMavenDisabled,
         postUploadActions = postUploadActions,
-      )(httpClient, loggerFactory))
+      ))
     }
   }
 
