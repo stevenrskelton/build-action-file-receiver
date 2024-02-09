@@ -13,6 +13,7 @@ import org.http4s.{HttpApp, HttpRoutes}
 import org.typelevel.log4cats.LoggerFactory
 
 import java.io.File
+import scala.util.boundary
 
 object Main extends IOApp /*EpollApp IOApp*/ {
 
@@ -26,7 +27,7 @@ object Main extends IOApp /*EpollApp IOApp*/ {
     case request@PUT -> Root / "releases" => handler.releasesPut(request)
   }.orNotFound
 
-  override def run(args: List[String]): IO[ExitCode] = {
+  override def run(args: List[String]): IO[ExitCode] = boundary {
 
     logger.info(s"${SbtBuildInfo.name} ${SbtBuildInfo.version}")
 
@@ -66,20 +67,20 @@ object Main extends IOApp /*EpollApp IOApp*/ {
     val host: Ipv4Address = Ipv4Address.fromString(argMap.getOrElse("host", "0.0.0.0"))
       .getOrElse {
         logger.error(s"Invalid host: ${argMap("host")}")
-        return IO.pure(ExitCode.Error)
+        boundary.break(IO.pure(ExitCode.Error))
       }
 
     val port: Port = Port.fromString(argMap.getOrElse("port", "8080"))
       .getOrElse {
         logger.error(s"Invalid port: ${argMap("port")}")
-        return IO.pure(ExitCode.Error)
+        boundary.break(IO.pure(ExitCode.Error))
       }
 
     val maxUploadByteSize = argMap.get("max-upload-size").map {
       userValue =>
         Utils.humanReadableToBytes(userValue).getOrElse {
           logger.error(s"Invalid maximum upload size: ${argMap("max-upload-size")}")
-          return IO.pure(ExitCode.Error)
+          boundary.break(IO.pure(ExitCode.Error))
         }
     }.getOrElse(DefaultAllowedUploadSize)
 

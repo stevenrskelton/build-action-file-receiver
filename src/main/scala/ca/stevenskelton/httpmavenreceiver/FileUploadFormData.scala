@@ -5,6 +5,7 @@ import org.http4s.multipart.Multipart
 import org.http4s.{EntityBody, Status}
 
 import scala.collection.mutable
+import scala.util.boundary
 
 case class FileUploadFormData(
                                authToken: AuthToken,
@@ -28,7 +29,7 @@ object FileUploadFormData {
 
   val FormErrorMessage = s"PUT body should include fields: ${FileUploadFields.mkString(",")}, and $FileUploadFieldName"
 
-  def fromFormData(formData: Multipart[IO]): IO[FileUploadFormData] = {
+  def fromFormData(formData: Multipart[IO]): IO[FileUploadFormData] = boundary {
     formData.parts.foldLeft(IO.pure(new mutable.HashMap[String, String])) {
       case (fieldsIO, part) if part.name.contains(FileUploadFieldName) =>
         val io = fieldsIO.map {
@@ -52,8 +53,7 @@ object FileUploadFormData {
               throw ResponseException(Status.BadRequest, FormErrorMessage)
             }
         }
-        return io
-        fieldsIO
+        boundary.break(io)
       case (fieldsIO, part) if FileUploadFields.contains(part.name.getOrElse("")) =>
         fieldsIO.flatMap {
           fields =>
@@ -65,7 +65,7 @@ object FileUploadFormData {
         }
       case (_, part) =>
         val msg = s"Found unexpected `${part.name.getOrElse("")}` form field of type ${part.contentType.fold("?")(_.toString)}."
-        return IO.raiseError(ResponseException(Status.BadRequest, msg))
+        boundary.break(IO.raiseError(ResponseException(Status.BadRequest, msg)))
     }
     IO.raiseError(ResponseException(Status.BadRequest, FormErrorMessage))
   }
