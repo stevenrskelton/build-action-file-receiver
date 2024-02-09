@@ -87,6 +87,8 @@ case class RequestHandler(
         .compile
         .drain
 
+      _ <- logger.info(s"Received $fileSize bytes for ${mavenPackage.filename}")
+
       uploadMD5 = Utils.byteArrayToHexString(digest.digest)
 
       destinationFile <-
