@@ -264,7 +264,8 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
         uploadFileMD5uri -> UploadRequestHelper.successResponse(uploadFileMD5File)
       )
       val cmd = new File("src/test/resources/postuploadactions/echoenv.sh").getAbsolutePath
-      val httpApp = UploadRequestHelper.httpApp(gitHubResponses, postUploadActions = Some(PostUploadAction(cmd))).unsafeRunSync()
+      val workingDirectory = new File("").getAbsoluteFile
+      val httpApp = UploadRequestHelper.httpApp(gitHubResponses, postUploadActions = Some(PostUploadAction(cmd, workingDirectory))).unsafeRunSync()
 
       val request: Request[IO] = UploadRequestHelper.multipartFilePutRequest(uploadFile, uploadFileForm, requestUri)
       val client: Client[IO] = Client.fromHttpApp(httpApp)
@@ -273,21 +274,21 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       assert(resp1.unsafeRunSync() == "Successfully saved upload of test-file-1.0.10.png, 7kb, MD5 5c55838e6a9fb7bb5470cb222fd3b1f3")
 
       val log = logger.lines
-      assert(log.length == 12)
-      assert(log(0) == "Received 7478 bytes for test-file-1.0.10.png")
-      assert(log(1) == "Starting post upload action for test-file-1.0.10.png")
-      assert(log(2).contains("http-maven-receiver-specs-"))
-      assert(log(3) == uploadFileForm("user"))
-      assert(log(4) == uploadFileForm("repository"))
-      assert(log(5) == uploadFileForm("groupId"))
-      assert(log(6) == uploadFileForm("artifactId"))
-      assert(log(7) == uploadFileForm("packaging"))
-      assert(log(8) == uploadFileForm("version"))
-      assert(log(9) == "test-file-1.0.10.png")
-      assert(log(10) == "Completed post upload action for test-file-1.0.10.png")
-      assert(log(11).startsWith("Completed test-file-1.0.10.png (7kb) in"))
-//      val mainArgs = MainArgs.parse(List("--exec=/bin/ls")).unsafeRunSync()
-//      assert(mainArgs.postUploadAction.contains(PostUploadAction("/bin/ls")))
+      assert(log.length == 14)
+      assert(log(0) == "Starting releasesPut handler")
+      assert(log(1) == "Received request for file `test-file-1.0.10.png` by GitHub user `gh-user` upload from IP None")
+      assert(log(2) == "Received 7478 bytes for test-file-1.0.10.png")
+      assert(log(3) == "Starting post upload action for test-file-1.0.10.png")
+      assert(log(4).startsWith("/"))
+      assert(log(5) == uploadFileForm("user"))
+      assert(log(6) == uploadFileForm("repository"))
+      assert(log(7) == uploadFileForm("groupId"))
+      assert(log(8) == uploadFileForm("artifactId"))
+      assert(log(9) == uploadFileForm("packaging"))
+      assert(log(10) == uploadFileForm("version"))
+      assert(log(11) == "test-file-1.0.10.png")
+      assert(log(12) == "Completed post upload action for test-file-1.0.10.png")
+      assert(log(13).startsWith("Completed test-file-1.0.10.png (7kb) in"))
     }
   }
 

@@ -19,53 +19,54 @@ case class RequestHandler(
                          )(using httpClient: Resource[IO, Client[IO]], logger: Logger[IO]) {
 
   def releasesPut(request: Request[IO]): IO[Response[IO]] = {
-    logger.info("Starting releasesPut handler")
+    for {
+      _ <- logger.info("Starting releasesPut handler")
 
-    val start = System.currentTimeMillis
-    val clientIp = request.remoteAddr
+      startTime <- IO.realTimeInstant
 
-    request.decode[IO, Multipart[IO]] { multipart =>
-      FileUploadFormData.fromFormData(multipart).flatMap {
-        fileUploadFormData =>
-          logger.info(s"Received request for file `${fileUploadFormData.filename}` by GitHub user `${fileUploadFormData.user}` upload from IP $clientIp")
+      handlerResponse <- request.decode[IO, Multipart[IO]] { multipart =>
+        FileUploadFormData.fromFormData(multipart).flatMap {
+          fileUploadFormData =>
+            for {
+              _ <- logger.info(s"Received request for file `${fileUploadFormData.filename}` by GitHub user `${fileUploadFormData.user}` upload from IP ${request.remoteAddr}")
+              mavenPackage <-
+                if (isMavenDisabled) IO.pure(MavenPackage.unverified(fileUploadFormData))
+                else MetadataUtil.fetchMetadata(fileUploadFormData, allowAllVersions)
 
-          for {
+              tempFile <- FileUtils.createTempFileIfNotExists(uploadDirectory / mavenPackage.filename)
 
-            mavenPackage <-
-              if (isMavenDisabled) IO.pure(MavenPackage.unverified(fileUploadFormData))
-              else MetadataUtil.fetchMetadata(fileUploadFormData, allowAllVersions)
+              successfulUpload <- handleUpload(
+                tempFile,
+                mavenPackage,
+                fileUploadFormData.entityBody,
+                fileUploadFormData.authToken,
+              ).onError {
+                ex =>
+                  Files[IO].exists(tempFile).flatMap {
+                    case true => Files[IO].delete(tempFile)
+                    case false => IO.unit
+                  } *> IO.raiseError(ex)
+              }
 
-            tempFile <- FileUtils.createTempFileIfNotExists(uploadDirectory / mavenPackage.filename)
+              response <- successfulUpload.responseBody()
 
-            successfulUpload <- handleUpload(
-              tempFile,
-              mavenPackage,
-              fileUploadFormData.entityBody,
-              fileUploadFormData.authToken,
-            ).onError {
-              ex =>
-                Files[IO].exists(tempFile).flatMap {
-                  case true => Files[IO].delete(tempFile)
-                  case false => IO.unit
-                } *> IO.raiseError(ex)
+              endTime <- IO.realTimeInstant
+              _ <- logger.info({
+                val duration = Duration.between(startTime, endTime)
+                s"Completed ${mavenPackage.filename} (${Utils.humanReadableBytes(successfulUpload.fileSize)}) in ${Utils.humanReadableDuration(duration)}"
+              })
+
+            } yield {
+              response
             }
-
-            response <- successfulUpload.responseBody()
-
-            _ <- logger.info({
-              val duration = Duration.ofMillis(System.currentTimeMillis - start)
-              s"Completed ${mavenPackage.filename} (${Utils.humanReadableBytes(successfulUpload.fileSize)}) in ${Utils.humanReadableDuration(duration)}"
-            })
-
-          } yield {
-            response
-          }
+        }
       }
+    } yield {
+      handlerResponse
     }
   }
 
   private def handleUpload(tempFile: Path, mavenPackage: MavenPackage, entityBody: EntityBody[IO], authToken: AuthToken): IO[SuccessfulUpload] = {
-
     for {
 
       digestRef <- IO.ref(MessageDigest.getInstance("MD5"))

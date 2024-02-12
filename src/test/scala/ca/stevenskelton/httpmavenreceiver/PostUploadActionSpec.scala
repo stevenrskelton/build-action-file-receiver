@@ -22,12 +22,13 @@ class PostUploadActionSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec 
     snapshotTimeIncrement = None,
     updated = None,
   )
+  private val workingDirectory = new File("src/test/resources/postuploadactions").getAbsoluteFile
 
   "run" - {
     "populate environmental variables" in {
       given logger: RecordingLogger = RecordingLogger()
 
-      val postUploadAction = PostUploadAction("./echoenv.sh")
+      val postUploadAction = PostUploadAction("./echoenv.sh", workingDirectory)
       postUploadAction.run(destinationFile, mavenPackage).unsafeRunSync()
       val log = logger.lines
       assert(log.length == 10)
@@ -46,7 +47,7 @@ class PostUploadActionSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec 
     "handle error" in {
       given logger: RecordingLogger = RecordingLogger()
 
-      val postUploadAction = PostUploadAction("./error.sh")
+      val postUploadAction = PostUploadAction("./error.sh", workingDirectory)
       val ex = intercept[ResponseException](postUploadAction.run(destinationFile, mavenPackage).unsafeRunSync())
       assert(ex.status == Status.InternalServerError)
 

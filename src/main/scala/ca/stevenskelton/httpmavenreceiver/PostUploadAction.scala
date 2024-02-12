@@ -1,14 +1,16 @@
 package ca.stevenskelton.httpmavenreceiver
 
 import ca.stevenskelton.httpmavenreceiver.githubmaven.MavenPackage
-import cats.effect.{ExitCode, IO, Sync}
+import cats.effect.{ExitCode, IO}
 import fs2.io.file.Path
 import org.http4s.Status.InternalServerError
 import org.typelevel.log4cats.Logger
 
+import java.io.File
 import scala.sys.process.ProcessLogger
 
-case class PostUploadAction(command: String) {
+case class PostUploadAction(command: String, workingDirectory: File) {
+
   def run(destinationFile: Path, mavenPackage: MavenPackage)(using logger: Logger[IO]): IO[ExitCode] = {
     val file = destinationFile.toNioPath.toFile
     val env = Seq(
@@ -24,7 +26,7 @@ case class PostUploadAction(command: String) {
     for {
       _ <- logger.info(s"Starting post upload action for ${destinationFile.fileName}")
       processLogger <- IO.pure(ProcessLogger(logger.info(_).unsafeRunSync()(cats.effect.unsafe.implicits.global)))
-      processExitCode <- IO.blocking(sys.process.Process(Seq(command), file.getParentFile.getAbsoluteFile, env: _*).!(processLogger))
+      processExitCode <- IO.blocking(sys.process.Process(Seq(command), workingDirectory, env: _*).!(processLogger))
       actionExitCode <- processExitCode match {
         case 0 => logger.info(s"Completed post upload action for ${destinationFile.fileName}").as(ExitCode.Success)
         case _ =>

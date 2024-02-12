@@ -22,11 +22,11 @@ object Main extends /*epollcat.EpollApp */ IOApp {
     case request@PUT -> Root / "releases" => handler.releasesPut(request)
   }.orNotFound
 
+  def jarDirectory = new java.io.File(getClass.getProtectionDomain.getCodeSource.getLocation.toURI.toString)
+
   override def run(args: List[String]): IO[ExitCode] = {
-
-    logger.info(s"${SbtBuildInfo.name} ${SbtBuildInfo.version}")
-
-    MainArgs.parse(args)
+    logger.info(s"${SbtBuildInfo.name} ${SbtBuildInfo.version}") *>
+      MainArgs.parse(args, jarDirectory)
       .flatMap {
         mainArgs =>
 

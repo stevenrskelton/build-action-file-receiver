@@ -6,6 +6,8 @@ import fs2.io.file.{Files, Path}
 import org.typelevel.log4cats.Logger
 import ca.stevenskelton.httpmavenreceiver.Main.ExitException
 
+import java.io.File
+
 case class MainArgs(
                      allowAllVersions: Boolean,
                      disableMaven: Boolean,
@@ -19,7 +21,7 @@ object MainArgs {
 
   private val DefaultAllowedUploadSize = 30 * 1024 * 1024
 
-  def parse(args: List[String])(using logger: Logger[IO]): IO[MainArgs] = {
+  def parse(args: List[String], jarDirectory: File)(using logger: Logger[IO]): IO[MainArgs] = {
 
     val argMap = args
       .filter(_.startsWith("--"))
@@ -82,12 +84,14 @@ object MainArgs {
       postUploadAction <- argMap.get("exec")
         .map {
           cmd =>
-            val path = Path(cmd)
+            val cmdPath = Path(cmd)
+            val path = if(cmdPath.isAbsolute) cmdPath else Path.fromNioPath(jarDirectory.getAbsoluteFile.toPath) / cmd
+
             Files[IO].exists(path).flatMap {
-              case false => IO.raiseError(ExitException(s"Exec $cmd does not exist with working directory ${Path("").absolute.toString}"))
+              case false => IO.raiseError(ExitException(s"Exec $cmd does not exist with working directory ${jarDirectory.toString}"))
               case true => Files[IO].isExecutable(path).flatMap {
                 case false => IO.raiseError(ExitException(s"Exec $cmd not executable."))
-                case true => logger.info(s"Post upload command: $cmd").as(Some(PostUploadAction(cmd)))
+                case true => logger.info(s"Post upload command: $cmd").as(Some(PostUploadAction(cmd, jarDirectory.getAbsoluteFile)))
               }
             }
         }
