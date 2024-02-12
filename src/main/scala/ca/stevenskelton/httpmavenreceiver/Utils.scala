@@ -70,23 +70,5 @@ object Utils {
       s"$bytes bytes"
     }
   }
-
-  def humanReadableDuration(duration: Duration): String = {
-    val seconds = duration.toSeconds
-    if (seconds < 10) {
-      s"${duration.toMillis * 0.001} seconds"
-    } else {
-      if (seconds >= 2592000) {
-        s"${(seconds / 2592000).toInt} months"
-      } else if (seconds > 86400) {
-        s"${(seconds / 86400).toInt} days"
-      } else if (seconds > 3600) {
-        s"${(seconds / 3600).toInt} hours"
-      } else if (seconds > 60) {
-        s"${(seconds / 60).toInt} minutes"
-      } else {
-        s"$seconds seconds"
-      }
-    }
-  }
+  
 }

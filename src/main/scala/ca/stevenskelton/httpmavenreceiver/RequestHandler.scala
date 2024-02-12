@@ -52,8 +52,8 @@ case class RequestHandler(
 
               endTime <- IO.realTimeInstant
               _ <- logger.info({
-                val duration = Duration.between(startTime, endTime)
-                s"Completed ${mavenPackage.filename} (${Utils.humanReadableBytes(successfulUpload.fileSize)}) in ${Utils.humanReadableDuration(duration)}"
+                val duration = s"${"%.2f".format(Duration.between(startTime, endTime).toMillis * 0.001)} seconds"
+                s"Completed ${mavenPackage.filename} (${Utils.humanReadableBytes(successfulUpload.fileSize)}) in $duration}"
               })
 
             } yield {

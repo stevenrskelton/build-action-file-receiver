@@ -9,7 +9,13 @@ import org.typelevel.log4cats.Logger
 import java.io.File
 import scala.sys.process.ProcessLogger
 
-case class PostUploadAction(command: String, workingDirectory: File) {
+case class PostUploadAction(command: String, jarDirectory: File) {
+  
+  val commandPath: Path = {
+    val cmdPath = Path(command)
+    if (cmdPath.isAbsolute) cmdPath 
+    else Path(s"${jarDirectory.getAbsolutePath}/$command")
+  }
 
   def run(destinationFile: Path, mavenPackage: MavenPackage)(using logger: Logger[IO]): IO[ExitCode] = {
     val file = destinationFile.toNioPath.toFile
@@ -26,7 +32,7 @@ case class PostUploadAction(command: String, workingDirectory: File) {
     for {
       _ <- logger.info(s"Starting post upload action for ${destinationFile.fileName}")
       processLogger <- IO.pure(ProcessLogger(logger.info(_).unsafeRunSync()(cats.effect.unsafe.implicits.global)))
-      processExitCode <- IO.blocking(sys.process.Process(Seq(command), workingDirectory, env: _*).!(processLogger))
+      processExitCode <- IO.blocking(sys.process.Process(Seq(commandPath.toString), destinationFile.toNioPath.toFile.getAbsoluteFile.getParentFile, env: _*).!(processLogger))
       actionExitCode <- processExitCode match {
         case 0 => logger.info(s"Completed post upload action for ${destinationFile.fileName}").as(ExitCode.Success)
         case _ =>

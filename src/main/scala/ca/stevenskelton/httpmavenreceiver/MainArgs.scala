@@ -84,14 +84,12 @@ object MainArgs {
       postUploadAction <- argMap.get("exec")
         .map {
           cmd =>
-            val cmdPath = Path(cmd)
-            val path = if(cmdPath.isAbsolute) cmdPath else Path(s"${jarDirectory.getAbsolutePath}/$cmd")
-
-            Files[IO].exists(path).flatMap {
+            val postUploadAction = PostUploadAction(cmd, jarDirectory)
+            Files[IO].exists(postUploadAction.commandPath).flatMap {
               case false => IO.raiseError(ExitException(s"Exec $cmd does not exist in working directory ${jarDirectory.getPath}"))
-              case true => Files[IO].isExecutable(path).flatMap {
+              case true => Files[IO].isExecutable(postUploadAction.commandPath).flatMap {
                 case false => IO.raiseError(ExitException(s"Exec $cmd not executable."))
-                case true => logger.info(s"Post upload command: $cmd").as(Some(PostUploadAction(cmd, jarDirectory.getAbsoluteFile)))
+                case true => logger.info(s"Post upload command: $cmd").as(Some(postUploadAction))
               }
             }
         }

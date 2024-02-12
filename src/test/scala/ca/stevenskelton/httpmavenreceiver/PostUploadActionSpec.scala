@@ -54,8 +54,8 @@ class PostUploadActionSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec 
       val log = logger.lines
       assert(log.length == 3)
       assert(log(0) == "Starting post upload action for destinationfile.jar")
-      assert(log(1) == "./error.sh: line 1: cd: hi: No such file or directory")
-      assert(log(2).endsWith("Failed post upload action for destinationfile.jar"))
+      assert(log(1).endsWith("/./error.sh: line 1: cd: hi: No such file or directory"))
+      assert(log(2) == "ca.stevenskelton.httpmavenreceiver.ResponseException: Failed post upload action for destinationfile.jar")
     }
   }
 
