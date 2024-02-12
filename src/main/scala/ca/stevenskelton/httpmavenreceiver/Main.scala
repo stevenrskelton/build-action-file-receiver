@@ -24,7 +24,7 @@ object Main extends /*epollcat.EpollApp */ IOApp {
     case request@PUT -> Root / "releases" => handler.releasesPut(request)
   }.orNotFound
 
-  def jarDirectory: File = new java.io.File(getClass.getProtectionDomain.getCodeSource.getLocation.toURI.toString).getParentFile
+  def jarDirectory: File = new java.io.File(getClass.getProtectionDomain.getCodeSource.getLocation.toURI.getPath).getParentFile
 
   override def run(args: List[String]): IO[ExitCode] = {
     logger.info(s"${SbtBuildInfo.name} ${SbtBuildInfo.version}") *>
