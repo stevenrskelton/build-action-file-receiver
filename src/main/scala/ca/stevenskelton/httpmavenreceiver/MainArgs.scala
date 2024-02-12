@@ -85,7 +85,7 @@ object MainArgs {
         .map {
           cmd =>
             val cmdPath = Path(cmd)
-            val path = if(cmdPath.isAbsolute) cmdPath else Path.fromNioPath(jarDirectory.getAbsoluteFile.toPath) / cmd
+            val path = if(cmdPath.isAbsolute) cmdPath else Path(s"${jarDirectory.getAbsolutePath}/$cmd")
 
             Files[IO].exists(path).flatMap {
               case false => IO.raiseError(ExitException(s"Exec $cmd does not exist with working directory ${jarDirectory.toString}"))

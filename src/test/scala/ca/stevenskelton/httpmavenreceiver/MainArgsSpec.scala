@@ -10,7 +10,7 @@ import java.io.File
 
 class MainArgsSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
 
-  val jarDirectory = new File("").getAbsoluteFile
+  val jarDirectory = new File("src").getAbsoluteFile
   //  --help
   //  --disable-maven
   //  --allow-all-versions
@@ -42,16 +42,23 @@ class MainArgsSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
     "relative exists without leading /" in {
       given logger: RecordingLogger = RecordingLogger()
 
-      val mainArgs = MainArgs.parse(List("--exec=src/test/resources/postuploadactions/echoenv.sh"),jarDirectory).unsafeRunSync()
-      assert(mainArgs.postUploadAction.contains(PostUploadAction("src/test/resources/postuploadactions/echoenv.sh", jarDirectory)))
-      assert(logger.lines(0) == "Post upload command: src/test/resources/postuploadactions/echoenv.sh")
+      val mainArgs = MainArgs.parse(List("--exec=test/resources/postuploadactions/echoenv.sh"),jarDirectory).unsafeRunSync()
+      assert(mainArgs.postUploadAction.contains(PostUploadAction("test/resources/postuploadactions/echoenv.sh", jarDirectory)))
+      assert(logger.lines(0) == "Post upload command: test/resources/postuploadactions/echoenv.sh")
     }
     "relative exists with leading ./" in {
       given logger: RecordingLogger = RecordingLogger()
 
-      val mainArgs = MainArgs.parse(List("--exec=./src/test/resources/postuploadactions/echoenv.sh"), jarDirectory).unsafeRunSync()
-      assert(mainArgs.postUploadAction.contains(PostUploadAction("./src/test/resources/postuploadactions/echoenv.sh", jarDirectory)))
-      assert(logger.lines(0) == "Post upload command: ./src/test/resources/postuploadactions/echoenv.sh")
+      val mainArgs = MainArgs.parse(List("--exec=./test/resources/postuploadactions/echoenv.sh"), jarDirectory).unsafeRunSync()
+      assert(mainArgs.postUploadAction.contains(PostUploadAction("./test/resources/postuploadactions/echoenv.sh", jarDirectory)))
+      assert(logger.lines(0) == "Post upload command: ./test/resources/postuploadactions/echoenv.sh")
+    }
+    "relative exists with leading ../" in {
+      given logger: RecordingLogger = RecordingLogger()
+
+      val mainArgs = MainArgs.parse(List("--exec=../src/test/resources/postuploadactions/echoenv.sh"), jarDirectory).unsafeRunSync()
+      assert(mainArgs.postUploadAction.contains(PostUploadAction("../src/test/resources/postuploadactions/echoenv.sh", jarDirectory)))
+      assert(logger.lines(0) == "Post upload command: ../src/test/resources/postuploadactions/echoenv.sh")
     }
     "relative does not exist without leading /" in {
       given logger: RecordingLogger = RecordingLogger()
@@ -70,9 +77,9 @@ class MainArgsSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
     "not executable" in {
       given logger: RecordingLogger = RecordingLogger()
 
-      val ex = intercept[ExitException](MainArgs.parse(List("--exec=build.sbt"), jarDirectory).unsafeRunSync())
+      val ex = intercept[ExitException](MainArgs.parse(List("--exec=../build.sbt"), jarDirectory).unsafeRunSync())
       assert(ex.code == ExitCode.Error)
-      assert(ex.msg == "Exec build.sbt not executable.")
+      assert(ex.msg == "Exec ../build.sbt not executable.")
     }
   }
 
