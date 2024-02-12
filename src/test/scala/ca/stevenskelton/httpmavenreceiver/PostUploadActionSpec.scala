@@ -3,6 +3,7 @@ package ca.stevenskelton.httpmavenreceiver
 import ca.stevenskelton.httpmavenreceiver.githubmaven.MavenPackage
 import cats.effect.testing.scalatest.AsyncIOSpec
 import fs2.io.file.Path
+import org.http4s.Status
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -46,12 +47,14 @@ class PostUploadActionSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec 
       given logger: RecordingLogger = RecordingLogger()
 
       val postUploadAction = PostUploadAction("./error.sh")
-      postUploadAction.run(destinationFile, mavenPackage).unsafeRunSync()
+      val ex = intercept[ResponseException](postUploadAction.run(destinationFile, mavenPackage).unsafeRunSync())
+      assert(ex.status == Status.InternalServerError)
+
       val log = logger.lines
       assert(log.length == 3)
       assert(log(0) == "Starting post upload action for destinationfile.jar")
       assert(log(1) == "./error.sh: line 1: cd: hi: No such file or directory")
-      assert(log(2) == "java.lang.Exception: Failed post upload action for destinationfile.jar")
+      assert(log(2).endsWith("Failed post upload action for destinationfile.jar"))
     }
   }
 

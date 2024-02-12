@@ -1,7 +1,7 @@
 package ca.stevenskelton.httpmavenreceiver
 
 import ca.stevenskelton.httpmavenreceiver.githubmaven.{MD5Util, MavenPackage, MetadataUtil}
-import cats.effect.{IO, Resource}
+import cats.effect.{ExitCode, IO, Resource}
 import fs2.io.file.{Files, Path}
 import org.http4s.client.Client
 import org.http4s.multipart.Multipart
@@ -46,7 +46,7 @@ case class RequestHandler(
               ex =>
                 Files[IO].exists(tempFile).flatMap {
                   case true => Files[IO].delete(tempFile)
-                  case false => IO.pure(())
+                  case false => IO.unit
                 } *> IO.raiseError(ex)
             }
 
@@ -65,10 +65,11 @@ case class RequestHandler(
   }
 
   private def handleUpload(tempFile: Path, mavenPackage: MavenPackage, entityBody: EntityBody[IO], authToken: AuthToken): IO[SuccessfulUpload] = {
-    val digest = MessageDigest.getInstance("MD5")
-    var fileSize = 0L
 
     for {
+
+      digestRef <- IO.ref(MessageDigest.getInstance("MD5"))
+      fileSizeRef <- IO.ref(0L)
 
       expectedMD5 <-
         if (isMavenDisabled) IO.pure(None)
@@ -76,20 +77,25 @@ case class RequestHandler(
 
       _ <- entityBody
         .chunkLimit(65536)
-        .map {
+        .flatMap {
           chunk =>
-            digest.update(chunk.toArray, 0, chunk.size)
-            fileSize += chunk.size
-            chunk
+            val updateMutable = digestRef.update(digest => {
+              digest.update(chunk.toArray, 0, chunk.size)
+              digest
+            }) *> fileSizeRef.update(fileSize => fileSize + chunk.size)
+
+            fs2.Stream.eval(updateMutable.as(chunk))
         }
         .flatMap(fs2.Stream.chunk)
         .through(Files[IO].writeAll(tempFile))
         .compile
         .drain
 
+      fileSize <- fileSizeRef.get
+
       _ <- logger.info(s"Received $fileSize bytes for ${mavenPackage.filename}")
 
-      uploadMD5 = Utils.byteArrayToHexString(digest.digest)
+      uploadMD5 <- digestRef.get.map(digest => Utils.byteArrayToHexString(digest.digest))
 
       destinationFile <-
         expectedMD5.fold(
@@ -98,7 +104,7 @@ case class RequestHandler(
           FileUtils.verifyMD5(tempFile, uploadDirectory / mavenPackage.filename, uploadMD5, _)
         )
 
-      _ <- postUploadActions.fold(IO.pure(0))(
+      _ <- postUploadActions.fold(IO.pure(ExitCode.Success))(
         action => action.run(destinationFile, mavenPackage)
       )
 

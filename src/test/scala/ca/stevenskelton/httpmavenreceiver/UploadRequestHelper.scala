@@ -4,7 +4,7 @@ import ca.stevenskelton.httpmavenreceiver.FileUploadFormData.FileUploadFieldName
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import fs2.io.file.{Files, Path}
-import org.http4s.{Uri,Response, HttpApp, Entity,Request,Headers,EntityEncoder,Method,MediaType}
+import org.http4s.*
 import org.http4s.client.Client
 import org.http4s.headers.`Content-Type`
 import org.http4s.multipart.{Boundary, Multipart, Part}
@@ -17,14 +17,12 @@ import scala.util.Using
 
 object UploadRequestHelper {
 
-  given logger: Logger[IO] = Main.logger
-
   def httpApp(
                responses: Map[Uri, Response[IO]],
                allowAllVersions: Boolean = false,
                isMavenDisabled: Boolean = false,
                postUploadActions: Option[PostUploadAction] = None,
-             ): IO[HttpApp[IO]] = {
+             )(using logger: Logger[IO] = Main.logger): IO[HttpApp[IO]] = {
 
     for {
       tmpDir <- Files[IO].createTempDirectory(None, "http-maven-receiver-specs-", None)
@@ -72,7 +70,10 @@ object UploadRequestHelper {
     val dir = new File(s"${tmpDir.toNioPath.toFile.getPath}/upload")
     dir.mkdir()
     val file = new File(s"${dir.getPath}/test.bin")
-    if (!file.exists) {
+    file.deleteOnExit()
+    if (file.exists) {
+      file
+    } else {
       //50MB file, this needs to fit into memory to make the request
       Using(new FileOutputStream(file)) {
         stream =>
@@ -80,10 +81,8 @@ object UploadRequestHelper {
           (0 to 50000).foreach {
             _ => stream.write(empty)
           }
-      }
+      }.map(_ => file).get
     }
-    file.deleteOnExit()
-    file
   }
 
 }

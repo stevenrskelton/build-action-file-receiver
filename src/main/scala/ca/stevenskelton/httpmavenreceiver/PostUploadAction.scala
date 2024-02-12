@@ -1,15 +1,15 @@
 package ca.stevenskelton.httpmavenreceiver
 
 import ca.stevenskelton.httpmavenreceiver.githubmaven.MavenPackage
-import cats.effect.IO
+import cats.effect.{ExitCode, IO, Sync}
 import fs2.io.file.Path
+import org.http4s.Status.InternalServerError
 import org.typelevel.log4cats.Logger
 
 import scala.sys.process.ProcessLogger
 
 case class PostUploadAction(command: String) {
-  def run(destinationFile: Path, mavenPackage: MavenPackage)(using logger: Logger[IO]): IO[_] = {
-    logger.info(s"Starting post upload action for ${destinationFile.fileName}")
+  def run(destinationFile: Path, mavenPackage: MavenPackage)(using logger: Logger[IO]): IO[ExitCode] = {
     val file = destinationFile.toNioPath.toFile
     val env = Seq(
       "HMV_USER" -> mavenPackage.user,
@@ -20,12 +20,19 @@ case class PostUploadAction(command: String) {
       "HMV_VERSION" -> mavenPackage.version,
       "HMV_FILENAME" -> file.getName
     )
-    val processLogger = ProcessLogger(logger.info(_))
-    IO.pure(sys.process.Process(Seq(command), file.getParentFile.getAbsoluteFile, env: _*).!(processLogger)).flatMap {
-      case 0 => logger.info(s"Completed post upload action for ${destinationFile.fileName}")
-      case _ =>
-        val ex = Exception(s"Failed post upload action for ${destinationFile.fileName}")
-        logger.error(ex)(ex.getMessage)
+
+    for {
+      _ <- logger.info(s"Starting post upload action for ${destinationFile.fileName}")
+      processLogger <- IO.pure(ProcessLogger(logger.info(_).unsafeRunSync()(cats.effect.unsafe.implicits.global)))
+      processExitCode <- IO.blocking(sys.process.Process(Seq(command), file.getParentFile.getAbsoluteFile, env: _*).!(processLogger))
+      actionExitCode <- processExitCode match {
+        case 0 => logger.info(s"Completed post upload action for ${destinationFile.fileName}").as(ExitCode.Success)
+        case _ =>
+          val ex = ResponseException(InternalServerError, s"Failed post upload action for ${destinationFile.fileName}")
+          logger.error(ex)(ex.getMessage) *> IO.raiseError(ex)
+      }
+    } yield {
+      actionExitCode
     }
   }
 

@@ -2,8 +2,8 @@ package ca.stevenskelton.httpmavenreceiver
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
-import org.http4s.{Uri, Request, Response, Entity, Status}
 import org.http4s.client.Client
+import org.http4s.*
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -12,6 +12,15 @@ import java.io.File
 class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
 
   private val requestUri = Uri.unsafeFromString("http://localhost/releases")
+
+  private val fileForm = Map(
+    "authToken" -> "",
+    "user" -> "gh-user",
+    "repository" -> "gh-project",
+    "groupId" -> "gh.groupid",
+    "artifactId" -> "test-file",
+    "packaging" -> "png",
+  )
 
   "VERSION 1.0.10" - {
 
@@ -22,15 +31,7 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
 
     val uploadPackageMetadataUri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/maven-metadata.xml")
     val uploadPackageMetadataFile = new File("/maven/maven-metadata.xml")
-    val uploadFileForm = Map(
-      "authToken" -> "",
-      "user" -> "gh-user",
-      "repository" -> "gh-project",
-      "groupId" -> "gh.groupid",
-      "artifactId" -> "test-file",
-      "packaging" -> "png",
-      "version" -> "1.0.10"
-    )
+    val uploadFileForm = fileForm + ("version" -> "1.0.10")
 
     "save upload if file does not exist, return BadRequest if it already exists" in {
       val gitHubResponses = Map(
@@ -54,41 +55,41 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
     "throw error if no github form data included in request" in {
       val httpApp = UploadRequestHelper.httpApp(Map.empty).unsafeRunSync()
 
-      val request: Request[IO] = UploadRequestHelper.multipartFilePutRequest(uploadFile, Map.empty, requestUri)
-      val client: Client[IO] = Client.fromHttpApp(httpApp)
+      val resp1: IO[String] = Client.fromHttpApp(httpApp).expect[String](
+        UploadRequestHelper.multipartFilePutRequest(uploadFile, Map.empty, requestUri)
+      )
 
-      val resp1: IO[String] = client.expect[String](request)
       val ex = intercept[ResponseException](resp1.unsafeRunSync())
       assert(ex.status == Status.BadRequest)
       assert(ex.message == FileUploadFormData.FormErrorMessage)
     }
 
     "cause error when upload md5 sum doesn't match" in {
-      val gitHubResponses = Map(
+
+      val httpApp = UploadRequestHelper.httpApp(Map(
         uploadPackageMetadataUri -> UploadRequestHelper.successResponse(uploadPackageMetadataFile),
         uploadFileMD5uri -> Response(entity = Entity.utf8String("36a9ba7d32ad98d518f67bd6b1787233"))
+      )).unsafeRunSync()
+
+      val resp1: IO[String] = Client.fromHttpApp(httpApp).expect[String](
+        UploadRequestHelper.multipartFilePutRequest(uploadFile, uploadFileForm, requestUri)
       )
-      val httpApp = UploadRequestHelper.httpApp(gitHubResponses).unsafeRunSync()
 
-      val request: Request[IO] = UploadRequestHelper.multipartFilePutRequest(uploadFile, uploadFileForm, requestUri)
-      val client: Client[IO] = Client.fromHttpApp(httpApp)
-
-      val resp1: IO[String] = client.expect[String](request)
       val ex = intercept[ResponseException](resp1.unsafeRunSync())
       assert(ex.status == Status.Conflict)
       assert(ex.message == "Upload test-file-1.0.10.png MD5 not equal, 36a9ba7d32ad98d518f67bd6b1787233 expected != 5c55838e6a9fb7bb5470cb222fd3b1f3 of upload.")
     }
 
     "cause errors when Maven package 404" in {
-      val gitHubResponses = Map(
+
+      val httpApp = UploadRequestHelper.httpApp(Map(
         uploadPackageMetadataUri -> Response(status = Status.NotFound)
+      )).unsafeRunSync()
+
+      val resp1: IO[String] = Client.fromHttpApp(httpApp).expect[String](
+        UploadRequestHelper.multipartFilePutRequest(uploadFile, uploadFileForm, requestUri)
       )
-      val httpApp = UploadRequestHelper.httpApp(gitHubResponses).unsafeRunSync()
 
-      val request: Request[IO] = UploadRequestHelper.multipartFilePutRequest(uploadFile, uploadFileForm, requestUri)
-      val client: Client[IO] = Client.fromHttpApp(httpApp)
-
-      val resp1: IO[String] = client.expect[String](request)
       val ex = intercept[ResponseException](resp1.unsafeRunSync())
       assert(ex.status == Status.NotFound)
       assert(ex.message == "404 Could not fetch GitHub maven: https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/maven-metadata.xml")
@@ -110,15 +111,7 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
     val uploadPackageSnapshotMetadataUri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/0.1.0-SNAPSHOT/maven-metadata.xml")
     val uploadPackageSnapshotMetadataFile = new File("/maven/0.1.0-SNAPSHOT/maven-metadata.xml")
 
-    val uploadFileForm = Map(
-      "authToken" -> "",
-      "user" -> "gh-user",
-      "repository" -> "gh-project",
-      "groupId" -> "gh.groupid",
-      "artifactId" -> "test-file",
-      "packaging" -> "png",
-      "version" -> "0.1.0-SNAPSHOT"
-    )
+    val uploadFileForm = fileForm + ("version" -> "0.1.0-SNAPSHOT")
 
     "save upload if file does not exist, return BadRequest if it already exists" in {
       val gitHubResponses = Map(
@@ -158,14 +151,10 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       )
       val httpApp = UploadRequestHelper.httpApp(gitHubResponses, allowAllVersions = true).unsafeRunSync()
 
-      val differentUploadFileForm = Map(
-        "authToken" -> "",
-        "user" -> "gh-user",
-        "repository" -> "gh-project",
-        "groupId" -> "gh.groupid",
+      val differentUploadFileForm = fileForm ++ Map(
         "artifactId" -> "test-file-assembly",
         "packaging" -> "bin",
-        "version" -> "1.0.5"
+        "version" -> "1.0.5",
       )
 
       val request: Request[IO] = UploadRequestHelper.multipartFilePutRequest(uploadFile, differentUploadFileForm, requestUri)
@@ -197,15 +186,7 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       uploadFileMD5uri -> UploadRequestHelper.successResponse(uploadFileMD5File)
     )
 
-    val uploadFileForm = Map(
-      "authToken" -> "",
-      "user" -> "gh-user",
-      "repository" -> "gh-project",
-      "groupId" -> "gh.groupid",
-      "artifactId" -> "test-file",
-      "packaging" -> "png",
-      "version" -> "0.1.0-SNAPSHOT"
-    )
+    val uploadFileForm = fileForm + ("version" -> "0.1.0-SNAPSHOT")
 
     def exec(allowAllVersions: Boolean): IO[String] = {
       val httpApp = UploadRequestHelper.httpApp(gitHubResponses, allowAllVersions = allowAllVersions).unsafeRunSync()
@@ -235,15 +216,7 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
     val uploadPackageMetadataUri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/maven-metadata.xml")
     val uploadPackageMetadataFile = new File("/maven/maven-metadata.xml")
 
-    val uploadFileForm404 = Map(
-      "authToken" -> "",
-      "user" -> "gh-user",
-      "repository" -> "gh-project",
-      "groupId" -> "gh.groupid",
-      "artifactId" -> "test-file",
-      "packaging" -> "png",
-      "version" -> "9.0.0-SNAPSHOT"
-    )
+    val uploadFileForm404 = fileForm + ("version" -> "9.0.0-SNAPSHOT")
 
     def exec(isMavenDisabled: Boolean): IO[String] = {
       val gitHubResponses = if (isMavenDisabled) Map.empty else Map(
@@ -270,6 +243,52 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       assert(resp1.unsafeRunSync() == "Successfully saved upload of test-file-9.0.0-SNAPSHOT.png, 7kb, MD5 5c55838e6a9fb7bb5470cb222fd3b1f3")
     }
 
+  }
+
+  "post upload action" - {
+
+    val uploadFilename = "test-file-1.0.10.png"
+    val uploadFile = new File(s"/test-file/1.0.10/$uploadFilename")
+    val uploadFileMD5uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/1.0.10/$uploadFilename.md5")
+    val uploadFileMD5File = new File(s"/test-file/1.0.10/$uploadFilename.md5")
+
+    val uploadPackageMetadataUri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/maven-metadata.xml")
+    val uploadPackageMetadataFile = new File("/maven/maven-metadata.xml")
+    val uploadFileForm = fileForm + ("version" -> "1.0.10")
+
+    "exec" in {
+      given logger: RecordingLogger = RecordingLogger()
+
+      val gitHubResponses = Map(
+        uploadPackageMetadataUri -> UploadRequestHelper.successResponse(uploadPackageMetadataFile),
+        uploadFileMD5uri -> UploadRequestHelper.successResponse(uploadFileMD5File)
+      )
+      val cmd = new File("src/test/resources/postuploadactions/echoenv.sh").getAbsolutePath
+      val httpApp = UploadRequestHelper.httpApp(gitHubResponses, postUploadActions = Some(PostUploadAction(cmd))).unsafeRunSync()
+
+      val request: Request[IO] = UploadRequestHelper.multipartFilePutRequest(uploadFile, uploadFileForm, requestUri)
+      val client: Client[IO] = Client.fromHttpApp(httpApp)
+
+      val resp1: IO[String] = client.expect[String](request)
+      assert(resp1.unsafeRunSync() == "Successfully saved upload of test-file-1.0.10.png, 7kb, MD5 5c55838e6a9fb7bb5470cb222fd3b1f3")
+
+      val log = logger.lines
+      assert(log.length == 12)
+      assert(log(0) == "Received 7478 bytes for test-file-1.0.10.png")
+      assert(log(1) == "Starting post upload action for test-file-1.0.10.png")
+      assert(log(2).contains("http-maven-receiver-specs-"))
+      assert(log(3) == uploadFileForm("user"))
+      assert(log(4) == uploadFileForm("repository"))
+      assert(log(5) == uploadFileForm("groupId"))
+      assert(log(6) == uploadFileForm("artifactId"))
+      assert(log(7) == uploadFileForm("packaging"))
+      assert(log(8) == uploadFileForm("version"))
+      assert(log(9) == "test-file-1.0.10.png")
+      assert(log(10) == "Completed post upload action for test-file-1.0.10.png")
+      assert(log(11).startsWith("Completed test-file-1.0.10.png (7kb) in"))
+//      val mainArgs = MainArgs.parse(List("--exec=/bin/ls")).unsafeRunSync()
+//      assert(mainArgs.postUploadAction.contains(PostUploadAction("/bin/ls")))
+    }
   }
 
 }

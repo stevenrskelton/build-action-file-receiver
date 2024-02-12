@@ -38,7 +38,7 @@ lazy val root = (project in file("."))
         "-Ykind-projector",
         //        "-Yexplicit-nulls",
         "-Ysafe-init",
-        //        "-Wvalue-discard",
+        "-Wvalue-discard",
         // "-Xfatal-warnings"
       )
     },

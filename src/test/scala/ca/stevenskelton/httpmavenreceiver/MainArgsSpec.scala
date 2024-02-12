@@ -36,7 +36,7 @@ class MainArgsSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       assert(ex.code == ExitCode.Error)
       assert(ex.msg.startsWith("Exec /bin/lsss does not exist with working directory /"))
     }
-    "relative exists" in {
+    "relative exists without leading /" in {
       given logger: RecordingLogger = RecordingLogger()
 
       val mainArgs = MainArgs.parse(List("--exec=src/test/resources/postuploadactions/echoenv.sh")).unsafeRunSync()
@@ -50,7 +50,14 @@ class MainArgsSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       assert(mainArgs.postUploadAction.contains(PostUploadAction("./src/test/resources/postuploadactions/echoenv.sh")))
       assert(logger.lines(0) == "Post upload command: ./src/test/resources/postuploadactions/echoenv.sh")
     }
-    "relative does not exist" in {
+    "relative does not exist without leading /" in {
+      given logger: RecordingLogger = RecordingLogger()
+
+      val ex = intercept[ExitException](MainArgs.parse(List("--exec=echoenv.sh")).unsafeRunSync())
+      assert(ex.code == ExitCode.Error)
+      assert(ex.msg.startsWith("Exec echoenv.sh does not exist with working directory /"))
+    }
+    "relative does not exist with leading ./" in {
       given logger: RecordingLogger = RecordingLogger()
 
       val ex = intercept[ExitException](MainArgs.parse(List("--exec=./echoenv.sh")).unsafeRunSync())
