@@ -86,9 +86,9 @@ object MainArgs {
           cmd =>
             val cmdPath = Path(cmd)
             val path = if(cmdPath.isAbsolute) cmdPath else Path(s"${jarDirectory.getAbsolutePath}/$cmd")
-
+            logger.info(path.toString)
             Files[IO].exists(path).flatMap {
-              case false => IO.raiseError(ExitException(s"Exec $cmd does not exist in working directory ${jarDirectory.toString}"))
+              case false => IO.raiseError(ExitException(s"Exec $cmd does not exist in working directory ${jarDirectory.getPath}"))
               case true => Files[IO].isExecutable(path).flatMap {
                 case false => IO.raiseError(ExitException(s"Exec $cmd not executable."))
                 case true => logger.info(s"Post upload command: $cmd").as(Some(PostUploadAction(cmd, jarDirectory.getAbsoluteFile)))
