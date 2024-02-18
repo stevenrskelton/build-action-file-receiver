@@ -69,5 +69,5 @@ def publishToGitHubPackages(fileToPublish: File): Def.Initialize[Task[Unit]] = D
 
   println(s"Executing shell command $exe")
   import scala.sys.process._
-  if (exe.! != 0) throw new Exception("publishAssemblyToGitHubPackages failed")
+  if (exe.! != 0) throw new Exception("publishToGitHubPackages failed")
 }
