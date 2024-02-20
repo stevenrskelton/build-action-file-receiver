@@ -1,25 +1,19 @@
 package ca.stevenskelton.httpmavenreceiver
 
 import ca.stevenskelton.httpmavenreceiver.FileUploadFormData.FileUploadFieldName
-import ca.stevenskelton.httpmavenreceiver.Main.logger
 import ca.stevenskelton.httpmavenreceiver.logging.StdOutLoggerFactory
 import cats.effect.kernel.Resource
-import cats.effect.{ExitCode, IO, IOApp, Resource}
-import fs2.io.file.{Files, Path}
+import cats.effect.{ExitCode, IO, IOApp}
 import org.http4s.*
 import org.http4s.client.Client
-import org.http4s.dsl.impl./
-import org.http4s.dsl.io.{->, PUT, Root}
 import org.http4s.ember.client.EmberClientBuilder
-import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.headers.`Content-Type`
 import org.http4s.multipart.{Boundary, Multipart, Part}
 import org.typelevel.log4cats.{Logger, LoggerFactory}
 import org.typelevel.vault.Vault
 import scodec.bits.ByteVector
 
-import java.io.{File, FileOutputStream}
-import scala.util.Using
+import java.io.File
 
 object PostUploadTest extends IOApp {
 

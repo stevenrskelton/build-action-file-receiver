@@ -2,8 +2,8 @@ package ca.stevenskelton.httpmavenreceiver.githubmaven
 
 import ca.stevenskelton.httpmavenreceiver.{AuthToken, MD5Hash, ResponseException}
 import cats.effect.{IO, Resource}
-import org.http4s.client.Client
 import org.http4s.*
+import org.http4s.client.Client
 import org.typelevel.log4cats.Logger
 
 import scala.util.Try

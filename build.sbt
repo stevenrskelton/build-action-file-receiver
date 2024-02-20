@@ -32,14 +32,12 @@ lazy val root = (project in file("."))
         "-deprecation",
         "-feature",
         "-unchecked",
-        "-language:experimental.macros",
-        "-language:higherKinds",
-        "-language:implicitConversions",
-        "-Ykind-projector",
-        //        "-Yexplicit-nulls",
+        "-indent", //"-rewrite",
+        "-Wunused:imports,privates,locals",
+//        "-Yexplicit-nulls",
         "-Ysafe-init",
         "-Wvalue-discard",
-        // "-Xfatal-warnings"
+        "-Xfatal-warnings",
       )
     },
     javacOptions ++= Seq("-source", javaVersion, "-target", javaVersion),

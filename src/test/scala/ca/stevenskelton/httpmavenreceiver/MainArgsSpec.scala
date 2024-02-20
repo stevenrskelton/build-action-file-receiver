@@ -35,14 +35,14 @@ class MainArgsSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
     "absolute does not exist" in {
       given logger: RecordingLogger = RecordingLogger()
 
-      val ex = intercept[ExitException](MainArgs.parse(List("--exec=/bin/lsss"),jarDirectory).unsafeRunSync())
+      val ex = intercept[ExitException](MainArgs.parse(List("--exec=/bin/lsss"), jarDirectory).unsafeRunSync())
       assert(ex.code == ExitCode.Error)
       assert(ex.msg.startsWith("Exec /bin/lsss does not exist in working directory /"))
     }
     "relative exists without leading /" in {
       given logger: RecordingLogger = RecordingLogger()
 
-      val mainArgs = MainArgs.parse(List("--exec=test/resources/postuploadactions/echoenv.sh"),jarDirectory).unsafeRunSync()
+      val mainArgs = MainArgs.parse(List("--exec=test/resources/postuploadactions/echoenv.sh"), jarDirectory).unsafeRunSync()
       assert(mainArgs.postUploadAction.contains(PostUploadAction("test/resources/postuploadactions/echoenv.sh", jarDirectory)))
       assert(logger.lines(0) == "Post upload command: test/resources/postuploadactions/echoenv.sh")
     }

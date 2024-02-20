@@ -1,10 +1,10 @@
 package ca.stevenskelton.httpmavenreceiver
 
+import ca.stevenskelton.httpmavenreceiver.Main.ExitException
 import cats.effect.{ExitCode, IO}
 import com.comcast.ip4s.{Host, Port}
 import fs2.io.file.{Files, Path}
 import org.typelevel.log4cats.Logger
-import ca.stevenskelton.httpmavenreceiver.Main.ExitException
 
 import java.io.File
 
@@ -17,6 +17,7 @@ case class MainArgs(
                      postUploadAction: Option[PostUploadAction],
                      uploadDirectory: Path,
                    )
+
 object MainArgs {
 
   private val DefaultAllowedUploadSize = 30 * 1024 * 1024

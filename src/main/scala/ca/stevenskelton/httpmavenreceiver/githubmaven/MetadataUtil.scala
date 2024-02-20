@@ -2,9 +2,9 @@ package ca.stevenskelton.httpmavenreceiver.githubmaven
 
 import ca.stevenskelton.httpmavenreceiver.{AuthToken, FileUploadFormData, ResponseException}
 import cats.effect.kernel.Resource
-import cats.effect.{IO, Resource}
-import org.http4s.client.Client
+import cats.effect.IO
 import org.http4s.*
+import org.http4s.client.Client
 import org.typelevel.log4cats.Logger
 
 import java.time.format.DateTimeFormatter

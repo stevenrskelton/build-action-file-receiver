@@ -2,8 +2,8 @@ package ca.stevenskelton.httpmavenreceiver
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
-import org.http4s.client.Client
 import org.http4s.*
+import org.http4s.client.Client
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -23,11 +23,11 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
   )
 
   "VERSION 1.0.10" - {
+    val uploadFile = new File(s"/test-file/1.0.10/test-file-1.0.10.png")
 
-    val uploadFilename = "test-file-1.0.10.png"
-    val uploadFile = new File(s"/test-file/1.0.10/$uploadFilename")
-    val uploadFileMD5uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/1.0.10/$uploadFilename.md5")
-    val uploadFileMD5File = new File(s"/test-file/1.0.10/$uploadFilename.md5")
+    val mavenFilename = "test-file-1.0.10.png"
+    val uploadFileMD5uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/1.0.10/$mavenFilename.md5")
+    val uploadFileMD5File = new File(s"/test-file/1.0.10/$mavenFilename.md5")
 
     val uploadPackageMetadataUri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/maven-metadata.xml")
     val uploadPackageMetadataFile = new File("/maven/maven-metadata.xml")
@@ -65,7 +65,6 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
     }
 
     "cause error when upload md5 sum doesn't match" in {
-
       val httpApp = UploadRequestHelper.httpApp(Map(
         uploadPackageMetadataUri -> UploadRequestHelper.successResponse(uploadPackageMetadataFile),
         uploadFileMD5uri -> Response(entity = Entity.utf8String("36a9ba7d32ad98d518f67bd6b1787233"))
@@ -81,7 +80,6 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
     }
 
     "cause errors when Maven package 404" in {
-
       val httpApp = UploadRequestHelper.httpApp(Map(
         uploadPackageMetadataUri -> Response(status = Status.NotFound)
       )).unsafeRunSync()
@@ -98,10 +96,9 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
   }
 
   "SNAPSHOT 0.1.0" - {
+    val uploadFile = new File(s"/test-file/0.1.0-SNAPSHOT/test-file-0.1.0-SNAPSHOT.png")
 
-    val uploadFilename = "test-file-0.1.0-SNAPSHOT.png"
     val mavenFilename = "test-file-0.1.0-20230330.234307-29.png"
-    val uploadFile = new File(s"/test-file/0.1.0-SNAPSHOT/$mavenFilename")
     val uploadFileMD5uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/0.1.0-SNAPSHOT/$mavenFilename.md5")
     val uploadFileMD5File = new File(s"/test-file/0.1.0-SNAPSHOT/$mavenFilename.md5")
 
@@ -139,7 +136,8 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
     "rename based on packaging" in {
       val uploadFile = new File(s"/test-file/1.0.10/test-file-1.0.10.png")
 
-      val uploadFileMD5uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file-assembly/1.0.5/test-file-assembly-1.0.5.bin.md5")
+      val mavenFilename = "test-file-assembly-1.0.5.bin"
+      val uploadFileMD5uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file-assembly/1.0.5/$mavenFilename.md5")
       val uploadFileMD5File = new File(s"/test-file/1.0.10/test-file-1.0.10.png.md5")
 
       val uploadPackageMetadataUri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file-assembly/maven-metadata.xml")
@@ -167,10 +165,9 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
   }
 
   "allow-all-versions" - {
+    val uploadFile = new File(s"/test-file/0.1.0-SNAPSHOT/test-file-0.1.0-SNAPSHOT.png")
 
-    val uploadFilename = "test-file-0.1.0-SNAPSHOT.png"
     val mavenFilename = "test-file-0.1.0-20230330.234307-29.png"
-    val uploadFile = new File(s"/test-file/0.1.0-SNAPSHOT/$mavenFilename")
     val uploadFileMD5uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/0.1.0-SNAPSHOT/$mavenFilename.md5")
     val uploadFileMD5File = new File(s"/test-file/0.1.0-SNAPSHOT/$mavenFilename.md5")
 
@@ -211,8 +208,8 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
   }
 
   "disable-maven" - {
-
     val uploadFile = new File(s"/test-file/0.1.0-SNAPSHOT/test-file-0.1.0-SNAPSHOT.png")
+
     val uploadPackageMetadataUri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/maven-metadata.xml")
     val uploadPackageMetadataFile = new File("/maven/maven-metadata.xml")
 
@@ -246,11 +243,11 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
   }
 
   "post upload action" - {
+    val uploadFile = new File(s"/test-file/1.0.10/test-file-1.0.10.png")
 
-    val uploadFilename = "test-file-1.0.10.png"
-    val uploadFile = new File(s"/test-file/1.0.10/$uploadFilename")
-    val uploadFileMD5uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/1.0.10/$uploadFilename.md5")
-    val uploadFileMD5File = new File(s"/test-file/1.0.10/$uploadFilename.md5")
+    val mavenFilename = "test-file-1.0.10.png"
+    val uploadFileMD5uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/1.0.10/$mavenFilename.md5")
+    val uploadFileMD5File = new File(s"/test-file/1.0.10/$mavenFilename.md5")
 
     val uploadPackageMetadataUri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/maven-metadata.xml")
     val uploadPackageMetadataFile = new File("/maven/maven-metadata.xml")

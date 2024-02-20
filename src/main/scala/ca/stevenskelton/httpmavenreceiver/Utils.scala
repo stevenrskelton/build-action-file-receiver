@@ -2,7 +2,6 @@ package ca.stevenskelton.httpmavenreceiver
 
 import java.io.{File, FileInputStream}
 import java.security.MessageDigest
-import java.time.Duration
 import scala.util.Using
 
 object Utils {
@@ -70,5 +69,5 @@ object Utils {
       s"$bytes bytes"
     }
   }
-  
+
 }

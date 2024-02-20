@@ -12,8 +12,8 @@ class RecordingLogger extends Logger[IO] {
   private val logBuffer = new ListBuffer[String]()
 
   private def log(msg: String): IO[Unit] = {
-//    IO.println(msg) *>
-      IO(synchronized(logBuffer.append(msg)))
+    //    IO.println(msg) *>
+    IO(synchronized(logBuffer.append(msg)))
   }
 
   override def error(t: Throwable)(message: => String): IO[Unit] = log(t.toString)

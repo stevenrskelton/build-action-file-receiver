@@ -10,10 +10,10 @@ import java.io.File
 import scala.sys.process.ProcessLogger
 
 case class PostUploadAction(command: String, jarDirectory: File) {
-  
+
   val commandPath: Path = {
     val cmdPath = Path(command)
-    if (cmdPath.isAbsolute) cmdPath 
+    if (cmdPath.isAbsolute) cmdPath
     else Path(s"${jarDirectory.getAbsolutePath}/$command")
   }
 
