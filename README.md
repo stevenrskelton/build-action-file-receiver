@@ -95,7 +95,7 @@ if [[ $HMV_FILENAME == project-assembly-* ]] ; then
     echo "Moving $HMV_FILENAME to /home/project"
     sudo -- chown project:project $HMV_FILENAME
     sudo -- mv $HMV_FILENAME /home/project/
-    echo "Successfully installed new tradeaudit version $HMV_FILENAME"
+    echo "Successfully installed new version $HMV_FILENAME"
 fi
 ```
 
