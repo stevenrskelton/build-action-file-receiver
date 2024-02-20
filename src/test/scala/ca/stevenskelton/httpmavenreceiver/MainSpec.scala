@@ -2,12 +2,11 @@ package ca.stevenskelton.httpmavenreceiver
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
+import fs2.io.file.Path
 import org.http4s.*
 import org.http4s.client.Client
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
-
-import java.io.File
 
 class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
 
@@ -23,14 +22,14 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
   )
 
   "VERSION 1.0.10" - {
-    val uploadFile = new File(s"/test-file/1.0.10/test-file-1.0.10.png")
+    val uploadFile = Path(s"/test-file/1.0.10/test-file-1.0.10.png")
 
     val mavenFilename = "test-file-1.0.10.png"
     val uploadFileMD5uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/1.0.10/$mavenFilename.md5")
-    val uploadFileMD5File = new File(s"/test-file/1.0.10/$mavenFilename.md5")
+    val uploadFileMD5File = Path(s"/test-file/1.0.10/$mavenFilename.md5")
 
     val uploadPackageMetadataUri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/maven-metadata.xml")
-    val uploadPackageMetadataFile = new File("/maven/maven-metadata.xml")
+    val uploadPackageMetadataFile = Path("/maven/maven-metadata.xml")
     val uploadFileForm = fileForm + ("version" -> "1.0.10")
 
     "save upload if file does not exist, return BadRequest if it already exists" in {
@@ -96,17 +95,17 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
   }
 
   "SNAPSHOT 0.1.0" - {
-    val uploadFile = new File(s"/test-file/0.1.0-SNAPSHOT/test-file-0.1.0-SNAPSHOT.png")
+    val uploadFile = Path(s"/test-file/0.1.0-SNAPSHOT/test-file-0.1.0-SNAPSHOT.png")
 
     val mavenFilename = "test-file-0.1.0-20230330.234307-29.png"
     val uploadFileMD5uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/0.1.0-SNAPSHOT/$mavenFilename.md5")
-    val uploadFileMD5File = new File(s"/test-file/0.1.0-SNAPSHOT/$mavenFilename.md5")
+    val uploadFileMD5File = Path(s"/test-file/0.1.0-SNAPSHOT/$mavenFilename.md5")
 
     val uploadPackageMetadataUri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/maven-metadata.xml")
-    val uploadPackageMetadataFile = new File("/maven/maven-metadata_withsnapshot.xml")
+    val uploadPackageMetadataFile = Path("/maven/maven-metadata_withsnapshot.xml")
 
     val uploadPackageSnapshotMetadataUri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/0.1.0-SNAPSHOT/maven-metadata.xml")
-    val uploadPackageSnapshotMetadataFile = new File("/maven/0.1.0-SNAPSHOT/maven-metadata.xml")
+    val uploadPackageSnapshotMetadataFile = Path("/maven/0.1.0-SNAPSHOT/maven-metadata.xml")
 
     val uploadFileForm = fileForm + ("version" -> "0.1.0-SNAPSHOT")
 
@@ -134,14 +133,14 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
 
   "BIN-ASSEMBLY" - {
     "rename based on packaging" in {
-      val uploadFile = new File(s"/test-file/1.0.10/test-file-1.0.10.png")
+      val uploadFile = Path(s"/test-file/1.0.10/test-file-1.0.10.png")
 
       val mavenFilename = "test-file-assembly-1.0.5.bin"
       val uploadFileMD5uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file-assembly/1.0.5/$mavenFilename.md5")
-      val uploadFileMD5File = new File(s"/test-file/1.0.10/test-file-1.0.10.png.md5")
+      val uploadFileMD5File = Path(s"/test-file/1.0.10/test-file-1.0.10.png.md5")
 
       val uploadPackageMetadataUri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file-assembly/maven-metadata.xml")
-      val uploadPackageMetadataFile = new File("/maven/maven-metadata.xml")
+      val uploadPackageMetadataFile = Path("/maven/maven-metadata.xml")
 
       val gitHubResponses = Map(
         uploadPackageMetadataUri -> UploadRequestHelper.successResponse(uploadPackageMetadataFile),
@@ -165,17 +164,17 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
   }
 
   "allow-all-versions" - {
-    val uploadFile = new File(s"/test-file/0.1.0-SNAPSHOT/test-file-0.1.0-SNAPSHOT.png")
+    val uploadFile = Path(s"/test-file/0.1.0-SNAPSHOT/test-file-0.1.0-SNAPSHOT.png")
 
     val mavenFilename = "test-file-0.1.0-20230330.234307-29.png"
     val uploadFileMD5uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/0.1.0-SNAPSHOT/$mavenFilename.md5")
-    val uploadFileMD5File = new File(s"/test-file/0.1.0-SNAPSHOT/$mavenFilename.md5")
+    val uploadFileMD5File = Path(s"/test-file/0.1.0-SNAPSHOT/$mavenFilename.md5")
 
     val uploadPackageMetadataUri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/maven-metadata.xml")
-    val uploadPackageMetadataFile = new File("/maven/maven-metadata.xml")
+    val uploadPackageMetadataFile = Path("/maven/maven-metadata.xml")
 
     val uploadPackageSnapshotMetadataUri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/0.1.0-SNAPSHOT/maven-metadata.xml")
-    val uploadPackageSnapshotMetadataFile = new File("/maven/0.1.0-SNAPSHOT/maven-metadata.xml")
+    val uploadPackageSnapshotMetadataFile = Path("/maven/0.1.0-SNAPSHOT/maven-metadata.xml")
 
     val gitHubResponses = Map(
       uploadPackageMetadataUri -> UploadRequestHelper.successResponse(uploadPackageMetadataFile),
@@ -208,10 +207,10 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
   }
 
   "disable-maven" - {
-    val uploadFile = new File(s"/test-file/0.1.0-SNAPSHOT/test-file-0.1.0-SNAPSHOT.png")
+    val uploadFile = Path(s"/test-file/0.1.0-SNAPSHOT/test-file-0.1.0-SNAPSHOT.png")
 
     val uploadPackageMetadataUri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/maven-metadata.xml")
-    val uploadPackageMetadataFile = new File("/maven/maven-metadata.xml")
+    val uploadPackageMetadataFile = Path("/maven/maven-metadata.xml")
 
     val uploadFileForm404 = fileForm + ("version" -> "9.0.0-SNAPSHOT")
 
@@ -243,14 +242,14 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
   }
 
   "post upload action" - {
-    val uploadFile = new File(s"/test-file/1.0.10/test-file-1.0.10.png")
+    val uploadFile = Path(s"/test-file/1.0.10/test-file-1.0.10.png")
 
     val mavenFilename = "test-file-1.0.10.png"
     val uploadFileMD5uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/1.0.10/$mavenFilename.md5")
-    val uploadFileMD5File = new File(s"/test-file/1.0.10/$mavenFilename.md5")
+    val uploadFileMD5File = Path(s"/test-file/1.0.10/$mavenFilename.md5")
 
     val uploadPackageMetadataUri = Uri.unsafeFromString(s"https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/maven-metadata.xml")
-    val uploadPackageMetadataFile = new File("/maven/maven-metadata.xml")
+    val uploadPackageMetadataFile = Path("/maven/maven-metadata.xml")
     val uploadFileForm = fileForm + ("version" -> "1.0.10")
 
     "exec" in {
@@ -260,9 +259,9 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
         uploadPackageMetadataUri -> UploadRequestHelper.successResponse(uploadPackageMetadataFile),
         uploadFileMD5uri -> UploadRequestHelper.successResponse(uploadFileMD5File)
       )
-      val cmd = new File("src/test/resources/postuploadactions/echoenv.sh").getAbsolutePath
-      val workingDirectory = new File("").getAbsoluteFile
-      val httpApp = UploadRequestHelper.httpApp(gitHubResponses, postUploadActions = Some(PostUploadAction(cmd, workingDirectory))).unsafeRunSync()
+      val cmd = Path("src/test/resources/postuploadactions/echoenv.sh").absolute
+      val workingDirectory = Path("").absolute
+      val httpApp = UploadRequestHelper.httpApp(gitHubResponses, postUploadActions = Some(PostUploadAction(cmd.toString, workingDirectory))).unsafeRunSync()
 
       val request: Request[IO] = UploadRequestHelper.multipartFilePutRequest(uploadFile, uploadFileForm, requestUri)
       val client: Client[IO] = Client.fromHttpApp(httpApp)

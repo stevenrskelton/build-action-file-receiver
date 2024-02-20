@@ -6,8 +6,6 @@ import com.comcast.ip4s.{Host, Port}
 import fs2.io.file.{Files, Path}
 import org.typelevel.log4cats.Logger
 
-import java.io.File
-
 case class MainArgs(
                      allowAllVersions: Boolean,
                      disableMaven: Boolean,
@@ -21,8 +19,10 @@ case class MainArgs(
 object MainArgs:
 
   private val DefaultAllowedUploadSize = 30 * 1024 * 1024
+  private val DefaultPort = 8080
+  private val DefaultUploadFolder = "files"
 
-  def parse(args: List[String], jarDirectory: File)(using logger: Logger[IO]): IO[MainArgs] =
+  def parse(args: List[String], jarDirectory: Path)(using logger: Logger[IO]): IO[MainArgs] =
 
     val argMap = args
       .filter(_.startsWith("--"))
@@ -63,7 +63,7 @@ object MainArgs:
         .getOrElse:
           IO.raiseError(ExitException(s"Invalid host: ${argMap("host")}"))
 
-      port <- Port.fromString(argMap.getOrElse("port", "8080"))
+      port <- Port.fromString(argMap.getOrElse("port", DefaultPort.toString))
         .map(IO.pure)
         .getOrElse:
           IO.raiseError(ExitException(s"Invalid port: ${argMap("port")}"))
@@ -82,14 +82,14 @@ object MainArgs:
           cmd =>
             val postUploadAction = PostUploadAction(cmd, jarDirectory)
             Files[IO].exists(postUploadAction.commandPath).flatMap:
-              case false => IO.raiseError(ExitException(s"Exec $cmd does not exist in working directory ${jarDirectory.getPath}"))
+              case false => IO.raiseError(ExitException(s"Exec $cmd does not exist in working directory ${jarDirectory.toString}"))
               case true => Files[IO].isExecutable(postUploadAction.commandPath).flatMap:
                 case false => IO.raiseError(ExitException(s"Exec $cmd not executable."))
                 case true => logger.info(s"Post upload command: $cmd").as(Some(postUploadAction))
         .getOrElse(IO.pure(None))
 
       uploadDirectory <-
-        val path = Path(argMap.getOrElse("upload-directory", "files"))
+        val path = Path(argMap.getOrElse("upload-directory", DefaultUploadFolder))
         val pathString = path.absolute.toString
         for {
           _ <- Files[IO].exists(path).flatMap:

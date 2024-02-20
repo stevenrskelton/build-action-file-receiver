@@ -1,8 +1,8 @@
 package ca.stevenskelton.httpmavenreceiver.githubmaven
 
 import ca.stevenskelton.httpmavenreceiver.{AuthToken, FileUploadFormData, ResponseException}
-import cats.effect.kernel.Resource
 import cats.effect.IO
+import cats.effect.kernel.Resource
 import org.http4s.*
 import org.http4s.client.Client
 import org.typelevel.log4cats.Logger
@@ -23,10 +23,10 @@ object MetadataUtil:
           headers = Headers(Header.ToRaw.keyValuesToRaw("Authorization" -> s"token $authToken")),
         )
         client.expectOr[String](request):
-            errorResponse =>
-              val msg = s"${errorResponse.status.code} Could not fetch GitHub maven: $uri"
-              IO.raiseError(ResponseException(errorResponse.status, msg))
-          .map(XML.loadString)
+          errorResponse =>
+            val msg = s"${errorResponse.status.code} Could not fetch GitHub maven: $uri"
+            IO.raiseError(ResponseException(errorResponse.status, msg))
+        .map(XML.loadString)
 
   def fetchMetadata(fileUploadFormData: FileUploadFormData, allowAllVersions: Boolean)(using httpClient: Resource[IO, Client[IO]], logger: Logger[IO]): IO[MavenPackage] =
     MavenPackage.gitHubMavenArtifactPath(fileUploadFormData).map {

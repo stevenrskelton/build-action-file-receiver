@@ -19,17 +19,17 @@ object FileUtils:
   def verifyMD5(tempFile: Path, destinationFile: Path, md5: MD5Hash, expectedMd5: MD5Hash)(using logger: Logger[IO]): IO[Path] =
     if (md5 != expectedMd5)
       val errorMessage = s"Upload ${destinationFile.fileName} MD5 not equal, $expectedMd5 expected != $md5 of upload."
-      logger.error(errorMessage) *> 
-        Files[IO].delete(tempFile) *> 
+      logger.error(errorMessage) *>
+        Files[IO].delete(tempFile) *>
         IO.raiseError(ResponseException(Status.Conflict, errorMessage))
     else
-      logger.info(s"MD5 validated $md5, saving file at ${destinationFile.fileName}") *> 
+      logger.info(s"MD5 validated $md5, saving file at ${destinationFile.fileName}") *>
         moveTempToDestinationFile(tempFile, destinationFile)
 
   def moveTempToDestinationFile(tempFile: Path, destinationFile: Path)(using logger: Logger[IO]): IO[Path] =
     Files[IO].move(tempFile, destinationFile).as(destinationFile).handleErrorWith:
       ex =>
         val errorMessage = s"Could not rename $tempFile to ${destinationFile.fileName}"
-        logger.error(errorMessage) *> 
+        logger.error(errorMessage) *>
           IO.raiseError(ResponseException(Status.InternalServerError, errorMessage, Some(ex)))
 

@@ -2,6 +2,7 @@ package ca.stevenskelton.httpmavenreceiver
 
 import ca.stevenskelton.httpmavenreceiver.logging.StdOutLoggerFactory
 import cats.effect.{ExitCode, IO, IOApp, Resource}
+import fs2.io.file.Path
 import org.http4s.client.Client
 import org.http4s.dsl.impl./
 import org.http4s.dsl.io.{->, PUT, Root}
@@ -9,8 +10,6 @@ import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.{HttpApp, HttpRoutes}
 import org.typelevel.log4cats.{Logger, LoggerFactory}
-
-import java.io.File
 
 object Main extends /*epollcat.EpollApp */ IOApp:
 
@@ -24,7 +23,7 @@ object Main extends /*epollcat.EpollApp */ IOApp:
     case request@PUT -> Root / "releases" => handler.releasesPut(request)
   }.orNotFound
 
-  def jarDirectory: File = new java.io.File(getClass.getProtectionDomain.getCodeSource.getLocation.toURI.getPath).getParentFile
+  def jarDirectory: Path = Path(getClass.getProtectionDomain.getCodeSource.getLocation.toURI.getPath).parent.get
 
   override def run(args: List[String]): IO[ExitCode] =
     logger.info(s"${SbtBuildInfo.name} ${SbtBuildInfo.version}") *>
@@ -55,9 +54,9 @@ object Main extends /*epollcat.EpollApp */ IOApp:
               .build
               .useForever
               .as(ExitCode.Success)
-            
+
         .handleErrorWith:
           case ExitException(msg, code) => logger.error(msg).as(code)
           case ex => logger.error(ex)(ex.getMessage).as(ExitCode.Error)
-          
+
 end Main

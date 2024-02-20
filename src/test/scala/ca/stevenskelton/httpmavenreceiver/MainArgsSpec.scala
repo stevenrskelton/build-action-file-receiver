@@ -3,14 +3,13 @@ package ca.stevenskelton.httpmavenreceiver
 import ca.stevenskelton.httpmavenreceiver.Main.ExitException
 import cats.effect.ExitCode
 import cats.effect.testing.scalatest.AsyncIOSpec
+import fs2.io.file.Path
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.io.File
-
 class MainArgsSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
 
-  val jarDirectory = new File("src").getAbsoluteFile
+  private val jarDirectory = Path("src").absolute
   //  --help
   //  --disable-maven
   //  --allow-all-versions

@@ -12,9 +12,6 @@ import org.typelevel.log4cats.Logger
 import org.typelevel.vault.Vault
 import scodec.bits.ByteVector
 
-import java.io.{File, FileOutputStream}
-import scala.util.Using
-
 object UploadRequestHelper {
 
   def httpApp(
@@ -40,49 +37,51 @@ object UploadRequestHelper {
     }
   }
 
-  def successResponse(file: File): Response[IO] = {
-    val bodyBytes = Option(getClass.getResourceAsStream(file.getAbsolutePath)).map(_.readAllBytes).getOrElse {
-      java.nio.file.Files.readAllBytes(file.toPath)
+  def successResponse(file: Path): Response[IO] = {
+    val bodyBytes = Option(getClass.getResourceAsStream(file.absolute.toString)).map(_.readAllBytes).getOrElse {
+      java.nio.file.Files.readAllBytes(file.toNioPath)
     }
     Response[IO](entity = Entity.Strict(ByteVector(bodyBytes)))
   }
 
   def multipartFilePutRequest(
-                               resource: File,
+                               resource: Path,
                                formFields: Map[String, String],
                                uri: Uri
                              ): Request[IO] = {
 
     //TODO: this could be streamed instead of using a Byte[]
-    val bodyBytes = Option(getClass.getResourceAsStream(resource.getAbsolutePath)).map(_.readAllBytes).getOrElse {
-      java.nio.file.Files.readAllBytes(resource.toPath)
+    val bodyBytes = Option(getClass.getResourceAsStream(resource.toString)).map(_.readAllBytes).getOrElse {
+      java.nio.file.Files.readAllBytes(resource.toNioPath)
     }
 
     val formParts = formFields.toSeq.map((k, v) => Part.formData(k, v, Headers(`Content-Type`(MediaType.text.plain))))
-    val entityPart = Part.fileData(FileUploadFieldName, resource.getName, Entity.strict(ByteVector(bodyBytes)))
+    val entityPart = Part.fileData(FileUploadFieldName, resource.fileName.toString, Entity.strict(ByteVector(bodyBytes)))
     val parts = formParts :+ entityPart
     val multipart = Multipart(Vector.from(parts), boundary = Boundary("dfkfdkfdkdfkdffd"))
     val multipartEntity = EntityEncoder.multipartEncoder.toEntity(multipart)
     Request[IO](Method.PUT, uri, headers = multipart.headers, entity = multipartEntity)
   }
 
-  def create50MBFile(tmpDir: Path): File = {
-    val dir = new File(s"${tmpDir.toNioPath.toFile.getPath}/upload")
-    dir.mkdir()
-    val file = new File(s"${dir.getPath}/test.bin")
-    file.deleteOnExit()
-    if (file.exists) {
-      file
-    } else {
-      //50MB file, this needs to fit into memory to make the request
-      Using(new FileOutputStream(file)) {
-        stream =>
-          val empty = new Array[Byte](1024)
-          (0 to 50000).foreach {
-            _ => stream.write(empty)
-          }
-      }.map(_ => file).get
-    }
-  }
+  //import java.io.FileOutputStream
+  //import scala.util.Using
+  //  def create50MBFile(tmpDir: Path): File = {
+  //    val dir = new File(s"${tmpDir.toNioPath.toFile.getPath}/upload")
+  //    dir.mkdir()
+  //    val file = new File(s"${dir.getPath}/test.bin")
+  //    file.deleteOnExit()
+  //    if (file.exists) {
+  //      file
+  //    } else {
+  //      //50MB file, this needs to fit into memory to make the request
+  //      Using(new FileOutputStream(file)) {
+  //        stream =>
+  //          val empty = new Array[Byte](1024)
+  //          (0 to 50000).foreach {
+  //            _ => stream.write(empty)
+  //          }
+  //      }.map(_ => file).get
+  //    }
+  //  }
 
 }

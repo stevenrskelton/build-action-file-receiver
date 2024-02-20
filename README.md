@@ -3,7 +3,7 @@
 Written in Scala 3, and (evolving) support for [Scala Native](https://github.com/stevenrskelton/http-maven-receiver/tree/main#scala-native).
 
 Simple HTTP server that accepts HTTP PUT requests which are validated against GitHub Packages.
-This allows for GitHub Actions to upload artifacts using unmetered bandwidth.
+This allows for GitHub Actions to upload artifacts using unmetered egress bandwidth.
 
 This avoids using metered bandwidth from *private* GitHub Packages to download Maven artifacts.
 
@@ -12,7 +12,7 @@ See https://www.stevenskelton.ca/data-transfers-github-actions/ additional infor
 
 ### Why would you use this?
 
-You are trying to maximumize the utility of the GitHub Free-tier for your private project.
+You are trying to maximize the utility of the GitHub Free-tier for your private project.
 
 ### User Permissions 
 
@@ -33,7 +33,7 @@ SBT build tasks
 
 HTTP Upload Server
 - built on FS2, handles HTTP PUT
-- validates upload is latest version in Maven, and validates upload correct MD5 checksum
+- validates upload is the latest version in Maven, and validates upload has correct MD5 checksum
 - can optionally execute command after upload; useful for deployment and restarting
 
 ![Request Flow](./requests.drawio.svg)
@@ -48,7 +48,7 @@ HTTP Upload Server
 
 example:
 ```
-PUT_URI="http://yourdomain.com:8080/upload"
+PUT_URI="http://yourdomain.com:8080/releases"
 ```
 
 Running this GitHub Action will compile your code, upload the artifact to GitHub Packages for the project, upload the file to your `PUT_URI` destination, and execute server-side actions all in 1 step.
@@ -59,10 +59,13 @@ Compile and run on your server using the appropriate command line arguments.
 
 #### Command Line Arguments
 
-- `http-maven-receiver.host` : Host/IP address to bind to.  _Required_
-- `http-maven-receiver.port` : Port to bind to. _Default = 8080_
-- `http-maven-receiver.file-directory` : Directory to upload to. _Default = "./files"_
-- `http-maven-receiver.max-upload-size` : Maximum file size to handle. _Default = 1M_
+- `--disable-maven` : Do not validate against Maven, **This disables all security**
+- `--allow-all-versions` : Allow upload of non-latest versions in Maven
+- `--host=[STRING]` : Host/IP address to bind to.  _Required_
+- `--port=[INTEGER]` : Port to bind to. _Default = 8080_
+- `--max-upload-size=[STRING]` : Maximum file size to handle. _Default = 30M_
+- `--exec=[STRING]` : Command to execute after successful upload.
+- `--upload-directory=[STRING]` : Directory to upload to. _Default = "./files"_
 
 example:
 ```
@@ -71,15 +74,38 @@ java -Dhost="192.168.0.1" -jar http-maven-receiver-assembly-0.1.0-SNAPSHOT.jar
 
 ## Post Upload Tasks
 
-TODO: document param
+When the `exec` command is executed in the system shell, it will:  
+run in `upload-directory` and have access to the following environment variables:
 
+- `HMV_USER` : GitHub user/org
+- `HMV_REPOSITORY` : GitHub repository
+- `HMV_GROUPID` :  Maven groupId
+- `HMV_ARTIFACTID` :  Maven artifactId
+- `HMV_PACKAGING` :  Maven packaging (eg: _jar_, _bin_)
+- `HMV_VERSION` :  Maven version
+- `HMV_FILENAME` :  Local filename
 
+### Sample
 
+If using this to upload multiple project artifacts, it makes sense to use `if` statements in the filename:
+```shell
+#!/bin/bash
+
+if [[ $HMV_FILENAME == project-assembly-* ]] ; then
+    echo "Moving $HMV_FILENAME to /home/project"
+    sudo -- chown project:project $HMV_FILENAME
+    sudo -- mv $HMV_FILENAME /home/project/
+    echo "Successfully installed new tradeaudit version $HMV_FILENAME"
+fi
+```
 
 # Scala Native
 
-This project supports Scala Native compilation my making a few modifications. This is a poor application of Scala Native as it will diminish performance, but this isn't the type of application 
-where performance is a concern.
+This project is attempting to support Scala Native compilation.  **It currently doesn't compile.**
+
+Scala Native isn't well suited to this application, it will diminish performance and is a headache with no upside, 
+but why not? The rest of this README are working notes.
+
 See https://www.stevenskelton.ca/compiling-scala-native-github-actions-alternative-to-graalvm/
 
 ## Modifications Required to Enable Scala Native

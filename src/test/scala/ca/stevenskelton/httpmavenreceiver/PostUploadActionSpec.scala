@@ -7,8 +7,6 @@ import org.http4s.Status
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.io.File
-
 class PostUploadActionSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
 
   private val destinationFile = Path("src/test/resources/postuploadactions/destinationfile.jar")
@@ -22,7 +20,7 @@ class PostUploadActionSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec 
     snapshotTimeIncrement = None,
     updated = None,
   )
-  private val workingDirectory = new File("src/test/resources/postuploadactions").getAbsoluteFile
+  private val workingDirectory = Path("src/test/resources/postuploadactions").absolute
 
   "run" - {
     "populate environmental variables" in {
@@ -33,7 +31,7 @@ class PostUploadActionSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec 
       val log = logger.lines
       assert(log.length == 10)
       assert(log(0) == "Starting post upload action for destinationfile.jar")
-      assert(log(1) == new File("").getAbsolutePath + "/src/test/resources/postuploadactions")
+      assert(log(1) == Path("").absolute.toString + "/src/test/resources/postuploadactions")
       assert(log(2) == mavenPackage.user)
       assert(log(3) == mavenPackage.repository)
       assert(log(4) == mavenPackage.groupId)
