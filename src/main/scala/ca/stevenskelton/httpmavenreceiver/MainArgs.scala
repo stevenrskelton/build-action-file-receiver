@@ -18,28 +18,27 @@ case class MainArgs(
                      uploadDirectory: Path,
                    )
 
-object MainArgs {
+object MainArgs:
 
   private val DefaultAllowedUploadSize = 30 * 1024 * 1024
 
-  def parse(args: List[String], jarDirectory: File)(using logger: Logger[IO]): IO[MainArgs] = {
+  def parse(args: List[String], jarDirectory: File)(using logger: Logger[IO]): IO[MainArgs] =
 
     val argMap = args
       .filter(_.startsWith("--"))
       .map {
         argument =>
           val equalsChar = argument.indexOf("=")
-          if (equalsChar > -1) {
+          if (equalsChar > -1)
             val (key, value) = argument.splitAt(equalsChar)
             (key.drop(2), value.drop(1))
-          } else {
+          else
             (argument.drop(2), "")
-          }
       }.toMap
 
     for {
 
-      _ <- if (argMap.contains("help")) {
+      _ <- if (argMap.contains("help"))
         val msg =
           """
             |Command line arguments:
@@ -53,7 +52,7 @@ object MainArgs {
             |  --upload-directory=[STRING]
             |""".stripMargin
         IO.raiseError(ExitException(msg, ExitCode.Success))
-      } else IO.pure(())
+      else IO.unit
 
       disableMaven <- IO.pure(argMap.contains("disable-maven"))
 
@@ -61,64 +60,52 @@ object MainArgs {
 
       host <- Host.fromString(argMap.getOrElse("host", "0.0.0.0"))
         .map(IO.pure)
-        .getOrElse {
+        .getOrElse:
           IO.raiseError(ExitException(s"Invalid host: ${argMap("host")}"))
-        }
 
       port <- Port.fromString(argMap.getOrElse("port", "8080"))
         .map(IO.pure)
-        .getOrElse {
+        .getOrElse:
           IO.raiseError(ExitException(s"Invalid port: ${argMap("port")}"))
-        }
 
       maxUploadByteSize <- argMap.get("max-upload-size")
-        .map {
+        .map:
           userValue =>
             Utils.humanReadableToBytes(userValue)
               .map(IO.pure)
-              .getOrElse {
+              .getOrElse:
                 IO.raiseError(ExitException(s"Invalid maximum upload size: ${argMap("max-upload-size")}"))
-              }
-        }
         .getOrElse(IO.pure(DefaultAllowedUploadSize))
 
       postUploadAction <- argMap.get("exec")
-        .map {
+        .map:
           cmd =>
             val postUploadAction = PostUploadAction(cmd, jarDirectory)
-            Files[IO].exists(postUploadAction.commandPath).flatMap {
+            Files[IO].exists(postUploadAction.commandPath).flatMap:
               case false => IO.raiseError(ExitException(s"Exec $cmd does not exist in working directory ${jarDirectory.getPath}"))
-              case true => Files[IO].isExecutable(postUploadAction.commandPath).flatMap {
+              case true => Files[IO].isExecutable(postUploadAction.commandPath).flatMap:
                 case false => IO.raiseError(ExitException(s"Exec $cmd not executable."))
                 case true => logger.info(s"Post upload command: $cmd").as(Some(postUploadAction))
-              }
-            }
-        }
         .getOrElse(IO.pure(None))
 
-      uploadDirectory <- {
+      uploadDirectory <-
         val path = Path(argMap.getOrElse("upload-directory", "files"))
         val pathString = path.absolute.toString
         for {
-          _ <- Files[IO].exists(path).flatMap {
+          _ <- Files[IO].exists(path).flatMap:
             case false =>
               Files[IO].createDirectories(path) *>
                 logger.info(s"Created upload directory: $pathString")
-                  .onError {
+                  .onError:
                     ex => IO.raiseError(ExitException(s"Could not create upload directory: $pathString"))
-                  }
-            case true => Files[IO].isWritable(path).flatMap {
-              case true => IO.pure(())
+            case true => Files[IO].isWritable(path).flatMap:
+              case true => IO.unit
               case false => IO.raiseError(ExitException(s"Can not write to directory: $pathString"))
-            }
-          }
           _ <- logger.info(s"Setting file upload directory to: $pathString \nMaximum upload size: ${Utils.humanReadableBytes(maxUploadByteSize)}")
-        } yield {
+        } yield
           path
-        }
-      }
 
-    } yield {
+    } yield
       MainArgs(
         allowAllVersions = allowAllVersions,
         disableMaven = disableMaven,
@@ -128,6 +115,3 @@ object MainArgs {
         postUploadAction = postUploadAction,
         uploadDirectory = uploadDirectory,
       )
-    }
-  }
-}

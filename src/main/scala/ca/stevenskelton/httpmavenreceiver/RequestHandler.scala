@@ -16,21 +16,21 @@ case class RequestHandler(
                            allowAllVersions: Boolean,
                            isMavenDisabled: Boolean,
                            postUploadActions: Option[PostUploadAction],
-                         )(using httpClient: Resource[IO, Client[IO]], logger: Logger[IO]) {
+                         )(using httpClient: Resource[IO, Client[IO]], logger: Logger[IO]):
 
-  def releasesPut(request: Request[IO]): IO[Response[IO]] = {
+  def releasesPut(request: Request[IO]): IO[Response[IO]] =
     for {
       _ <- logger.info("Starting releasesPut handler")
 
       startTime <- IO.realTimeInstant
 
       handlerResponse <- request.decode[IO, Multipart[IO]] { multipart =>
-        FileUploadFormData.fromFormData(multipart).flatMap {
+        FileUploadFormData.fromFormData(multipart).flatMap:
           fileUploadFormData =>
             for {
               _ <- logger.info(s"Received request for file `${fileUploadFormData.filename}` by GitHub user `${fileUploadFormData.user}` upload from IP ${request.remoteAddr}")
               mavenPackage <-
-                if (isMavenDisabled) IO.pure(MavenPackage.unverified(fileUploadFormData))
+                if (isMavenDisabled) IO(MavenPackage.unverified(fileUploadFormData))
                 else MetadataUtil.fetchMetadata(fileUploadFormData, allowAllVersions)
 
               tempFile <- FileUtils.createTempFileIfNotExists(uploadDirectory / mavenPackage.filename)
@@ -40,13 +40,12 @@ case class RequestHandler(
                 mavenPackage,
                 fileUploadFormData.entityBody,
                 fileUploadFormData.authToken,
-              ).onError {
+              ).onError:
                 ex =>
                   Files[IO].exists(tempFile).flatMap {
                     case true => Files[IO].delete(tempFile)
                     case false => IO.unit
                   } *> IO.raiseError(ex)
-              }
 
               response <- successfulUpload.responseBody()
 
@@ -56,17 +55,13 @@ case class RequestHandler(
                 s"Completed ${mavenPackage.filename} (${Utils.humanReadableBytes(successfulUpload.fileSize)}) in $duration}"
               })
 
-            } yield {
+            } yield
               response
-            }
-        }
       }
-    } yield {
+    } yield
       handlerResponse
-    }
-  }
 
-  private def handleUpload(tempFile: Path, mavenPackage: MavenPackage, entityBody: EntityBody[IO], authToken: AuthToken): IO[SuccessfulUpload] = {
+  private def handleUpload(tempFile: Path, mavenPackage: MavenPackage, entityBody: EntityBody[IO], authToken: AuthToken): IO[SuccessfulUpload] =
     for {
 
       digestRef <- IO.ref(MessageDigest.getInstance("MD5"))
@@ -78,7 +73,7 @@ case class RequestHandler(
 
       _ <- entityBody
         .chunkLimit(65536)
-        .flatMap {
+        .flatMap:
           chunk =>
             val updateMutable = digestRef.update(digest => {
               digest.update(chunk.toArray, 0, chunk.size)
@@ -86,7 +81,6 @@ case class RequestHandler(
             }) *> fileSizeRef.update(fileSize => fileSize + chunk.size)
 
             fs2.Stream.eval(updateMutable.as(chunk))
-        }
         .flatMap(fs2.Stream.chunk)
         .through(Files[IO].writeAll(tempFile))
         .compile
@@ -109,9 +103,6 @@ case class RequestHandler(
         action => action.run(destinationFile, mavenPackage)
       )
 
-    } yield {
+    } yield
       SuccessfulUpload(mavenPackage.filename, fileSize, uploadMD5)
-    }
-  }
 
-}

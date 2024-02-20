@@ -3,13 +3,12 @@ package ca.stevenskelton.httpmavenreceiver.logging
 import cats.Applicative
 import org.typelevel.log4cats.SelfAwareStructuredLogger
 
-class StdOutLogger[F[_] : Applicative] extends SelfAwareStructuredLogger[F] {
+class StdOutLogger[F[_] : Applicative] extends SelfAwareStructuredLogger[F]:
 
   private val yes: F[Boolean] = Applicative[F].pure(true)
 
-  private def void(arg: => Any): F[Unit] = Applicative[F].pure {
+  private def void(arg: => Any): F[Unit] = Applicative[F].pure:
     println(arg)
-  }
 
   @inline override def isTraceEnabled: F[Boolean] = yes
 
@@ -66,4 +65,3 @@ class StdOutLogger[F[_] : Applicative] extends SelfAwareStructuredLogger[F] {
   @inline override def error(ctx: Map[String, String], t: Throwable)(msg: => String): F[Unit] =
     void(msg)
 
-}

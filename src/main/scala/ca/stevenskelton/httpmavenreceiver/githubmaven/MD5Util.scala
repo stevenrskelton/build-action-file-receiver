@@ -8,14 +8,14 @@ import org.typelevel.log4cats.Logger
 
 import scala.util.Try
 
-object MD5Util {
+object MD5Util:
 
-  def fetchMavenMD5(mavenPackage: MavenPackage, authToken: AuthToken)(using httpClient: Resource[IO, Client[IO]], logger: Logger[IO]): IO[MD5Hash] = {
+  def fetchMavenMD5(mavenPackage: MavenPackage, authToken: AuthToken)(using httpClient: Resource[IO, Client[IO]], logger: Logger[IO]): IO[MD5Hash] =
 
     val gitHubMD5Uri = mavenPackage.gitHubMavenArtifactPath / mavenPackage.version / s"${mavenPackage.filename}.md5"
-    logger.info(s"Fetching MD5 at $gitHubMD5Uri")
-
-    httpClient.use {
+    
+    logger.info(s"Fetching MD5 at $gitHubMD5Uri") *>
+    httpClient.use:
       client =>
 
         val request = Request[IO](
@@ -25,19 +25,15 @@ object MD5Util {
         )
 
         client
-          .expectOr[String](request) {
+          .expectOr[String](request):
             errorResponse =>
-              val msg = if (errorResponse.status.code == Status.NotFound.code) {
+              val msg = if (errorResponse.status.code == Status.NotFound.code)
                 s"Maven ${mavenPackage.filename} does not exist in GitHub"
-              } else {
+              else
                 val errorBody = Try(errorResponse.entity.body.bufferAll.compile.toString).toOption.getOrElse("[error reading body]")
                 s"Error reading Maven (${errorResponse.status.code}):\n$errorBody"
-              }
-              logger.error(msg)
-              IO.raiseError(ResponseException(errorResponse.status, msg))
-          }
-    }
-  }
+              
+              logger.error(msg) *> IO.raiseError(ResponseException(errorResponse.status, msg))
 
   //
   //  def downloadLatestMavenPackage(fileUploadFormData: FileUploadFormData): IO[File] = {
@@ -107,4 +103,3 @@ object MD5Util {
   //      }
   //    }
   //  }
-}

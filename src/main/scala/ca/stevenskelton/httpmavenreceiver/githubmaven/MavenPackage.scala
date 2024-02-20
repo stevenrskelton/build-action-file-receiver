@@ -14,7 +14,7 @@ case class MavenPackage(
                          version: String,
                          snapshotTimeIncrement: Option[String],
                          updated: Option[ZonedDateTime],
-                       ) {
+                       ):
 
   val filename: String = s"$artifactId-${snapshotTimeIncrement.getOrElse(version)}.$packaging"
 
@@ -27,11 +27,10 @@ case class MavenPackage(
 
   val gitHubMavenArtifactPath: Uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/$user/$repository/${groupId.replace(".", "/")}/$artifactId")
 
-}
 
-object MavenPackage {
+object MavenPackage:
 
-  def unverified(fileUploadFormData: FileUploadFormData): MavenPackage = {
+  def unverified(fileUploadFormData: FileUploadFormData): MavenPackage =
     MavenPackage(
       user = fileUploadFormData.user,
       repository = fileUploadFormData.repository,
@@ -42,10 +41,8 @@ object MavenPackage {
       snapshotTimeIncrement = None,
       updated = None,
     )
-  }
 
-  def gitHubMavenArtifactPath(fileUploadFormData: FileUploadFormData): ParseResult[Uri] = {
+  def gitHubMavenArtifactPath(fileUploadFormData: FileUploadFormData): ParseResult[Uri] =
     Uri.fromString(s"https://maven.pkg.github.com/${fileUploadFormData.user}/${fileUploadFormData.repository}/${fileUploadFormData.groupId.replace(".", "/")}/${fileUploadFormData.artifactId}")
-  }
 
-}
+end MavenPackage

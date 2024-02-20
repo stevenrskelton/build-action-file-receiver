@@ -15,13 +15,13 @@ import scodec.bits.ByteVector
 
 import java.io.File
 
-object PostUploadTest extends IOApp {
+object PostUploadTest extends IOApp:
 
   given loggerFactory: LoggerFactory[IO] = StdOutLoggerFactory()
 
   given logger: Logger[IO] = loggerFactory.getLoggerFromClass(getClass)
 
-  override def run(args: List[String]): IO[ExitCode] = {
+  override def run(args: List[String]): IO[ExitCode] =
     val jarDirectory = new java.io.File(getClass.getProtectionDomain.getCodeSource.getLocation.toURI.toString)
     MainArgs.parse(args, jarDirectory).flatMap { mainArgs =>
 
@@ -54,10 +54,7 @@ object PostUploadTest extends IOApp {
       val multipartEntity = EntityEncoder.multipartEncoder.toEntity(multipart)
 
       val request = Request[IO](Method.PUT, Uri.unsafeFromString("/"), headers = multipart.headers, multipartEntity)
-      handler.releasesPut(request).as(ExitCode.Success).recoverWith {
+      handler.releasesPut(request).as(ExitCode.Success).recoverWith:
         case ex =>
           logger.error(ex)(ex.getMessage).as(ExitCode.Error)
-      }
     }
-  }
-}

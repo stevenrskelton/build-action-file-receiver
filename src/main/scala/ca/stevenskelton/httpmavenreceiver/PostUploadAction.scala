@@ -9,15 +9,14 @@ import org.typelevel.log4cats.Logger
 import java.io.File
 import scala.sys.process.ProcessLogger
 
-case class PostUploadAction(command: String, jarDirectory: File) {
+case class PostUploadAction(command: String, jarDirectory: File):
 
-  val commandPath: Path = {
+  val commandPath: Path =
     val cmdPath = Path(command)
     if (cmdPath.isAbsolute) cmdPath
     else Path(s"${jarDirectory.getAbsolutePath}/$command")
-  }
 
-  def run(destinationFile: Path, mavenPackage: MavenPackage)(using logger: Logger[IO]): IO[ExitCode] = {
+  def run(destinationFile: Path, mavenPackage: MavenPackage)(using logger: Logger[IO]): IO[ExitCode] =
     val file = destinationFile.toNioPath.toFile
     val env = Seq(
       "HMV_USER" -> mavenPackage.user,
@@ -33,16 +32,13 @@ case class PostUploadAction(command: String, jarDirectory: File) {
       _ <- logger.info(s"Starting post upload action for ${destinationFile.fileName}")
       processLogger <- IO.pure(ProcessLogger(logger.info(_).unsafeRunSync()(cats.effect.unsafe.implicits.global)))
       processExitCode <- IO.blocking(sys.process.Process(Seq(commandPath.toString), destinationFile.toNioPath.toFile.getAbsoluteFile.getParentFile, env: _*).!(processLogger))
-      actionExitCode <- processExitCode match {
+      actionExitCode <- processExitCode match
         case 0 => logger.info(s"Completed post upload action for ${destinationFile.fileName}").as(ExitCode.Success)
         case _ =>
           val ex = ResponseException(InternalServerError, s"Failed post upload action for ${destinationFile.fileName}")
           logger.error(ex)(ex.getMessage) *> IO.raiseError(ex)
-      }
-    } yield {
+    } yield
       actionExitCode
-    }
-  }
 
   //  private def exec(command: String)(implicit logger: Logger): Unit = {
   //    val result = sys.process.Process(command).!
@@ -63,4 +59,3 @@ case class PostUploadAction(command: String, jarDirectory: File) {
   //    }
   //    Future.successful(Done)
   //  }
-}

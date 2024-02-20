@@ -19,7 +19,7 @@ case class FileUploadFormData(
                                entityBody: EntityBody[IO]
                              )
 
-object FileUploadFormData {
+object FileUploadFormData:
 
   val FileUploadFields: Set[String] = Set(
     "authToken", "user", "repository", "groupId", "artifactId", "packaging", "version"
@@ -29,10 +29,10 @@ object FileUploadFormData {
 
   val FormErrorMessage = s"PUT body should include fields: ${FileUploadFields.mkString(",")}, and $FileUploadFieldName"
 
-  def fromFormData(formData: Multipart[IO]): IO[FileUploadFormData] = boundary {
-    formData.parts.foldLeft(IO.pure(new mutable.HashMap[String, String])) {
+  def fromFormData(formData: Multipart[IO]): IO[FileUploadFormData] = boundary[IO[FileUploadFormData]]:
+    val _ = formData.parts.foldLeft(IO.pure(new mutable.HashMap[String, String])):
       case (fieldsIO, part) if part.name.contains(FileUploadFieldName) =>
-        val io = fieldsIO.map {
+        val io = fieldsIO.map:
           fields =>
             val upload = for {
               authToken <- fields.get("authToken")
@@ -43,7 +43,7 @@ object FileUploadFormData {
               packaging <- fields.get("packaging")
               version <- fields.get("version")
               filename <- part.filename
-            } yield {
+            } yield
               FileUploadFormData(
                 authToken = authToken,
                 user = user,
@@ -55,26 +55,20 @@ object FileUploadFormData {
                 filename = filename,
                 entityBody = part.body
               )
-            }
 
-            upload.getOrElse {
+            upload.getOrElse:
               throw ResponseException(Status.BadRequest, FormErrorMessage)
-            }
-        }
         boundary.break(io)
       case (fieldsIO, part) if FileUploadFields.contains(part.name.getOrElse("")) =>
-        fieldsIO.flatMap {
+        fieldsIO.flatMap:
           fields =>
-            part.bodyText.compile.string.map {
+            part.bodyText.compile.string.map:
               value =>
-                fields.put(part.name.get, value)
+                val _ = fields.put(part.name.get, value)
                 fields
-            }
-        }
       case (_, part) =>
         val msg = s"Found unexpected `${part.name.getOrElse("")}` form field of type ${part.contentType.fold("?")(_.toString)}."
         boundary.break(IO.raiseError(ResponseException(Status.BadRequest, msg)))
-    }
     IO.raiseError(ResponseException(Status.BadRequest, FormErrorMessage))
-  }
-}
+
+end FileUploadFormData

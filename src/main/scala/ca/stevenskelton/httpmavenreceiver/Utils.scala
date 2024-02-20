@@ -2,7 +2,7 @@ package ca.stevenskelton.httpmavenreceiver
 
 import java.io.{File, FileInputStream}
 import java.security.MessageDigest
-import scala.util.Using
+import scala.util.{Try, Using}
 
 object Utils {
 
@@ -24,29 +24,32 @@ object Utils {
     sb.toString
   }
 
-  def md5sum(file: File): String = {
+  def md5sum(file: File): Try[String] = {
     // instantiate a MessageDigest Object by passing
     // string "MD5" this means that this object will use
     // MD5 hashing algorithm to generate the checksum
     val digest = MessageDigest.getInstance("MD5")
 
-    Using(new FileInputStream(file)) {
-      fis =>
-        // Create byte array to read data in chunks
-        val byteArray = new Array[Byte](1024)
-        var bytesCount = 0
+    for {
+      _ <- Using(new FileInputStream(file)) {
+        fis =>
+          // Create byte array to read data in chunks
+          val byteArray = new Array[Byte](1024)
+          var bytesCount = 0
 
-        // read the data from file and update that data in
-        // the message digest
-        def read: Int = {
-          bytesCount = fis.read(byteArray)
-          bytesCount
-        }
+          // read the data from file and update that data in
+          // the message digest
+          def read: Int = {
+            bytesCount = fis.read(byteArray)
+            bytesCount
+          }
 
-        while (read != -1) digest.update(byteArray, 0, bytesCount)
+          while (read != -1) digest.update(byteArray, 0, bytesCount)
+      }
+    } yield {
+      // store the bytes returned by the digest() method
+      byteArrayToHexString(digest.digest)
     }
-    // store the bytes returned by the digest() method
-    byteArrayToHexString(digest.digest)
   }
 
   def humanReadableToBytes(size: String): Option[Int] = {

@@ -33,13 +33,17 @@ lazy val root = (project in file("."))
         "-feature",
         "-unchecked",
         "-indent", //"-rewrite",
-        "-Wunused:imports,privates,locals",
 //        "-Yexplicit-nulls",
         "-Ysafe-init",
+        "-Wunused:all",
         "-Wvalue-discard",
+        "-Wnonunit-statement",
         "-Xfatal-warnings",
       )
     },
+    Test / scalacOptions --= Seq(
+      "-Wnonunit-statement",
+    ),
     javacOptions ++= Seq("-source", javaVersion, "-target", javaVersion),
     addArtifact(assembly / artifact, assembly),
 //    addArtifact(nativeLink / artifact, nativeLink),

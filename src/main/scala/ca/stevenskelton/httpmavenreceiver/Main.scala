@@ -12,7 +12,7 @@ import org.typelevel.log4cats.{Logger, LoggerFactory}
 
 import java.io.File
 
-object Main extends /*epollcat.EpollApp */ IOApp {
+object Main extends /*epollcat.EpollApp */ IOApp:
 
   case class ExitException(msg: String, code: ExitCode = ExitCode.Error) extends Exception(msg)
 
@@ -26,10 +26,10 @@ object Main extends /*epollcat.EpollApp */ IOApp {
 
   def jarDirectory: File = new java.io.File(getClass.getProtectionDomain.getCodeSource.getLocation.toURI.getPath).getParentFile
 
-  override def run(args: List[String]): IO[ExitCode] = {
+  override def run(args: List[String]): IO[ExitCode] =
     logger.info(s"${SbtBuildInfo.name} ${SbtBuildInfo.version}") *>
       MainArgs.parse(args, jarDirectory)
-        .flatMap {
+        .flatMap:
           mainArgs =>
 
             given httpClient: Resource[IO, Client[IO]] = EmberClientBuilder
@@ -55,11 +55,9 @@ object Main extends /*epollcat.EpollApp */ IOApp {
               .build
               .useForever
               .as(ExitCode.Success)
-        }
-        .handleErrorWith {
+            
+        .handleErrorWith:
           case ExitException(msg, code) => logger.error(msg).as(code)
           case ex => logger.error(ex)(ex.getMessage).as(ExitCode.Error)
-        }
-
-  }
-}
+          
+end Main
