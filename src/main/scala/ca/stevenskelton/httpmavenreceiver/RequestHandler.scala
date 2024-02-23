@@ -61,37 +61,31 @@ case class RequestHandler(
       }
     } yield handlerResponse
 
-  private def handleUpload(tempFile: Path, mavenPackage: MavenPackage, entityBody: EntityBody[IO], authToken: AuthToken): IO[SuccessfulUpload] =
+  private def handleUpload(tempFile: Path, mavenPackage: MavenPackage, entityBody: EntityBody[IO], authToken: AuthToken): IO[SuccessfulUpload] = IO {
+
+    val digest = MessageDigest.getInstance("MD5")
+    var fileSize = 0
+    
     for {
-
-      digestRef <- IO.ref(MessageDigest.getInstance("MD5"))
-      
-      fileSizeRef <- IO.ref(0L)
-
       expectedMD5 <-
         if (isMavenDisabled) IO.pure(None)
         else MD5Util.fetchMavenMD5(mavenPackage, authToken).map(Some.apply)
-
+      
       _ <- entityBody
         .chunkLimit(65536)
-        .flatMap:
+        .map:
           chunk =>
-            val updateMutable = digestRef.update(digest => {
-              digest.update(chunk.toArray, 0, chunk.size)
-              digest
-            }) *> fileSizeRef.update(fileSize => fileSize + chunk.size)
-
-            fs2.Stream.eval(updateMutable.as(chunk))
+            digest.update(chunk.toArray, 0, chunk.size)
+            fileSize += chunk.size
+            chunk
         .flatMap(fs2.Stream.chunk)
         .through(Files[IO].writeAll(tempFile))
         .compile
         .drain
 
-      fileSize <- fileSizeRef.get
-
       _ <- logger.info(s"Received $fileSize bytes for ${mavenPackage.filename}")
 
-      uploadMD5 <- digestRef.get.map(digest => Utils.byteArrayToHexString(digest.digest))
+      uploadMD5 = Utils.byteArrayToHexString(digest.digest)
 
       destinationFile <-
         expectedMD5.fold(
@@ -105,4 +99,4 @@ case class RequestHandler(
       )
 
     } yield SuccessfulUpload(mavenPackage.filename, fileSize, uploadMD5)
-
+  }.flatten
