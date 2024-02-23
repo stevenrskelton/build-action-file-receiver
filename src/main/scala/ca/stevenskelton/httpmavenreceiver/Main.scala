@@ -8,7 +8,7 @@ import org.http4s.dsl.impl./
 import org.http4s.dsl.io.{->, PUT, Root}
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
-import org.http4s.{HttpApp, HttpRoutes}
+import org.http4s.{HttpApp, HttpRoutes, MessageFailure}
 import org.typelevel.log4cats.{Logger, LoggerFactory}
 
 object Main extends /*epollcat.EpollApp */ IOApp:
@@ -20,7 +20,12 @@ object Main extends /*epollcat.EpollApp */ IOApp:
   given logger: Logger[IO] = loggerFactory.getLoggerFromClass(getClass)
 
   def httpApp(handler: RequestHandler): HttpApp[IO] = HttpRoutes.of[IO] {
-    case request@PUT -> Root / "releases" => handler.releasesPut(request)
+    case request@PUT -> Root / "releases" => handler.releasesPut(request).handleErrorWith {
+      case ex: MessageFailure => ex.cause
+        .map(cause => logger.error(cause)(cause.getMessage))
+        .getOrElse(logger.error(ex.getMessage))
+        .as(ex.toHttpResponse(request.httpVersion))
+    }
   }.orNotFound
 
   def jarDirectory: Path = Path(getClass.getProtectionDomain.getCodeSource.getLocation.toURI.getPath).parent.get

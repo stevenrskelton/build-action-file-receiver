@@ -11,8 +11,7 @@ object FileUtils:
     Files[IO].exists(destinationFile).flatMap:
       exists =>
         if (exists)
-          val msg = s"${destinationFile.fileName} already exists"
-          logger.error(msg) *> IO.raiseError(ResponseException(Status.Conflict, msg))
+          IO.raiseError(ResponseException(Status.Conflict, s"${destinationFile.fileName} already exists"))
         else
           Files[IO].createTempFile(destinationFile.parent, System.currentTimeMillis.toString, ".tmp", None)
 

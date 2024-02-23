@@ -13,7 +13,7 @@ uploadNativeByPut := Def.taskDyn(uploadByPut((Compile / nativeLink).value)).valu
 
 def uploadByPut(fileToUpload: File): Def.Initialize[Task[Unit]] = Def.task {
 
-  println(s"Uploading ${fileToUpload.getName}")
+  println(s"uploadByPut called for ${fileToUpload.getName}")
 
   val githubToken = sys.env.getOrElse("GITHUB_TOKEN", throw new Exception("You must set environmental variable GITHUB_TOKEN"))
   val githubUser = sys.env.getOrElse("GITHUB_REPOSITORY_OWNER", throw new Exception("You must set environmental variable GITHUB_REPOSITORY_OWNER, eg: your GitHub username"))
