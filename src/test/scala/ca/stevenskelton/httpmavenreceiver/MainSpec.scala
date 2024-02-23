@@ -272,7 +272,7 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       val log = logger.lines
       assert(log.length == 16)
       assert(log(0) == "Starting releasesPut handler")
-      assert(log(1) == "Received request for file `test-file-1.0.10.png` by GitHub user `gh-user` upload from IP None")
+      assert(log(1) == "Received request for file `test-file-1.0.10.png` by GitHub user `gh-user` upload from IP ?")
       assert(log(2) == "Fetching MD5 at https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/1.0.10/test-file-1.0.10.png.md5")
       assert(log(3) == "Received 7478 bytes for test-file-1.0.10.png")
       assert(log(4) == "MD5 validated 5c55838e6a9fb7bb5470cb222fd3b1f3, saving file at test-file-1.0.10.png")

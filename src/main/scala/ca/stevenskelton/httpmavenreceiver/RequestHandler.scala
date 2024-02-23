@@ -29,7 +29,7 @@ case class RequestHandler(
           fileUploadFormData =>
             for {
 
-              _ <- logger.info(s"Received request for file `${fileUploadFormData.filename}` by GitHub user `${fileUploadFormData.user}` upload from IP ${request.remoteAddr}")
+              _ <- logger.info(s"Received request for file `${fileUploadFormData.filename}` by GitHub user `${fileUploadFormData.user}` upload from IP ${request.remoteAddr.fold("?")(_.toUriString)}")
 
               mavenPackage <-
                 if (isMavenDisabled) IO(MavenPackage.unverified(fileUploadFormData))
