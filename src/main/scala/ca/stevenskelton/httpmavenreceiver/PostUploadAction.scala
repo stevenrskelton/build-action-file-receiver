@@ -36,8 +36,7 @@ case class PostUploadAction(command: String, jarDirectory: Path):
         case _ =>
           val ex = ResponseException(InternalServerError, s"Failed post upload action for ${destinationFile.fileName}")
           logger.error(ex)(ex.getMessage) *> IO.raiseError(ex)
-    } yield
-      actionExitCode
+    } yield actionExitCode
 
 //  private def exec(command: String)(implicit logger: Logger): Unit = {
 //    val result = sys.process.Process(command).!

@@ -102,8 +102,7 @@ object MainArgs:
               case true => IO.unit
               case false => IO.raiseError(ExitException(s"Can not write to directory: $pathString"))
           _ <- logger.info(s"Setting file upload directory to: $pathString \nMaximum upload size: ${Utils.humanReadableBytes(maxUploadByteSize)}")
-        } yield
-          path
+        } yield path
 
     } yield
       MainArgs(

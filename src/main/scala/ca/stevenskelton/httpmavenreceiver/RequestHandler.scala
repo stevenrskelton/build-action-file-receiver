@@ -28,7 +28,9 @@ case class RequestHandler(
         FileUploadFormData.fromFormData(multipart).flatMap:
           fileUploadFormData =>
             for {
+
               _ <- logger.info(s"Received request for file `${fileUploadFormData.filename}` by GitHub user `${fileUploadFormData.user}` upload from IP ${request.remoteAddr}")
+
               mavenPackage <-
                 if (isMavenDisabled) IO(MavenPackage.unverified(fileUploadFormData))
                 else MetadataUtil.fetchMetadata(fileUploadFormData, allowAllVersions)
@@ -55,16 +57,15 @@ case class RequestHandler(
                 s"Completed ${mavenPackage.filename} (${Utils.humanReadableBytes(successfulUpload.fileSize)}) in $duration}"
               })
 
-            } yield
-              response
+            } yield response
       }
-    } yield
-      handlerResponse
+    } yield handlerResponse
 
   private def handleUpload(tempFile: Path, mavenPackage: MavenPackage, entityBody: EntityBody[IO], authToken: AuthToken): IO[SuccessfulUpload] =
     for {
 
       digestRef <- IO.ref(MessageDigest.getInstance("MD5"))
+      
       fileSizeRef <- IO.ref(0L)
 
       expectedMD5 <-
@@ -103,6 +104,5 @@ case class RequestHandler(
         action => action.run(destinationFile, mavenPackage)
       )
 
-    } yield
-      SuccessfulUpload(mavenPackage.filename, fileSize, uploadMD5)
+    } yield SuccessfulUpload(mavenPackage.filename, fileSize, uploadMD5)
 
