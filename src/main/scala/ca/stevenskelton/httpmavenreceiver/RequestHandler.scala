@@ -61,16 +61,16 @@ case class RequestHandler(
       }
     } yield handlerResponse
 
-  private def handleUpload(tempFile: Path, mavenPackage: MavenPackage, entityBody: EntityBody[IO], authToken: AuthToken): IO[SuccessfulUpload] = IO {
+  private def handleUpload(tempFile: Path, mavenPackage: MavenPackage, entityBody: EntityBody[IO], authToken: AuthToken): IO[SuccessfulUpload] = IO.blocking {
 
     val digest = MessageDigest.getInstance("MD5")
     var fileSize = 0
-    
+
     for {
       expectedMD5 <-
         if (isMavenDisabled) IO.pure(None)
         else MD5Util.fetchMavenMD5(mavenPackage, authToken).map(Some.apply)
-      
+
       _ <- entityBody
         .chunkLimit(65536)
         .map:
