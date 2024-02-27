@@ -50,7 +50,7 @@ object Main extends /*epollcat.EpollApp */ IOApp:
 
             EmberServerBuilder
               .default[IO]
-              .withReceiveBufferSize(mainArgs.maxUploadByteSize)
+//              .withReceiveBufferSize(mainArgs.maxUploadByteSize)
               //      .withHttp2
               .withHost(mainArgs.host)
               .withPort(mainArgs.port)

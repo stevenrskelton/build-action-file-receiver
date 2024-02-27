@@ -21,7 +21,7 @@ case class RequestHandler(
     request.decodeWith(FileUploadFormData.makeDecoder, strict = true)({fileUploadFormData =>
       for {
         startTime <- IO.realTimeInstant
-    
+
         _ <- logger.info(s"Received request for file `${fileUploadFormData.filename}` by GitHub user `${fileUploadFormData.user}` upload from IP ${request.remoteAddr.fold("?")(_.toUriString)}")
 
         mavenPackage <-
@@ -64,13 +64,13 @@ case class RequestHandler(
         else MD5Util.fetchMavenMD5(mavenPackage, authToken).map(Some.apply)
 
       _ <- entityBody
-        .chunkLimit(65536)
+//        .chunkLimit(65536)
         .map:
           chunk =>
-            digest.update(chunk.toArray, 0, chunk.size)
-            fileSize += chunk.size
+            digest.update(chunk) //.update(chunk.toArray, 0, chunk.size)
+            fileSize += 1 //chunk.size
             chunk
-        .flatMap(fs2.Stream.chunk)
+//        .flatMap(fs2.Stream.chunk)
         .through(Files[IO].writeAll(tempFile))
         .compile
         .drain
