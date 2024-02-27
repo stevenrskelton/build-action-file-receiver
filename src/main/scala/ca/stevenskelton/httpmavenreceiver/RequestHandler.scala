@@ -1,10 +1,9 @@
 package ca.stevenskelton.httpmavenreceiver
 
 import ca.stevenskelton.httpmavenreceiver.githubmaven.{MD5Util, MavenPackage, MetadataUtil}
-import cats.effect.{ExitCode, IO, Resource}
+import cats.effect.*
 import fs2.io.file.{Files, Path}
 import org.http4s.client.Client
-import org.http4s.multipart.Multipart
 import org.http4s.{EntityBody, Request, Response}
 import org.typelevel.log4cats.Logger
 
@@ -19,49 +18,42 @@ case class RequestHandler(
                          )(using httpClient: Resource[IO, Client[IO]], logger: Logger[IO]):
 
   def releasesPut(request: Request[IO]): IO[Response[IO]] =
-    for {
-      _ <- logger.info("Starting releasesPut handler")
+    request.decodeWith(FileUploadFormData.makeDecoder, strict = true)({fileUploadFormData =>
+      for {
+        startTime <- IO.realTimeInstant
+    
+        _ <- logger.info(s"Received request for file `${fileUploadFormData.filename}` by GitHub user `${fileUploadFormData.user}` upload from IP ${request.remoteAddr.fold("?")(_.toUriString)}")
 
-      startTime <- IO.realTimeInstant
+        mavenPackage <-
+          if (isMavenDisabled) IO(MavenPackage.unverified(fileUploadFormData))
+          else MetadataUtil.fetchMetadata(fileUploadFormData, allowAllVersions)
 
-      handlerResponse <- request.decode[IO, Multipart[IO]] { multipart =>
-        FileUploadFormData.fromFormData(multipart).flatMap:
-          fileUploadFormData =>
-            for {
+        tempFile <- FileUtils.createTempFileIfNotExists(uploadDirectory / mavenPackage.filename)
 
-              _ <- logger.info(s"Received request for file `${fileUploadFormData.filename}` by GitHub user `${fileUploadFormData.user}` upload from IP ${request.remoteAddr.fold("?")(_.toUriString)}")
+        successfulUpload <- handleUpload(
+          tempFile,
+          mavenPackage,
+          fileUploadFormData.entityBody,
+          fileUploadFormData.authToken,
+        ).onError:
+          ex =>
+            logger.error(ex)(ex.getMessage) *> Files[IO].exists(tempFile).flatMap {
+              case true => Files[IO].delete(tempFile)
+              case false => IO.unit
+            } *> IO.raiseError(ex)
 
-              mavenPackage <-
-                if (isMavenDisabled) IO(MavenPackage.unverified(fileUploadFormData))
-                else MetadataUtil.fetchMetadata(fileUploadFormData, allowAllVersions)
+        response <- successfulUpload.responseBody()
 
-              tempFile <- FileUtils.createTempFileIfNotExists(uploadDirectory / mavenPackage.filename)
+        endTime <- IO.realTimeInstant
+        _ <- logger.info({
+          val duration = s"${"%.2f".format(Duration.between(startTime, endTime).toMillis * 0.001)} seconds"
+          s"Completed ${mavenPackage.filename} (${Utils.humanReadableBytes(successfulUpload.fileSize)}) in $duration}"
+        })
 
-              successfulUpload <- handleUpload(
-                tempFile,
-                mavenPackage,
-                fileUploadFormData.entityBody,
-                fileUploadFormData.authToken,
-              ).onError:
-                ex =>
-                  logger.error(ex)(ex.getMessage) *> Files[IO].exists(tempFile).flatMap {
-                    case true => Files[IO].delete(tempFile)
-                    case false => IO.unit
-                  } *> IO.raiseError(ex)
+      } yield response
+    })
 
-              response <- successfulUpload.responseBody()
-
-              endTime <- IO.realTimeInstant
-              _ <- logger.info({
-                val duration = s"${"%.2f".format(Duration.between(startTime, endTime).toMillis * 0.001)} seconds"
-                s"Completed ${mavenPackage.filename} (${Utils.humanReadableBytes(successfulUpload.fileSize)}) in $duration}"
-              })
-
-            } yield response
-      }
-    } yield handlerResponse
-
-  private def handleUpload(tempFile: Path, mavenPackage: MavenPackage, entityBody: EntityBody[IO], authToken: AuthToken): IO[SuccessfulUpload] = IO.blocking {
+  private def handleUpload(tempFile: Path, mavenPackage: MavenPackage, entityBody: EntityBody[IO], authToken: AuthToken): IO[SuccessfulUpload] = IO {
 
     val digest = MessageDigest.getInstance("MD5")
     var fileSize = 0
