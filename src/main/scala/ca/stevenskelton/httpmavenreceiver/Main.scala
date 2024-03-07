@@ -32,6 +32,7 @@ object Main extends /*epollcat.EpollApp */ IOApp:
 
   override def run(args: List[String]): IO[ExitCode] =
     logger.info(s"${SbtBuildInfo.name} ${SbtBuildInfo.version}") *>
+    logger.info(s"Maximum JVM Heap ${Utils.humanReadableBytes(Runtime.getRuntime().maxMemory())}") *>
       MainArgs.parse(args, jarDirectory)
         .flatMap:
           mainArgs =>
@@ -50,7 +51,7 @@ object Main extends /*epollcat.EpollApp */ IOApp:
 
             EmberServerBuilder
               .default[IO]
-//              .withReceiveBufferSize(mainArgs.maxUploadByteSize)
+              //              .withReceiveBufferSize(mainArgs.maxUploadByteSize)
               //      .withHttp2
               .withHost(mainArgs.host)
               .withPort(mainArgs.port)

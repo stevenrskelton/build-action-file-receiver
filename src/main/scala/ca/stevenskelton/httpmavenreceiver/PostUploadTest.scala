@@ -52,7 +52,7 @@ object PostUploadTest extends IOApp:
         val multipart = Multipart(Vector.from(parts), boundary = Boundary("dfkfdkfdkdfkdffd"))
         val multipartEntity = EntityEncoder.multipartEncoder.toEntity(multipart)
 
-        val request = Request[IO](Method.PUT, Uri.unsafeFromString("/"), headers = multipart.headers, multipartEntity)
+        val request = Request[IO](Method.PUT, Uri.unsafeFromString("/"), headers = multipart.headers, entity = multipartEntity)
         handler.releasesPut(request).as(ExitCode.Success).recoverWith:
           case ex =>
             logger.error(ex)(ex.getMessage).as(ExitCode.Error)

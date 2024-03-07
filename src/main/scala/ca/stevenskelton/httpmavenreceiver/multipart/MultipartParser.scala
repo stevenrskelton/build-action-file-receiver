@@ -25,28 +25,28 @@ import org.typelevel.ci.CIString
 
 /** A low-level multipart-parsing pipe.  Most end users will prefer EntityDecoder[Multipart]. */
 object MultipartParser {
-  private[this] val CRLFBytesN = Array[Byte]('\r', '\n')
-  private[this] val DoubleCRLFBytesN = Array[Byte]('\r', '\n', '\r', '\n')
-  private[this] val DashDashBytesN = Array[Byte]('-', '-')
-  private[this] val BoundaryBytesN: Boundary => Array[Byte] = boundary =>
+  private val CRLFBytesN = Array[Byte]('\r', '\n')
+  private val DoubleCRLFBytesN = Array[Byte]('\r', '\n', '\r', '\n')
+  private val DashDashBytesN = Array[Byte]('-', '-')
+  private val BoundaryBytesN: Boundary => Array[Byte] = boundary =>
     boundary.value.getBytes("UTF-8")
   val StartLineBytesN: Boundary => Array[Byte] = BoundaryBytesN.andThen(DashDashBytesN ++ _)
 
   /** `delimiter` in RFC 2046 */
-  private[this] val ExpectedBytesN: Boundary => Array[Byte] =
+  private val ExpectedBytesN: Boundary => Array[Byte] =
     BoundaryBytesN.andThen(CRLFBytesN ++ DashDashBytesN ++ _)
-  private[this] val dashByte: Byte = '-'.toByte
-  private[this] val streamEmpty = Stream.empty
+  private val dashByte: Byte = '-'.toByte
+  private val streamEmpty = Stream.empty
 
   private type SplitStream[F[_]] = Pull[F, Nothing, (Stream[F, Byte], Stream[F, Byte])]
 
-  private[this] sealed trait Event
+  private sealed trait Event
 
-  private[this] final case class PartStart(value: Headers) extends Event
+  private final case class PartStart(value: Headers) extends Event
 
-  private[this] final case class PartChunk(value: Chunk[Byte]) extends Event
+  private final case class PartChunk(value: Chunk[Byte]) extends Event
 
-  private[this] case object PartEnd extends Event
+  private case object PartEnd extends Event
 
   private def bug(errorMessage: String): Exception = new Exception(errorMessage)
 
@@ -533,7 +533,7 @@ object MultipartParser {
   //    ).through(pullParts)
   //  }
 
-  private[this] def limitParts[F[_] : RaiseThrowable](
+  private def limitParts[F[_] : RaiseThrowable](
                                                        maxParts: Int,
                                                        failOnLimit: Boolean,
                                                      ): Pipe[F, Event, Event] = {
@@ -554,7 +554,7 @@ object MultipartParser {
   }
 
   //  // Consume `PartChunk`s until the first `PartEnd`, produce a stream with all the consumed data.
-  //  private[this] def partBodyFileStream[F[_] : Concurrent : Files](
+  //  private def partBodyFileStream[F[_] : Concurrent : Files](
   //                                                                   stream: Stream[F, Event],
   //                                                                   maxBeforeWrite: Int,
   //                                                                 ): Pull[F, Nothing, (Stream[F, Byte], Stream[F, Event])] = {
@@ -716,7 +716,7 @@ object MultipartParser {
   //
   //  // Acquire the resource in a separate fiber, which will remain running until the provided
   //  // supervisor sees fit to cancel it. The resulting action waits for the resource to be acquired.
-  //  private[this] def superviseResource[F[_], A](
+  //  private def superviseResource[F[_], A](
   //                                                supervisor: Supervisor[F],
   //                                                resource: Resource[F, A],
   //                                              )(implicit F: Concurrent[F]): F[A] =
@@ -743,7 +743,7 @@ object MultipartParser {
    *
    * Any number of such sequences may be produced.
    */
-  private[this] def parseEvents[F[_] : Concurrent](
+  private def parseEvents[F[_] : Concurrent](
                                                     boundary: Boundary,
                                                     headerLimit: Int,
                                                   ): Pipe[F, Byte, Event] =
@@ -754,7 +754,7 @@ object MultipartParser {
   /** Drain the prelude and remove the first boundary. Only traverses until the first
    * part.
    */
-  private[this] def skipPrelude[F[_] : Concurrent](
+  private def skipPrelude[F[_] : Concurrent](
                                                     boundary: Boundary,
                                                     stream: Stream[F, Byte],
                                                   ): Pull[F, Nothing, Stream[F, Byte]] = {
@@ -774,7 +774,7 @@ object MultipartParser {
   }
 
   /** Pull part events for parts until the end of the stream. */
-  private[this] def pullPartsEvents[F[_] : Concurrent](
+  private def pullPartsEvents[F[_] : Concurrent](
                                                         boundary: Boundary,
                                                         stream: Stream[F, Byte],
                                                         headerLimit: Int,
@@ -807,7 +807,7 @@ object MultipartParser {
   }
 
   /** Pulls part events for a single part. */
-  private[this] def pullPartEvents[F[_] : Concurrent](
+  private def pullPartEvents[F[_] : Concurrent](
                                                        headerStream: Stream[F, Byte],
                                                        rest: Stream[F, Byte],
                                                        delimiterBytes: Array[Byte],
@@ -826,7 +826,7 @@ object MultipartParser {
       }
 
   /** Split the stream on `delimiterBytes`, emitting the left part as `PartChunk` events. */
-  private[this] def pullPartChunks[F[_] : Concurrent](
+  private def pullPartChunks[F[_] : Concurrent](
                                                        delimiterBytes: Array[Byte],
                                                        stream: Stream[F, Byte],
                                                      ): Pull[F, PartChunk, Stream[F, Byte]] = {

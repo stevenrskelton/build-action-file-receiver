@@ -1,9 +1,10 @@
 package ca.stevenskelton.httpmavenreceiver.multipart
 
 import fs2.Stream
-import org.http4s.{Headers, MediaType, TransferCoding}
-import org.http4s.multipart.*
 import org.http4s.headers.*
+import org.http4s.multipart.*
+import org.http4s.{Headers, MediaType, TransferCoding}
+
 final case class Multipart[+F[_]](
                                    parts: Stream[F, Part[F]],
                                    boundary: Boundary,

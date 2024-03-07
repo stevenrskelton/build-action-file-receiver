@@ -75,9 +75,10 @@ object UploadRequestHelper {
       java.nio.file.Files.readAllBytes(resource.toNioPath)
     }
     val entity = Entity.strict(ByteVector(bodyBytes))
-    val headers = Headers.apply(formFields.map {
+    val headersIter: Seq[Header.ToRaw] = formFields.map {
       (k,v) => Header.ToRaw.keyValuesToRaw(s"X-$k", v)
-    }.toSeq :+ Header.Raw.apply(CIString("X-file"), resource.fileName.toString): _*)
+    }.toSeq :+ Header.Raw.apply(CIString("X-file"), resource.fileName.toString)
+    val headers = Headers.apply(headersIter*)
     Request[IO](Method.PUT, uri, headers = headers, entity = entity)
   }
 
