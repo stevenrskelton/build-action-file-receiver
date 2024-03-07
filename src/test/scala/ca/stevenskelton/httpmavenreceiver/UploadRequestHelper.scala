@@ -8,6 +8,7 @@ import org.http4s.*
 import org.http4s.client.Client
 import org.http4s.headers.`Content-Type`
 import org.http4s.multipart.{Boundary, Multipart, Part}
+import org.typelevel.ci.CIString
 import org.typelevel.log4cats.Logger
 import org.typelevel.vault.Vault
 import scodec.bits.ByteVector
@@ -61,6 +62,23 @@ object UploadRequestHelper {
     val multipart = Multipart(Vector.from(parts), boundary = Boundary("dfkfdkfdkdfkdffd"))
     val multipartEntity = EntityEncoder.multipartEncoder.toEntity(multipart)
     Request[IO](Method.PUT, uri, headers = multipart.headers, entity = multipartEntity)
+  }
+
+  def headersFilePutRequest(
+                               resource: Path,
+                               formFields: Map[String, String],
+                               uri: Uri
+                             ): Request[IO] = {
+
+    //TODO: this could be streamed instead of using a Byte[]
+    val bodyBytes = Option(getClass.getResourceAsStream(resource.toString)).map(_.readAllBytes).getOrElse {
+      java.nio.file.Files.readAllBytes(resource.toNioPath)
+    }
+    val entity = Entity.strict(ByteVector(bodyBytes))
+    val headers = Headers.apply(formFields.map {
+      (k,v) => Header.ToRaw.keyValuesToRaw(s"X-$k", v)
+    }.toSeq :+ Header.Raw.apply(CIString("X-file"), resource.fileName.toString): _*)
+    Request[IO](Method.PUT, uri, headers = headers, entity = entity)
   }
 
   //import java.io.FileOutputStream
