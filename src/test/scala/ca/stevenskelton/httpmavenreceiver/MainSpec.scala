@@ -3,7 +3,7 @@ package ca.stevenskelton.httpmavenreceiver
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import fs2.io.file.Path
-import org.http4s.*
+import org.http4s.{Uri, Status, Request, Response, Entity}
 import org.http4s.client.{Client, UnexpectedStatus}
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
@@ -267,7 +267,7 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       assert(resp1.unsafeRunSync() == "Successfully saved upload of test-file-1.0.10.png, 7kb, MD5 5c55838e6a9fb7bb5470cb222fd3b1f3")
 
       val log = logger.lines
-      assert(log.length == 16)
+      assert(log.length == 17)
       assert(log(0) == "Starting request from ?")
       assert(log(1) == "Parsed request for file `test-file-1.0.10.png` by GitHub user `gh-user`")
       assert(log(2) == "Fetching MD5 at https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/1.0.10/test-file-1.0.10.png.md5")
@@ -284,6 +284,7 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       assert(log(13) == "test-file-1.0.10.png")
       assert(log(14) == "Completed post upload action for test-file-1.0.10.png")
       assert(log(15).startsWith("Completed test-file-1.0.10.png (7kb) in"))
+      assert(log(16).startsWith("Current JVM Heap "))
     }
   }
 

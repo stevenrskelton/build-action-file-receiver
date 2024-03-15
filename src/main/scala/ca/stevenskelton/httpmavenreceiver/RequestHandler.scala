@@ -3,9 +3,9 @@ package ca.stevenskelton.httpmavenreceiver
 import ca.stevenskelton.httpmavenreceiver.githubmaven.{MD5Util, MavenPackage, MetadataUtil}
 import cats.effect.*
 import fs2.io.file.{Files, Path}
-import org.http4s.{EntityBody, MediaType, Request, Response, Status}
 import org.http4s.client.Client
 import org.http4s.headers.`Content-Type`
+import org.http4s.{EntityBody, MediaType, Request, Response, Status}
 import org.typelevel.log4cats.Logger
 
 import java.security.MessageDigest
@@ -15,6 +15,7 @@ case class RequestHandler(
                            uploadDirectory: Path,
                            allowAllVersions: Boolean,
                            isMavenDisabled: Boolean,
+                           allowedRepositories: Seq[String],
                            postUploadActions: Option[PostUploadAction],
                          )(using httpClient: Resource[IO, Client[IO]], logger: Logger[IO]):
 
@@ -24,8 +25,10 @@ case class RequestHandler(
         request.decodeWith(FileUploadFormData.makeDecoder, strict = true)(handleFileUploadFormData)
       else
         val fileUploadFormData = FileUploadFormData.readFromHttpHeaders(request.headers, request.body, isMavenDisabled)
-        fileUploadFormData.map(handleFileUploadFormData).getOrElse:
-          IO.raiseError(ResponseException(Status.BadRequest, FileUploadFormData.HeadersErrorMessage))
+        fileUploadFormData
+          .map(handleFileUploadFormData)
+          .getOrElse:
+            IO.raiseError(ResponseException(Status.BadRequest, FileUploadFormData.HeadersErrorMessage))
       end if
     }
   end releasesPut
@@ -33,6 +36,12 @@ case class RequestHandler(
   private def handleFileUploadFormData(fileUploadFormData: FileUploadFormData): IO[Response[IO]] =
     for {
       startTime <- IO.realTimeInstant
+
+      _ <-
+        if (allowedRepositories.nonEmpty && !allowedRepositories.contains(fileUploadFormData.repository))
+          IO.raiseError(ResponseException(Status.Forbidden, s"Repository ${fileUploadFormData.repository} not allowed."))
+        else
+          IO.unit
 
       _ <- logger.info(s"Parsed request for file `${fileUploadFormData.filename}` by GitHub user `${fileUploadFormData.user}`")
 
@@ -61,7 +70,7 @@ case class RequestHandler(
         val duration = s"${"%.2f".format(Duration.between(startTime, endTime).toMillis * 0.001)} seconds"
         s"Completed ${mavenPackage.filename} (${Utils.humanReadableBytes(successfulUpload.fileSize)}) in $duration}"
       })
-      _ <- logger.info( s"Current JVM Heap ${Utils.humanReadableBytes(Runtime.getRuntime().totalMemory())}")
+      _ <- logger.info(s"Current JVM Heap ${Utils.humanReadableBytes(Runtime.getRuntime().totalMemory())}")
 
     } yield response
   end handleFileUploadFormData

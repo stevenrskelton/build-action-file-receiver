@@ -4,7 +4,7 @@ import ca.stevenskelton.httpmavenreceiver.FileUploadFormData.FileUploadFieldName
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import fs2.io.file.{Files, Path}
-import org.http4s.*
+import org.http4s.{Headers, MediaType, Uri, HttpApp, Response, Entity, EntityEncoder, Request, Header, Method}
 import org.http4s.client.Client
 import org.http4s.headers.`Content-Type`
 import org.http4s.multipart.{Boundary, Multipart, Part}
@@ -19,6 +19,7 @@ object UploadRequestHelper {
                responses: Map[Uri, Response[IO]],
                allowAllVersions: Boolean = false,
                isMavenDisabled: Boolean = false,
+               allowedRepositories: Seq[String] = Nil,
                postUploadActions: Option[PostUploadAction] = None,
              )(using logger: Logger[IO] = Main.logger): IO[HttpApp[IO]] = {
 
@@ -33,15 +34,16 @@ object UploadRequestHelper {
         uploadDirectory = tmpDir,
         allowAllVersions = allowAllVersions,
         isMavenDisabled = isMavenDisabled,
+        allowedRepositories = allowedRepositories,
         postUploadActions = postUploadActions,
       ))
     }
   }
 
   def successResponse(file: Path): Response[IO] = {
-    val bodyBytes = Option(getClass.getResourceAsStream(file.absolute.toString)).map(_.readAllBytes).getOrElse {
-      java.nio.file.Files.readAllBytes(file.toNioPath)
-    }
+    val bodyBytes = Option(getClass.getResourceAsStream(file.absolute.toString))
+      .map(_.readAllBytes)
+      .getOrElse(java.nio.file.Files.readAllBytes(file.toNioPath))
     Response[IO](entity = Entity.Strict(ByteVector(bodyBytes)))
   }
 
@@ -52,9 +54,9 @@ object UploadRequestHelper {
                              ): Request[IO] = {
 
     //TODO: this could be streamed instead of using a Byte[]
-    val bodyBytes = Option(getClass.getResourceAsStream(resource.toString)).map(_.readAllBytes).getOrElse {
-      java.nio.file.Files.readAllBytes(resource.toNioPath)
-    }
+    val bodyBytes = Option(getClass.getResourceAsStream(resource.toString))
+      .map(_.readAllBytes)
+      .getOrElse(java.nio.file.Files.readAllBytes(resource.toNioPath))
 
     val formParts = formFields.toSeq.map((k, v) => Part.formData(k, v, Headers(`Content-Type`(MediaType.text.plain))))
     val entityPart = Part.fileData(FileUploadFieldName, resource.fileName.toString, Entity.strict(ByteVector(bodyBytes)))
@@ -71,9 +73,9 @@ object UploadRequestHelper {
                              ): Request[IO] = {
 
     //TODO: this could be streamed instead of using a Byte[]
-    val bodyBytes = Option(getClass.getResourceAsStream(resource.toString)).map(_.readAllBytes).getOrElse {
-      java.nio.file.Files.readAllBytes(resource.toNioPath)
-    }
+    val bodyBytes = Option(getClass.getResourceAsStream(resource.toString))
+      .map(_.readAllBytes)
+      .getOrElse(java.nio.file.Files.readAllBytes(resource.toNioPath))
     val entity = Entity.strict(ByteVector(bodyBytes))
     val headersIter: Seq[Header.ToRaw] = formFields.map {
       (k,v) => Header.ToRaw.keyValuesToRaw(s"X-$k", v)

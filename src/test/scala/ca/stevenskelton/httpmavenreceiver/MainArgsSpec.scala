@@ -13,9 +13,9 @@ class MainArgsSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
   //  --help
   //  --disable-maven
   //  --allow-all-versions
+  //  --allowed-repos=[STRING]
   //  --host=[STRING]
   //  --port=[INTEGER]
-  //  --max-upload-size=[STRING]
   //  --exec=[STRING]
   //  --upload-directory=[STRING]
   "exec" - {

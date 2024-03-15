@@ -35,6 +35,7 @@ object PostUploadTest extends IOApp:
           mainArgs.uploadDirectory,
           mainArgs.allowAllVersions,
           isMavenDisabled = true,
+          allowedRepositories = Nil,
           Some(PostUploadAction("src/test/resources/postuploadactions/echoenv.sh", workingDirectory)),
         )
         val formFields = Map(

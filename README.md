@@ -63,9 +63,9 @@ Compile this project, and run using appropriate command line arguments:
 
 - `--disable-maven` : Do not validate against Maven, **This disables all security**
 - `--allow-all-versions` : Allow upload of non-latest versions in Maven
+- `--allowed-repos=[STRING]` : Comma-separated list of allowed repositories
 - `--host=[STRING]` : Host/IP address to bind to.  _Required_
 - `--port=[INTEGER]` : Port to bind to. _Default = 8080_
-- `--max-upload-size=[STRING]` : Maximum file size to handle. _Default = 30M_
 - `--exec=[STRING]` : Command to execute after successful upload.
 - `--upload-directory=[STRING]` : Directory to upload to. _Default = "./files"_
 

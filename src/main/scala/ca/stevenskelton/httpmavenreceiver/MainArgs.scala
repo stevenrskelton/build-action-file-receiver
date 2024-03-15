@@ -9,16 +9,15 @@ import org.typelevel.log4cats.Logger
 case class MainArgs(
                      allowAllVersions: Boolean,
                      disableMaven: Boolean,
+                     allowedRepositories: Seq[String],
                      host: Host,
                      port: Port,
-                     maxUploadByteSize: Int,
                      postUploadAction: Option[PostUploadAction],
                      uploadDirectory: Path,
                    )
 
 object MainArgs:
 
-  private val DefaultAllowedUploadSize = 30 * 1024 * 1024
   private val DefaultPort = 8080
   private val DefaultUploadFolder = "files"
 
@@ -44,10 +43,10 @@ object MainArgs:
             |Command line arguments:
             |  --help
             |  --disable-maven
+            |  --allowed-repos=[STRING comma-separated]
             |  --allow-all-versions
             |  --host=[STRING]
             |  --port=[INTEGER]
-            |  --max-upload-size=[STRING]
             |  --exec=[STRING]
             |  --upload-directory=[STRING]
             |""".stripMargin
@@ -55,6 +54,8 @@ object MainArgs:
       else IO.unit
 
       disableMaven <- IO.pure(argMap.contains("disable-maven"))
+
+      allowedRepositories <- IO.pure(argMap.get("allowed-repos").toSeq.flatMap(_.split(',')))
 
       allowAllVersions <- IO.pure(argMap.contains("allow-all-versions"))
 
@@ -67,15 +68,6 @@ object MainArgs:
         .map(IO.pure)
         .getOrElse:
           IO.raiseError(ExitException(s"Invalid port: ${argMap("port")}"))
-
-      maxUploadByteSize <- argMap.get("max-upload-size")
-        .map:
-          userValue =>
-            Utils.humanReadableToBytes(userValue)
-              .map(IO.pure)
-              .getOrElse:
-                IO.raiseError(ExitException(s"Invalid maximum upload size: ${argMap("max-upload-size")}"))
-        .getOrElse(IO.pure(DefaultAllowedUploadSize))
 
       postUploadAction <- argMap.get("exec")
         .map:
@@ -101,16 +93,24 @@ object MainArgs:
             case true => Files[IO].isWritable(path).flatMap:
               case true => IO.unit
               case false => IO.raiseError(ExitException(s"Can not write to directory: $pathString"))
-          _ <- logger.info(s"Setting file upload directory to: $pathString \nMaximum upload size: ${Utils.humanReadableBytes(maxUploadByteSize)}")
+
+          _ <- logger.info(s"Setting file upload directory to: $pathString")
+
+          _ <-
+            if (allowedRepositories.isEmpty)
+              logger.warn("WARNING: Allowing all repositories.")
+            else
+              logger.info(s"Allowing repositories:\n${allowedRepositories.map(" ‣ " + _).mkString("\n")}")
+
         } yield path
 
     } yield
       MainArgs(
         allowAllVersions = allowAllVersions,
         disableMaven = disableMaven,
+        allowedRepositories = allowedRepositories,
         host = host,
         port = port,
-        maxUploadByteSize = maxUploadByteSize,
         postUploadAction = postUploadAction,
         uploadDirectory = uploadDirectory,
       )

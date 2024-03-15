@@ -46,12 +46,12 @@ object Main extends /*epollcat.EpollApp */ IOApp:
               mainArgs.uploadDirectory,
               mainArgs.allowAllVersions,
               mainArgs.disableMaven,
+              mainArgs.allowedRepositories,
               mainArgs.postUploadAction,
             )
 
             EmberServerBuilder
               .default[IO]
-              //              .withReceiveBufferSize(mainArgs.maxUploadByteSize)
               //      .withHttp2
               .withHost(mainArgs.host)
               .withPort(mainArgs.port)
