@@ -21,7 +21,7 @@ This application doesn't manage user permissions. It validates all PUT requests 
 - auth token is in HTTP request headers, and
 - auth token has access to read GitHub Packages.
 
-Since your GitHub Packages is for a private repo, this token is all the security you need.
+Since your GitHub Packages is for a private repo, this token is all the security you need.  
 All requests without a valid token, or for repos not explicitly allowed will be rejected.
 
 *Do not use this for public repos, download the files directly from GitHub Packages.*
@@ -61,24 +61,24 @@ Compile this project, and run using appropriate command line arguments:
 
 ### Command Line Arguments
 
-- `--disable-maven` : Do not validate against Maven, **This disables all security**
+- `--disable-maven` : Do not validate against Maven, **DISABLED ALL SECURITY**
 - `--allow-all-versions` : Allow upload of non-latest versions in Maven
 - `--allowed-repos=[STRING]` : Comma-separated list of allowed repositories
-- `--host=[STRING]` : Host/IP address to bind to.  _Required_
-- `--port=[INTEGER]` : Port to bind to. _Default = 8080_
+- `--host=[STRING]` : Host/IP address to bind to.  _REQUIRED_
+- `--port=[INTEGER]` : Port to bind to. _DEFAULT: 8080_
 - `--exec=[STRING]` : Command to execute after successful upload.
-- `--upload-directory=[STRING]` : Directory to upload to. _Default = "./files"_
+- `--upload-directory=[STRING]` : Directory to upload to. _DEFAULT: "./files"_
 
 JVM example:
 
 ```shell
-java -Xmx=40m -Dhost="192.168.0.1" -Dport=8080 -jar http-maven-receiver-assembly-0.1.0-SNAPSHOT.jar
+java -Xmx=40m -Dhost="192.168.0.1" -jar http-maven-receiver-assembly-1.1.1.jar
 ```
 
-GraalVM example:
+GraalVM / Scala Native example:
 
 ```shell
-./http-maven-receiver --host="192.168.0.1" --port=8080
+./http-maven-receiver --host="192.168.0.1"
 ```
 
 ### Post Upload Tasks
@@ -116,39 +116,41 @@ See https://www.stevenskelton.ca/examples/#http-maven-receiver for additional in
 
 ## GraalVM on MacOS M1
 
-Uses [SBT NativeImage plugin](https://github.com/scalameta/sbt-native-image).
-Uses [GraalVM](https://www.graalvm.org/downloads/) installed
-to `/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.2+13.1/Contents/Home`
+Uses [SBT NativeImage plugin](https://github.com/scalameta/sbt-native-image).  
+Uses [GraalVM](https://www.graalvm.org/downloads/) installed to   
+`/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.2+13.1/Contents/Home`  
 
-Run `nativeImageRunAgent` to capture files in `/META-INF/native-image/ca.stevenskelton/httpmavenreceiver`.
-Run `nativeImage` to compile http-maven-receiver (executable).
+Run `nativeImageRunAgent` to capture files in  
+`/META-INF/native-image/ca.stevenskelton/httpmavenreceiver`.
+Run `nativeImage` to compile http-maven-receiver (executable).  
 
 ## Scala Native
 
-Attempting to support Scala Native compilation.  **It currently doesn't compile.**
+Attempting to support Scala Native compilation.  
+**Currently doesn't compile.**
 
 👎Scala Native isn't well suited to this application, it will diminish performance and is a headache with no upside,
-but why not? The rest of this document are working notes.
+but why not? The rest of this document are working notes.  
 
-See https://www.stevenskelton.ca/compiling-scala-native-github-actions-alternative-to-graalvm/
+See https://www.stevenskelton.ca/compiling-scala-native-github-actions-alternative-to-graalvm/  
 
 ## Modifications Required to Enable Scala Native
 
 Code blocks have been commented out in `build.sbt` and `project/plugins.sbt` which when uncommented will provide Scala
-Native support.
+Native support.  
 Code blocks will need to be commented out in `build.sbt` and `project/DisabledScalaNativePlugin.scala`.
 
 ## Compiling Scala Native
 
 This project uses the `upload-native-linux-to-maven-put.yml` GitHub Action workflow to compile, so it can be used as a
-reference.
+reference.  
 
-Follow the setup instructions https://scala-native.org/en/stable/user/setup.html
+Follow the setup instructions https://scala-native.org/en/stable/user/setup.html  
 
-In addition, the AWS S2N-TLS (https://github.com/aws/s2n-tls) is required to be installed.
-If it is not in a standard library path; modify `build.sbt` to specify the location manually.
+In addition, the AWS S2N-TLS (https://github.com/aws/s2n-tls) is required to be installed.  
+If it is not in a standard library path; modify `build.sbt` to specify the location manually.  
 
-```
+```scala
 nativeLinkingOptions += s"-L/home/runner/work/http-maven-receiver/http-maven-receiver/s2n-tls/s2n-tls-install/lib"
 ```
 
