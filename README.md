@@ -99,7 +99,7 @@ environment variables set:
 
 This sample script has actions depending on the artifact name, allowing it to handle multiple repositories:
 
-Run server with `--exec=script.sh`. Where script.sh contains:
+Run server with `--exec=script.sh`. Where *script.sh* contains:
 
 ```shell
 #!/bin/bash
