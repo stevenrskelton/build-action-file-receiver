@@ -45,6 +45,7 @@ lazy val root = (project in file("."))
       "-Wunused:all",
       "-Wnonunit-statement",
     ),
+    Compile / mainClass := Some("ca.stevenskelton.httpmavenreceiver.Main"),
     javacOptions ++= Seq("-source", javaVersion, "-target", javaVersion),
     addArtifact(assembly / artifact, assembly),
 //    addArtifact(nativeLink / artifact, nativeLink),
@@ -63,8 +64,10 @@ lazy val root = (project in file("."))
     assembly / artifact := {
       val art = (assembly / artifact).value
       art.withClassifier(Some("assembly"))
-    },
+    }
   )
+
+//nativeImageVersion := "21.1.0"
 
 libraryDependencies ++= Seq(
   "org.http4s"              %% "http4s-ember-client"  % http4sVersion,
@@ -78,6 +81,17 @@ libraryDependencies ++= Seq(
 )
 
 enablePlugins(DisabledScalaNativePlugin)
+enablePlugins(NativeImagePlugin)
+
+nativeImageGraalHome := file("/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.2+13.1/Contents/Home").toPath
+
+nativeImageOptions ++= List(
+//  "--static",
+  "--verbose",
+  "--allow-incomplete-classpath",
+  "--report-unsupported-elements-at-runtime",
+  "--no-fallback"
+)
 /*
 
 
