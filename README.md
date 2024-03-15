@@ -117,11 +117,10 @@ See https://www.stevenskelton.ca/examples/#http-maven-receiver for additional in
 ## GraalVM on MacOS M1
 
 Uses [SBT NativeImage plugin](https://github.com/scalameta/sbt-native-image).  
-Uses [GraalVM](https://www.graalvm.org/downloads/) installed to   
-`/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.2+13.1/Contents/Home`  
 
-Run `nativeImageRunAgent` to capture files in  
-`/META-INF/native-image/ca.stevenskelton/httpmavenreceiver`.  
+Uses [GraalVM](https://www.graalvm.org/downloads/) installed to `/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.2+13.1/Contents/Home`  
+
+Run `nativeImageRunAgent` to capture files in `/META-INF/native-image/ca.stevenskelton/httpmavenreceiver`.  
 
 Run `nativeImage` to compile http-maven-receiver (executable).  
 
