@@ -16,19 +16,19 @@ available during GitHub Actions.
 
 ## User Permissions
 
-This application doesn't manage user permissions. It validates all PUT requests for:
+This application doesn't manage user permissions or security. It relies on GitHub auth tokens, and requires that:
 
 - auth token is in HTTP request headers, and
 - auth token has access to read GitHub Packages.
 
-Since your GitHub Packages is for a private repo, this token is all the security you need.  
-All requests without a valid token, or for repos not explicitly allowed will be rejected.
+Since your GitHub Packages is a private repo, the auth token is secure.  
+All requests without a valid token, or for repos not explicitly allowed by startup parameter will be rejected.
 
-*Do not use this for public repos, download the files directly from GitHub Packages.*
+*Do not use this for public repos.* It's not needed, download the files directly from GitHub Packages.
 
 ## SBT Tasks
 
-This is a server which accepts file uploads, use these SBT tasks to upload:
+Use these SBT tasks to initiate a file upload:
 
 - `publishToGitHubPackages`: uploads to GitHub Packages (Maven)
 - `uploadByPut`: uploads to this server (HTTP PUT)
