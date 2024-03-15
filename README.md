@@ -1,6 +1,6 @@
 # http-maven-receiver
 
-Written in Scala 3, using FS2/HTTP4s/Cats.
+Written in Scala 3, using FS2 / HTTP4s / Cats.
 
 Receives Scala artifacts uploaded during a GitHub Action.
 
