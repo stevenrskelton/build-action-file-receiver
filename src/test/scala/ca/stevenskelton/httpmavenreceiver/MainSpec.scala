@@ -3,8 +3,8 @@ package ca.stevenskelton.httpmavenreceiver
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import fs2.io.file.Path
-import org.http4s.{Uri, Status, Request, Response, Entity}
 import org.http4s.client.{Client, UnexpectedStatus}
+import org.http4s.{Entity, Request, Response, Status, Uri}
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -51,7 +51,7 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       val resp2: IO[String] = client.expect[String](request)
       val ex = intercept[UnexpectedStatus](resp2.unsafeRunSync())
       assert(ex.status == Status.Conflict)
-//      assert(ex.message == "test-file-1.0.10.png already exists")
+      //      assert(ex.message == "test-file-1.0.10.png already exists")
     }
 
     "throw error if no github form data included in request" in {
@@ -61,7 +61,7 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
 
       val ex = intercept[UnexpectedStatus](resp1.unsafeRunSync())
       assert(ex.status == Status.BadRequest)
-//      assert(ex.message == FileUploadFormData.FormErrorMessage)
+      //      assert(ex.message == FileUploadFormData.FormErrorMessage)
     }
 
     "cause error when upload md5 sum doesn't match" in {
@@ -74,7 +74,7 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
 
       val ex = intercept[UnexpectedStatus](resp1.unsafeRunSync())
       assert(ex.status == Status.Conflict)
-//      assert(ex.message == "Upload test-file-1.0.10.png MD5 not equal, 36a9ba7d32ad98d518f67bd6b1787233 expected != 5c55838e6a9fb7bb5470cb222fd3b1f3 of upload.")
+      //      assert(ex.message == "Upload test-file-1.0.10.png MD5 not equal, 36a9ba7d32ad98d518f67bd6b1787233 expected != 5c55838e6a9fb7bb5470cb222fd3b1f3 of upload.")
     }
 
     "cause errors when Maven package 404" in {
@@ -86,7 +86,7 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
 
       val ex = intercept[UnexpectedStatus](resp1.unsafeRunSync())
       assert(ex.status == Status.NotFound)
-//      assert(ex.message == "404 Could not fetch GitHub maven: https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/maven-metadata.xml")
+      //      assert(ex.message == "404 Could not fetch GitHub maven: https://maven.pkg.github.com/gh-user/gh-project/gh/groupid/test-file/maven-metadata.xml")
     }
 
   }
@@ -123,7 +123,7 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       val resp2: IO[String] = client.expect[String](request)
       val ex = intercept[UnexpectedStatus](resp2.unsafeRunSync())
       assert(ex.status == Status.Conflict)
-//      assert(ex.message == "test-file-0.1.0-20230330.234307-29.png already exists")
+      //      assert(ex.message == "test-file-0.1.0-20230330.234307-29.png already exists")
     }
 
   }
@@ -194,7 +194,7 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       val resp1: IO[String] = exec(allowAllVersions = false)
       val ex = intercept[UnexpectedStatus](resp1.unsafeRunSync())
       assert(ex.status == Status.Conflict)
-//      assert(ex.getMessage == "Version 0.1.0-SNAPSHOT requested. Latest is 1.0.10 updated on 2024-02-05T02:18:05Z[UTC]")
+      //      assert(ex.getMessage == "Version 0.1.0-SNAPSHOT requested. Latest is 1.0.10 updated on 2024-02-05T02:18:05Z[UTC]")
     }
 
     "succeed when latest version ignored" in {
@@ -228,7 +228,7 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       val resp1: IO[String] = exec(false)
       val ex = intercept[UnexpectedStatus](resp1.unsafeRunSync())
       assert(ex.status == Status.Conflict)
-//      assert(ex.message == "Version 9.0.0-SNAPSHOT requested. Latest is 1.0.10 updated on 2024-02-05T02:18:05Z[UTC]")
+      //      assert(ex.message == "Version 9.0.0-SNAPSHOT requested. Latest is 1.0.10 updated on 2024-02-05T02:18:05Z[UTC]")
     }
 
     "succeed when GitHub disabled" in {
@@ -236,6 +236,10 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
       assert(resp1.unsafeRunSync() == "Successfully saved upload of test-file-9.0.0-SNAPSHOT.png, 7kb, MD5 5c55838e6a9fb7bb5470cb222fd3b1f3")
     }
 
+  }
+  
+  "allowed-repositories" - {
+    
   }
 
   "post upload action" - {

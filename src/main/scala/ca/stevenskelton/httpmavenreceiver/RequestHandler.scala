@@ -4,8 +4,7 @@ import ca.stevenskelton.httpmavenreceiver.githubmaven.{MD5Util, MavenPackage, Me
 import cats.effect.*
 import fs2.io.file.{Files, Path}
 import org.http4s.client.Client
-import org.http4s.headers.`Content-Type`
-import org.http4s.{EntityBody, MediaType, Request, Response, Status}
+import org.http4s.{EntityBody, Request, Response, Status}
 import org.typelevel.log4cats.Logger
 
 import java.security.MessageDigest
@@ -21,7 +20,7 @@ case class RequestHandler(
 
   def releasesPut(request: Request[IO]): IO[Response[IO]] =
     logger.info(s"Starting request from ${request.remoteAddr.fold("?")(_.toUriString)}") *> {
-      if (request.contentType.contains(`Content-Type`.apply(MediaType.multipart.`form-data`)))
+      if (request.contentType.exists(contentType => contentType.mediaType.mainType == "multipart" && contentType.mediaType.subType == "form-data"))
         request.decodeWith(FileUploadFormData.makeDecoder, strict = true)(handleFileUploadFormData)
       else
         val fileUploadFormData = FileUploadFormData.readFromHttpHeaders(request.headers, request.body, isMavenDisabled)
@@ -70,7 +69,7 @@ case class RequestHandler(
         val duration = s"${"%.2f".format(Duration.between(startTime, endTime).toMillis * 0.001)} seconds"
         s"Completed ${mavenPackage.filename} (${Utils.humanReadableBytes(successfulUpload.fileSize)}) in $duration}"
       })
-      _ <- logger.info(s"Current JVM Heap ${Utils.humanReadableBytes(Runtime.getRuntime().totalMemory())}")
+      _ <- logger.info(s"Current JVM Heap ${Utils.humanReadableBytes(Runtime.getRuntime.totalMemory())}")
 
     } yield response
   end handleFileUploadFormData

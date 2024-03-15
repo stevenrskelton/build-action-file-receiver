@@ -4,10 +4,10 @@ import ca.stevenskelton.httpmavenreceiver.FileUploadFormData.FileUploadFieldName
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import fs2.io.file.{Files, Path}
-import org.http4s.{Headers, MediaType, Uri, HttpApp, Response, Entity, EntityEncoder, Request, Header, Method}
 import org.http4s.client.Client
 import org.http4s.headers.`Content-Type`
 import org.http4s.multipart.{Boundary, Multipart, Part}
+import org.http4s.{Headers, MediaType, Uri, HttpApp, Response, Entity, EntityEncoder, Request, Header, Method}
 import org.typelevel.ci.CIString
 import org.typelevel.log4cats.Logger
 import org.typelevel.vault.Vault
@@ -67,10 +67,10 @@ object UploadRequestHelper {
   }
 
   def headersFilePutRequest(
-                               resource: Path,
-                               formFields: Map[String, String],
-                               uri: Uri
-                             ): Request[IO] = {
+                             resource: Path,
+                             formFields: Map[String, String],
+                             uri: Uri
+                           ): Request[IO] = {
 
     //TODO: this could be streamed instead of using a Byte[]
     val bodyBytes = Option(getClass.getResourceAsStream(resource.toString))
@@ -78,9 +78,9 @@ object UploadRequestHelper {
       .getOrElse(java.nio.file.Files.readAllBytes(resource.toNioPath))
     val entity = Entity.strict(ByteVector(bodyBytes))
     val headersIter: Seq[Header.ToRaw] = formFields.map {
-      (k,v) => Header.ToRaw.keyValuesToRaw(s"X-$k", v)
+      (k, v) => Header.ToRaw.keyValuesToRaw(s"X-$k", v)
     }.toSeq :+ Header.Raw.apply(CIString("X-file"), resource.fileName.toString)
-    val headers = Headers.apply(headersIter*)
+    val headers = Headers.apply(headersIter *)
     Request[IO](Method.PUT, uri, headers = headers, entity = entity)
   }
 

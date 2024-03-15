@@ -70,8 +70,7 @@ object FileUploadFormData:
                     case Some(partName) if FileUploadFields.contains(partName) =>
                       fieldsIO.flatTap:
                         case fields: mutable.HashMap[String, String] =>
-                          part.bodyText.compile.string.map:
-                            fieldValue => fields.put(partName, fieldValue)
+                          part.bodyText.compile.string.map(fieldValue => fields.put(partName, fieldValue))
                         case _ => IO.raiseError(ResponseException(Status.BadRequest, FormErrorMessage))
                     case _ => fieldsIO
               .compile.lastOrError.flatten.map:
