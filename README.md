@@ -121,12 +121,14 @@ Uses [GraalVM](https://www.graalvm.org/downloads/) installed to
 `/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.2+13.1/Contents/Home`  
 
 Run `nativeImageRunAgent` to capture files in  
-`/META-INF/native-image/ca.stevenskelton/httpmavenreceiver`.
+`/META-INF/native-image/ca.stevenskelton/httpmavenreceiver`.  
+
 Run `nativeImage` to compile http-maven-receiver (executable).  
 
 ## Scala Native
 
 Attempting to support Scala Native compilation.  
+
 **Currently doesn't compile.**
 
 👎Scala Native isn't well suited to this application, it will diminish performance and is a headache with no upside,
