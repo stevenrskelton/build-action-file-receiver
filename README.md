@@ -2,17 +2,17 @@
 
 Written in Scala 3, using FS2/Cats.
 
-Purpose: Receives Scala artifacts uploaded during a GitHub Action.
+Receives Scala artifacts uploaded during a GitHub Action.
 
-**Runs an HTTP server accepting HTTP PUT requests of files, validating authenticity against GitHub Packages Maven MD5
+**An HTTP server accepting HTTP PUT requests of files, validating authenticity against GitHub Packages Maven MD5
 hashes.**
 
 Run this if you have a *private repo* and want to get your artifacts out of GitHub using the unlimited egress bandwidth
 available during GitHub Actions.
 
-✅ Runs as fat-jar using the `java -jar` command.
-✅ Runs as native assembly compiled with GraalVM.
-🚫 Almost compiles using Scala Native.
+✅ Runs as fat-jar using the `java -jar` command.  
+✅ Runs as native assembly compiled with GraalVM.  
+🚫 Almost compiles using Scala Native.  
 
 ## User Permissions
 
