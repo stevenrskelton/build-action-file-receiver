@@ -99,6 +99,8 @@ environment variables set:
 
 This sample script has actions depending on the artifact name, allowing it to handle multiple repositories:
 
+Run server with `--exec=script.sh`. Where script.sh contains:
+
 ```shell
 #!/bin/bash
 
@@ -116,7 +118,7 @@ See https://www.stevenskelton.ca/examples/#http-maven-receiver for additional in
 
 ## GraalVM on MacOS M1
 
-Uses [SBT NativeImage plugin](https://github.com/scalameta/sbt-native-image).  
+Uses [SBT Native-Image plugin](https://github.com/scalameta/sbt-native-image).  
 
 Uses [GraalVM](https://www.graalvm.org/downloads/) installed to `/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.2+13.1/Contents/Home`  
 
@@ -139,7 +141,8 @@ See https://www.stevenskelton.ca/compiling-scala-native-github-actions-alternati
 
 Code blocks have been commented out in `build.sbt` and `project/plugins.sbt` which when uncommented will provide Scala
 Native support.  
-Code blocks will need to be commented out in `build.sbt` and `project/DisabledScalaNativePlugin.scala`.
+
+Code blocks will need to be commented out in `build.sbt` and `project/DisabledScalaNativePlugin.scala`.  
 
 ## Compiling Scala Native
 
