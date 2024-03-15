@@ -2,8 +2,8 @@ package ca.stevenskelton.httpmavenreceiver
 
 import ca.stevenskelton.httpmavenreceiver.multipart.MultipartParser
 import cats.effect.IO
-import org.http4s.{DecodeFailure, DecodeResult, EntityBody, EntityDecoder, Headers, InvalidMessageBodyFailure, MediaRange, Status}
 import org.http4s.multipart.Boundary
+import org.http4s.{DecodeFailure, DecodeResult, EntityBody, EntityDecoder, Headers, InvalidMessageBodyFailure, MediaRange, Status}
 import org.typelevel.ci.CIString
 
 import scala.collection.mutable

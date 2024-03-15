@@ -30,7 +30,7 @@ case class PostUploadAction(command: String, jarDirectory: Path):
     for {
       _ <- logger.info(s"Starting post upload action for ${destinationFile.fileName}")
       processLogger <- IO.pure(ProcessLogger(logger.info(_).unsafeRunSync()(cats.effect.unsafe.implicits.global)))
-      processExitCode <- IO.blocking(sys.process.Process(Seq(commandPath.toString), destinationFile.toNioPath.toFile.getAbsoluteFile.getParentFile, env*).!(processLogger))
+      processExitCode <- IO.blocking(sys.process.Process(Seq(commandPath.toString), destinationFile.toNioPath.toFile.getAbsoluteFile.getParentFile, env *).!(processLogger))
       actionExitCode <- processExitCode match
         case 0 => logger.info(s"Completed post upload action for ${destinationFile.fileName}").as(ExitCode.Success)
         case _ =>

@@ -32,7 +32,7 @@ object Main extends /*epollcat.EpollApp */ IOApp:
 
   override def run(args: List[String]): IO[ExitCode] =
     logger.info(s"${SbtBuildInfo.name} ${SbtBuildInfo.version}") *>
-    logger.info(s"Maximum JVM Heap ${Utils.humanReadableBytes(Runtime.getRuntime().maxMemory())}, current ${Utils.humanReadableBytes(Runtime.getRuntime().totalMemory())}") *>
+      logger.info(s"Maximum JVM Heap ${Utils.humanReadableBytes(Runtime.getRuntime().maxMemory())}, current ${Utils.humanReadableBytes(Runtime.getRuntime().totalMemory())}") *>
       MainArgs.parse(args, jarDirectory)
         .flatMap:
           mainArgs =>

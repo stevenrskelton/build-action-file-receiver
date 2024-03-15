@@ -479,9 +479,9 @@ object MultipartParser {
   }
 
   private def limitParts[F[_] : RaiseThrowable](
-                                                       maxParts: Int,
-                                                       failOnLimit: Boolean,
-                                                     ): Pipe[F, Event, Event] = {
+                                                 maxParts: Int,
+                                                 failOnLimit: Boolean,
+                                               ): Pipe[F, Event, Event] = {
     def go(st: Stream[F, Event], partsCounter: Int): Pull[F, Event, Unit] =
       st.pull.uncons1.flatMap {
         case Some((event: PartStart, rest)) =>
@@ -511,9 +511,9 @@ object MultipartParser {
    * Any number of such sequences may be produced.
    */
   private def parseEvents[F[_] : Concurrent](
-                                                    boundary: Boundary,
-                                                    headerLimit: Int,
-                                                  ): Pipe[F, Byte, Event] =
+                                              boundary: Boundary,
+                                              headerLimit: Int,
+                                            ): Pipe[F, Byte, Event] =
     skipPrelude(boundary, _)
       .flatMap(pullPartsEvents(boundary, _, headerLimit))
       .stream
@@ -522,9 +522,9 @@ object MultipartParser {
    * part.
    */
   private def skipPrelude[F[_] : Concurrent](
-                                                    boundary: Boundary,
-                                                    stream: Stream[F, Byte],
-                                                  ): Pull[F, Nothing, Stream[F, Byte]] = {
+                                              boundary: Boundary,
+                                              stream: Stream[F, Byte],
+                                            ): Pull[F, Nothing, Stream[F, Byte]] = {
     val dashBoundaryBytes = StartLineBytesN(boundary)
 
     def go(s: Stream[F, Byte], state: Int): Pull[F, Nothing, Stream[F, Byte]] =
@@ -542,10 +542,10 @@ object MultipartParser {
 
   /** Pull part events for parts until the end of the stream. */
   private def pullPartsEvents[F[_] : Concurrent](
-                                                        boundary: Boundary,
-                                                        stream: Stream[F, Byte],
-                                                        headerLimit: Int,
-                                                      ): Pull[F, Event, Unit] = {
+                                                  boundary: Boundary,
+                                                  stream: Stream[F, Byte],
+                                                  headerLimit: Int,
+                                                ): Pull[F, Event, Unit] = {
     val delimiterBytes = ExpectedBytesN(boundary)
 
     // Headers on the left, the remainder on the right.
@@ -575,10 +575,10 @@ object MultipartParser {
 
   /** Pulls part events for a single part. */
   private def pullPartEvents[F[_] : Concurrent](
-                                                       headerStream: Stream[F, Byte],
-                                                       rest: Stream[F, Byte],
-                                                       delimiterBytes: Array[Byte],
-                                                     ): Pull[F, Event, Stream[F, Byte]] =
+                                                 headerStream: Stream[F, Byte],
+                                                 rest: Stream[F, Byte],
+                                                 delimiterBytes: Array[Byte],
+                                               ): Pull[F, Event, Stream[F, Byte]] =
     Pull
       .eval(parseHeaders(headerStream))
       .flatMap(headers => Pull.output1(PartStart(headers): Event))
@@ -594,9 +594,9 @@ object MultipartParser {
 
   /** Split the stream on `delimiterBytes`, emitting the left part as `PartChunk` events. */
   private def pullPartChunks[F[_] : Concurrent](
-                                                       delimiterBytes: Array[Byte],
-                                                       stream: Stream[F, Byte],
-                                                     ): Pull[F, PartChunk, Stream[F, Byte]] = {
+                                                 delimiterBytes: Array[Byte],
+                                                 stream: Stream[F, Byte],
+                                               ): Pull[F, PartChunk, Stream[F, Byte]] = {
     def go(
             s: Stream[F, Byte],
             state: Int,
