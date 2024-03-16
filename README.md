@@ -28,10 +28,25 @@ All requests without a valid token, or for repos not explicitly allowed by start
 
 ## SBT Tasks
 
-Use these SBT tasks to initiate a file upload:
+Use these SBT files to initiate a file upload:
 
-- `publishToGitHubPackages`: uploads to GitHub Packages (Maven)
-- `uploadByPut`: uploads to this server (HTTP PUT)
+- *publishToGitHubPackages.sbt* contains tasks to upload to GitHub Packages (Maven):
+  - `publishAssemblyToGitHubPackages` for fat-jar
+  - `publishGraalNativeToGitHubPackages` for GraalVM native
+  - `publishNativeToGitHubPackages` for Scala Native
+
+- *uploadByPut.sbt* contains tasks to upload to this server (HTTP PUT)
+  - `uploadAssemblyByPut` for fat-jar
+  - `uploadGraalNativeByPut` for GraalVM native
+  - `uploadNativeByPut` for Scala Native
+
+These tasks are dependent on SBT plugins being installed in *project/plugins.sbt*.  
+If not using an artifact output, the SBT task needs to be removed from the sbt file above to avoid compilation errors.  
+
+The SBT plugins required are:
+- `addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.1.5")` for fat-jar
+- `addSbtPlugin("org.scalameta" % "sbt-native-image" % "0.3.2")` for GraalVM native
+- `addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.16")` for Scala Native
 
 ![Request Flow](./requests.drawio.svg)
 

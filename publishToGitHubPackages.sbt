@@ -1,6 +1,9 @@
 lazy val publishAssemblyToGitHubPackages = taskKey[Unit]("Publish Über Jar to GitHub Packages")
 publishAssemblyToGitHubPackages := Def.taskDyn(publishToGitHubPackages(assembly.value)).value
 
+lazy val publishGraalNativeToGitHubPackages = taskKey[Unit]("Publish GraalVM Native to GitHub Packages")
+publishGraalNativeToGitHubPackages := Def.taskDyn(publishToGitHubPackages((Compile / nativeImage).value)).value
+
 lazy val publishNativeToGitHubPackages = taskKey[Unit]("Publish Native to GitHub Packages")
 publishNativeToGitHubPackages := Def.taskDyn(publishToGitHubPackages((Compile / nativeLink).value)).value
 

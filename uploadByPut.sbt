@@ -8,6 +8,9 @@ import scala.xml.XML
 lazy val uploadAssemblyByPut = taskKey[Unit](s"Upload Jar via HTTP PUT")
 uploadAssemblyByPut := Def.taskDyn(uploadByPut(assembly.value)).value
 
+lazy val uploadGraalNativeByPut = taskKey[Unit](s"Upload GraalVM Native via HTTP PUT")
+uploadGraalNativeByPut := Def.taskDyn(uploadByPut((Compile / nativeImage).value)).value
+
 lazy val uploadNativeByPut = taskKey[Unit](s"Upload Native via HTTP PUT")
 uploadNativeByPut := Def.taskDyn(uploadByPut((Compile / nativeLink).value)).value
 
