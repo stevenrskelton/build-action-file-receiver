@@ -1,0 +1,29 @@
+name: Publish Graal Native to GitHub Packages
+
+on:
+  workflow_dispatch:
+   push:
+     branches: [ main ]
+
+env:
+  GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  PUT_URI: ${{vars.PUT_URI}}
+  SBT_OPTS: "-Xmx1G -XX:+UseSerialGC"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: graalvm/setup-graalvm@v1
+      with:
+        java-version: '21'      # See 'Options' section below for all supported versions
+        distribution: 'graalvm'
+    - name: Publish GraalVM native & Deploy
+      run: sbt publishGraalNativeToGitHubPackages uploadGraalNativeByPut
