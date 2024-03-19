@@ -68,13 +68,14 @@ lazy val root = (project in file("."))
   )
 
 //nativeImageVersion := "21.1.0"
+//nativeImageVersion := "21.0.2+13.1"
 
 libraryDependencies ++= Seq(
   "org.http4s"              %% "http4s-ember-client"  % http4sVersion,
   "org.http4s"              %% "http4s-ember-server"  % http4sVersion,
   "org.http4s"              %% "http4s-dsl"           % http4sVersion,
   "org.typelevel"           %% "log4cats-core"        % "2.6.0",
-  "co.fs2"                  %% "fs2-io"               % "3.9.4",
+  "co.fs2"                  %% "fs2-io"               % "3.10.0",
   "org.scala-lang.modules"  %% "scala-xml"            % "2.2.0",
   "org.scalatest"           %% "scalatest"            % "3.3.0-alpha.1"   % Test,
   "org.typelevel"           %% "cats-effect-testing-scalatest" % "1.5.0"  % Test,
@@ -84,6 +85,7 @@ enablePlugins(DisabledScalaNativePlugin)
 enablePlugins(NativeImagePlugin)
 
 //nativeImageGraalHome := file("/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.2+13.1/Contents/Home").toPath
+nativeImageGraalHome := file("/opt/hostedtoolcache/graalvm-jdk-21_linux-x64_bin/21.0.0/x64/graalvm-jdk-21.0.2+13.1").toPath
 
 nativeImageOptions ++= List(
 //  "--static",
