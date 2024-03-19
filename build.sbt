@@ -83,7 +83,7 @@ libraryDependencies ++= Seq(
 enablePlugins(DisabledScalaNativePlugin)
 enablePlugins(NativeImagePlugin)
 
-nativeImageGraalHome := file("/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.2+13.1/Contents/Home").toPath
+//nativeImageGraalHome := file("/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.2+13.1/Contents/Home").toPath
 
 nativeImageOptions ++= List(
 //  "--static",
