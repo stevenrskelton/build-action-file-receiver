@@ -13,7 +13,7 @@ httpMavenReceiverUploadAssembly := Def.taskDyn {
       uploadByPut(fileToUpload, vm = "assembly", useMultipart = false)
     )
   }.value
-}.taskValue
+}.value
 
 lazy val httpMavenReceiverUploadGraalNative = taskKey[Unit]("Upload Graal Native via HTTP PUT to Maven Receiver")
 httpMavenReceiverUploadGraalNative := Def.taskDyn {
@@ -23,7 +23,7 @@ httpMavenReceiverUploadGraalNative := Def.taskDyn {
       uploadByPut(fileToUpload, vm = "graalvm", useMultipart = false)
     )
   }.value
-}.taskValue
+}.value
 
 lazy val httpMavenReceiverUploadScalaNative = taskKey[Unit]("Upload Scala Native via HTTP PUT to Maven Receiver")
 httpMavenReceiverUploadScalaNative := Def.taskDyn {
@@ -33,7 +33,7 @@ httpMavenReceiverUploadScalaNative := Def.taskDyn {
       uploadByPut(fileToUpload, vm = "scala-native", useMultipart = false)
     )
   }.value
-}.taskValue
+}.value
 
 def publishToGitHubPackages(fileToPublish: File, vm: String): Def.Initialize[Task[Unit]] = Def.task {
 
