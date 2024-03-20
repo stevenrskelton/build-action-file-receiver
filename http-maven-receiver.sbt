@@ -71,7 +71,7 @@ def publishToGitHubPackages(fileToPublish: File, vm: String): Def.Initialize[Tas
   </settings>"""
   IO.write(settingsXMLFile, settingsXML)
 
-  val (artifactId: String, packaging: String) = vmToArtifact(vm)
+  val (artifactId: String, packaging: String) = vmToArtifact(name.value, vm)
 
   val exe =
     s"""mvn deploy:deploy-file
@@ -107,7 +107,7 @@ def uploadByPut(fileToUpload: File, vm: String, useMultipart: Boolean = false): 
   val repository = name.value
   val groupId = organization.value.replace(".", "/")
 
-  val (artifactId: String, packaging: String) = vmToArtifact(vm)
+  val (artifactId: String, packaging: String) = vmToArtifact(name.value, vm)
 
   val destinationFile = if (version.value.contains("SNAPSHOT")) {
     val mavenUrl = s"https://maven.pkg.github.com/$githubUser/$repository/$groupId/$artifactId/${version.value}/maven-metadata.xml"
@@ -183,11 +183,11 @@ def uploadByPut(fileToUpload: File, vm: String, useMultipart: Boolean = false): 
 
 }
 
-private def vmToArtifact(vm: String): (String, String) = {
+private def vmToArtifact(projectName: String, vm: String): (String, String) = {
   vm match {
-    case "assembly" => (s"${name.value}-assembly", "jar")
-    case "graalvm" => (s"${name.value}-graal-linux", "bin")
-    case "scala-native" => (s"${name.value}-linux", "bin")
-    case _ => (name.value, "jar")
+    case "assembly" => (s"$projectName-assembly", "jar")
+    case "graalvm" => (s"$projectName-graal-linux", "bin")
+    case "scala-native" => (s"$projectName-linux", "bin")
+    case _ => (projectName, "jar")
   }
 }
