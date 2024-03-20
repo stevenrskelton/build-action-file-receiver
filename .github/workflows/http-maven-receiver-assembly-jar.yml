@@ -27,4 +27,4 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
     - name: Publish Über Jar & Deploy
-      run: sbt publishAssemblyToGitHubPackages uploadAssemblyByPut
+      run: sbt httpMavenReceiverUploadAssembly

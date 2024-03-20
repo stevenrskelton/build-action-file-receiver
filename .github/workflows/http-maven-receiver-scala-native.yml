@@ -43,4 +43,4 @@ jobs:
         cmake --install build
         echo $CMAKE_EXE_LINKER_FLAGS
     - name: Publish Native Linux & Deploy
-      run: sbt publishNativeToGitHubPackages uploadNativeByPut
+      run: sbt httpMavenReceiverUploadScalaNative

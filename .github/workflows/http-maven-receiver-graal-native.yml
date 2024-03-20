@@ -26,4 +26,4 @@ jobs:
         java-version: '21'      # See 'Options' section below for all supported versions
         distribution: 'graalvm'
     - name: Publish GraalVM native & Deploy
-      run: sbt publishGraalNativeToGitHubPackages uploadGraalNativeByPut
+      run: sbt httpMavenReceiverUploadGraalNative
