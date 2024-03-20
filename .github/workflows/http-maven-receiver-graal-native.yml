@@ -1,4 +1,4 @@
-name: Publish Graal Native to GitHub Packages
+name: http-maven-receiver Upload Graal Native
 
 on:
   workflow_dispatch:

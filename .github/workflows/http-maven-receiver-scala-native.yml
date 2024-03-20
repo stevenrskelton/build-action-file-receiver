@@ -1,4 +1,4 @@
-name: Publish Native Linux to GitHub Packages
+name: http-maven-receiver Upload Scala Native
 
 on:
   workflow_dispatch:
