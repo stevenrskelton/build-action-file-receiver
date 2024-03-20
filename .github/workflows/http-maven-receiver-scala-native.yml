@@ -1,4 +1,4 @@
-name: http-maven-receiver Upload Scala Native
+name: http-maven-receiver Scala Native
 
 on:
   workflow_dispatch:

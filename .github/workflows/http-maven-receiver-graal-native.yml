@@ -1,4 +1,4 @@
-name: http-maven-receiver Upload Graal Native
+name: http-maven-receiver Graal Native
 
 on:
   workflow_dispatch:
