@@ -6,34 +6,28 @@ import scala.util.Try
 import scala.xml.XML
 
 lazy val httpMavenReceiverUploadAssembly = taskKey[Unit]("Upload Jar via HTTP PUT to Maven Receiver")
-httpMavenReceiverUploadAssembly := Def.taskDyn {
-  (Compile / assembly).map {
-    fileToUpload => Def.sequential(
-      uploadByPut(fileToUpload, vm = "assembly", useMultipart = false),
-      publishToGitHubPackages(fileToUpload, vm = "assembly")
-    )
-  }
-}.value
+httpMavenReceiverUploadAssembly := (Compile / assembly).map {
+  fileToUpload => Def.sequential(
+    uploadByPut(fileToUpload, vm = "assembly", useMultipart = false),
+    publishToGitHubPackages(fileToUpload, vm = "assembly")
+  )
+}.taskValue
 
 lazy val httpMavenReceiverUploadGraalNative = taskKey[Unit]("Upload Graal Native via HTTP PUT to Maven Receiver")
-httpMavenReceiverUploadGraalNative := Def.taskDyn {
-  (Compile / nativeImage).map {
-    fileToUpload => Def.sequential(
-      uploadByPut(fileToUpload, vm = "graalvm", useMultipart = false),
-      publishToGitHubPackages(fileToUpload, vm ="graalvm")
-    )
-  }
-}.value
+httpMavenReceiverUploadGraalNative := (Compile / nativeImage).map {
+  fileToUpload => Def.sequential(
+    uploadByPut(fileToUpload, vm = "graalvm", useMultipart = false),
+    publishToGitHubPackages(fileToUpload, vm ="graalvm")
+  )
+}.taskValue
 
 lazy val httpMavenReceiverUploadScalaNative = taskKey[Unit]("Upload Scala Native via HTTP PUT to Maven Receiver")
-httpMavenReceiverUploadGraalNative := Def.taskDyn {
-  (Compile / nativeLink).map {
-    fileToUpload => Def.sequential(
-      uploadByPut(fileToUpload, vm = "scala-native", useMultipart = false),
-      publishToGitHubPackages(fileToUpload, vm ="scala-native")
-    )
-  }
-}.value
+httpMavenReceiverUploadScalaNative := (Compile / nativeLink).map {
+  fileToUpload => Def.sequential(
+    uploadByPut(fileToUpload, vm = "scala-native", useMultipart = false),
+    publishToGitHubPackages(fileToUpload, vm ="scala-native")
+  )
+}.taskValue
 
 def publishToGitHubPackages(fileToPublish: File, vm: String): Def.Initialize[Task[Unit]] = Def.task {
 
