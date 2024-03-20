@@ -2,12 +2,10 @@
 
 Written in Scala 3, using FS2 / HTTP4s / Cats.
 
-Receives Scala artifacts uploaded during a GitHub Action.
-
 ### An HTTP server accepting HTTP PUT file uploads, validating authenticity against GitHub Packages Maven MD5 hashes.
 
-Run this if you have a *private repo* and want to get your artifacts out of GitHub using the unlimited egress bandwidth
-available to GitHub Actions.
+Run this if you have a GitHub *private repo* and want to get your artifacts out of GitHub CI/CD using the unlimited 
+egress bandwidth available to GitHub Actions.
 
 #### ✅ Runs as fat-jar using the `java -jar` command Java JDK 17  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -30,28 +28,26 @@ This application doesn't manage user permissions or security. It relies on GitHu
 - auth token has access to read GitHub Packages.
 
 Since your GitHub Packages is a private repo, the auth token is secure.  
-All requests without a valid token, or for repos not explicitly allowed by startup parameter will be rejected.
+All requests without a valid token, or for repos not explicitly allowed by server config will be rejected.
 
 *Do not use this for public repos.* It's not needed, download the files directly from GitHub Packages.
 
 ## SBT Tasks
 
-Use these SBT files to initiate a file upload:
+The _http-maven-receivers.sbt_ file has 2 helper tasks:
+- `publishToGitHubPackages` contains tasks to upload to GitHub Packages (Maven)
+- `uploadByPut` contains tasks to upload to this server (HTTP PUT)
 
-- *publishToGitHubPackages.sbt* contains tasks to upload to GitHub Packages (Maven):
-  - `publishAssemblyToGitHubPackages` for fat-jar
-  - `publishGraalNativeToGitHubPackages` for GraalVM native
-  - `publishNativeToGitHubPackages` for Scala Native
+Your GitHub Action should call one of 3 tasks, depending on the artifact to be compiled:
+- `httpMavenReceiverUploadAssembly` for fat-jar
+- `httpMavenReceiverUploadGraalNative` for GraalVM native
+- `httpMavenReceiverUploadScalaNative` for Scala Native
 
-- *uploadByPut.sbt* contains tasks to upload to this server (HTTP PUT)
-  - `uploadAssemblyByPut` for fat-jar
-  - `uploadGraalNativeByPut` for GraalVM native
-  - `uploadNativeByPut` for Scala Native
+These tasks are dependent on external libraries, meaning SBT plugins need to be installed in _project/plugins.sbt_.  
+If not using a particular artifact output, that SBT dependency can be omitted and the SBT task above can be removed
+from _http-maven-receivers.sbt_ to avoid compilation errors.  
 
-These tasks are dependent on SBT plugins being installed in *project/plugins.sbt*.  
-If not using an artifact output, the SBT task needs to be removed from the sbt file above to avoid compilation errors.  
-
-The SBT plugins required are:
+The SBT plugins required to be added to _project/plugins.sbt_ are:
 - `addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.1.5")` for fat-jar
 - `addSbtPlugin("org.scalameta" % "sbt-native-image" % "0.3.2")` for GraalVM native
 - `addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.16")` for Scala Native
@@ -62,13 +58,11 @@ The SBT plugins required are:
 
 ## GitHub Action Install
 
-(These assume you are using _"com.eed3si9n" % "sbt-assembly"_ to create executable jars that containing all necessary
-dependencies)
-
-- Copy `publishToGitHubPackages.sbt` and `uploadByPut.sbt` to the root directory of your SBT project.
-- Copy `upload-assembly-to-maven-put.yml` to the `.github/workflows` folder in your project.
-- Create new `PUT_URI` environmental variable in your `upload-assembly-to-maven-put.yml` workflow, or hard-code it into
-  the YML file.
+- Copy `http-mave-receiver.sbt` to the root directory of your project.
+- Add plugins to _project/plugins.sbt_ in your project.
+- Copy `.github/workflows/http-maven-receiver-*.yml` to the `.github/workflows` folder in your project.
+- Create new `PUT_URI` environmental variable in your `http-maven-receiver-*.yml` workflow, or hard-code it into
+  the YML file in the `env` section.
 
 example:
 ```shell
@@ -76,11 +70,11 @@ PUT_URI="http://yourdomain.com:8080/releases"
 ```
 
 Running this GitHub Action will compile your code, upload the artifact to GitHub Packages, then upload the artifact to
-the `PUT_URI` destination, and optionally execute a server-side script.
+the `PUT_URI` destination, and the receiver server optionally execute a server-side script.
 
 ## Server-side Receiver Install
 
-Compile this project, and run using appropriate command line arguments:
+This program is configured via command line arguments:
 
 ### Command Line Arguments
 
@@ -169,8 +163,7 @@ Code blocks will need to be commented out in `build.sbt` and `project/DisabledSc
 
 ## Compiling Scala Native
 
-This project uses the `upload-native-linux-to-maven-put.yml` GitHub Action workflow to compile, so it can be used as a
-reference.  
+Refer to `.github/workflows/http-maven-receiver-scala-native.yml` for how the GitHub Action workflow is configured.
 
 Follow the setup instructions https://scala-native.org/en/stable/user/setup.html  
 
