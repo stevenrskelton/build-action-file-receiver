@@ -4,7 +4,7 @@ Written in Scala 3, using FS2 / HTTP4s / Cats.
 
 Receives Scala artifacts uploaded during a GitHub Action.
 
-## An HTTP server accepting HTTP PUT file uploads, validating authenticity against GitHub Packages Maven MD5 hashes.
+### An HTTP server accepting HTTP PUT file uploads, validating authenticity against GitHub Packages Maven MD5 hashes.
 
 Run this if you have a *private repo* and want to get your artifacts out of GitHub using the unlimited egress bandwidth
 available to GitHub Actions.
