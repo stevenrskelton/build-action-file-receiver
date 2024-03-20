@@ -4,11 +4,10 @@ Written in Scala 3, using FS2 / HTTP4s / Cats.
 
 Receives Scala artifacts uploaded during a GitHub Action.
 
-**An HTTP server accepting HTTP PUT requests of files, validating authenticity against GitHub Packages Maven MD5
-hashes.**
+## An HTTP server accepting HTTP PUT file uploads, validating authenticity against GitHub Packages Maven MD5 hashes.
 
 Run this if you have a *private repo* and want to get your artifacts out of GitHub using the unlimited egress bandwidth
-available during GitHub Actions.
+available to GitHub Actions.
 
 #### ✅ Runs as fat-jar using the `java -jar` command Java JDK 17  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
