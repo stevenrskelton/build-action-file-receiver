@@ -6,28 +6,34 @@ import scala.util.Try
 import scala.xml.XML
 
 lazy val httpMavenReceiverUploadAssembly = taskKey[Unit]("Upload Jar via HTTP PUT to Maven Receiver")
-httpMavenReceiverUploadAssembly := (Compile / assembly).map {
-  fileToUpload => Def.sequential(
-    uploadByPut(fileToUpload, vm = "assembly", useMultipart = false),
-    publishToGitHubPackages(fileToUpload, vm = "assembly")
-  )
-}.taskValue
+httpMavenReceiverUploadAssembly := Def.taskDyn {
+  (Compile / assembly).map {
+    fileToUpload => Def.sequential(
+      uploadByPut(fileToUpload, vm = "assembly", useMultipart = false),
+      publishToGitHubPackages(fileToUpload, vm = "assembly")
+    )
+  }.value
+}.value
 
 lazy val httpMavenReceiverUploadGraalNative = taskKey[Unit]("Upload Graal Native via HTTP PUT to Maven Receiver")
-httpMavenReceiverUploadGraalNative := (Compile / nativeImage).map {
-  fileToUpload => Def.sequential(
-    uploadByPut(fileToUpload, vm = "graalvm", useMultipart = false),
-    publishToGitHubPackages(fileToUpload, vm ="graalvm")
-  )
-}.taskValue
+httpMavenReceiverUploadGraalNative := Def.taskDyn {
+  (Compile / nativeImage).map {
+    fileToUpload => Def.sequential(
+      uploadByPut(fileToUpload, vm = "graalvm", useMultipart = false),
+      publishToGitHubPackages(fileToUpload, vm ="graalvm")
+    )
+  }.value
+}.value
 
 lazy val httpMavenReceiverUploadScalaNative = taskKey[Unit]("Upload Scala Native via HTTP PUT to Maven Receiver")
-httpMavenReceiverUploadScalaNative := (Compile / nativeLink).map {
-  fileToUpload => Def.sequential(
-    uploadByPut(fileToUpload, vm = "scala-native", useMultipart = false),
-    publishToGitHubPackages(fileToUpload, vm ="scala-native")
-  )
-}.taskValue
+httpMavenReceiverUploadScalaNative := Def.taskDyn {
+  (Compile / nativeLink).map {
+    fileToUpload => Def.sequential(
+      uploadByPut(fileToUpload, vm = "scala-native", useMultipart = false),
+      publishToGitHubPackages(fileToUpload, vm ="scala-native")
+    )
+  }.value
+}.value
 
 def publishToGitHubPackages(fileToPublish: File, vm: String): Def.Initialize[Task[Unit]] = Def.task {
 
