@@ -12,7 +12,7 @@ case class PostUploadAction(command: String, jarDirectory: Path):
 
   val commandPath: Path =
     val cmdPath = Path(command)
-    if (cmdPath.isAbsolute) cmdPath
+    if cmdPath.isAbsolute then cmdPath
     else Path(s"${jarDirectory.absolute.toString}/$command")
 
   def run(destinationFile: Path, mavenPackage: MavenPackage)(using logger: Logger[IO]): IO[ExitCode] =
@@ -27,7 +27,7 @@ case class PostUploadAction(command: String, jarDirectory: Path):
       "HMV_FILENAME" -> file.getName
     )
 
-    for {
+    for
       _ <- logger.info(s"Starting post upload action for ${destinationFile.fileName}")
       processLogger <- IO.pure(ProcessLogger(logger.info(_).unsafeRunSync()(cats.effect.unsafe.implicits.global)))
       processExitCode <- IO.blocking(sys.process.Process(Seq(commandPath.toString), destinationFile.toNioPath.toFile.getAbsoluteFile.getParentFile, env *).!(processLogger))
@@ -36,7 +36,7 @@ case class PostUploadAction(command: String, jarDirectory: Path):
         case _ =>
           val ex = ResponseException(InternalServerError, s"Failed post upload action for ${destinationFile.fileName}")
           logger.error(ex)(ex.getMessage) *> IO.raiseError(ex)
-    } yield actionExitCode
+    yield actionExitCode
 
 //  private def exec(command: String)(implicit logger: Logger): Unit = {
 //    val result = sys.process.Process(command).!

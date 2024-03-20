@@ -27,7 +27,7 @@ object MD5Util:
           client
             .expectOr[String](request):
               errorResponse =>
-                val msg = if (errorResponse.status.code == Status.NotFound.code)
+                val msg = if errorResponse.status.code == Status.NotFound.code then
                   s"Maven ${mavenPackage.filename} does not exist in GitHub"
                 else
                   val errorBody = Try(errorResponse.entity.body.bufferAll.compile.toString).toOption.getOrElse("[error reading body]")

@@ -10,13 +10,13 @@ object FileUtils:
   def createTempFileIfNotExists(destinationFile: Path)(using logger: Logger[IO]): IO[Path] =
     Files[IO].exists(destinationFile).flatMap:
       exists =>
-        if (exists)
+        if exists then
           IO.raiseError(ResponseException(Status.Conflict, s"${destinationFile.fileName} already exists"))
         else
           Files[IO].createTempFile(destinationFile.parent, System.currentTimeMillis.toString, ".tmp", None)
 
   def verifyMD5(tempFile: Path, destinationFile: Path, md5: MD5Hash, expectedMd5: MD5Hash)(using logger: Logger[IO]): IO[Path] =
-    if (md5 != expectedMd5)
+    if md5 != expectedMd5 then
       val errorMessage = s"Upload ${destinationFile.fileName} MD5 not equal, $expectedMd5 expected != $md5 of upload."
       logger.error(errorMessage) *>
         Files[IO].delete(tempFile) *>

@@ -12,7 +12,7 @@ object Utils {
     val sb = new StringBuilder
 
     // loop through the bytes array
-    for (i <- bytes.indices) { // the following line converts the decimal into
+    for i <- bytes.indices do { // the following line converts the decimal into
       // hexadecimal format and appends that to the
       // StringBuilder object
       sb.append(Integer.toString((bytes(i) & 0xff) + 0x100, 16).substring(1))
@@ -21,9 +21,9 @@ object Utils {
   }
 
   def humanReadableBytes(bytes: Long): String = {
-    if (bytes > (1024 * 1024)) {
+    if bytes > (1024 * 1024) then {
       s"${(bytes / (1024 * 1024)).toInt}mb"
-    } else if (bytes > 1024) {
+    } else if bytes > 1024 then {
       s"${(bytes / 1024).toInt}kb"
     } else {
       s"$bytes bytes"

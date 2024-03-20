@@ -28,16 +28,16 @@ object MainArgs:
       .map {
         argument =>
           val equalsChar = argument.indexOf("=")
-          if (equalsChar > -1)
+          if equalsChar > -1 then
             val (key, value) = argument.splitAt(equalsChar)
             (key.drop(2), value.drop(1))
           else
             (argument.drop(2), "")
       }.toMap
 
-    for {
+    for
 
-      _ <- if (argMap.contains("help"))
+      _ <- if argMap.contains("help") then
         val msg =
           """
             |Command line arguments:
@@ -83,7 +83,7 @@ object MainArgs:
       uploadDirectory <-
         val path = Path(argMap.getOrElse("upload-directory", DefaultUploadFolder))
         val pathString = path.absolute.toString
-        for {
+        for
           _ <- Files[IO].exists(path).flatMap:
             case false =>
               Files[IO].createDirectories(path) *>
@@ -97,14 +97,14 @@ object MainArgs:
           _ <- logger.info(s"Setting file upload directory to: $pathString")
 
           _ <-
-            if (allowedRepositories.isEmpty)
+            if allowedRepositories.isEmpty then
               logger.warn("WARNING: Allowing all repositories.")
             else
               logger.info(s"Allowing repositories:\n${allowedRepositories.map(" ‣ " + _).mkString("\n")}")
 
-        } yield path
+        yield path
 
-    } yield
+    yield
       MainArgs(
         allowAllVersions = allowAllVersions,
         disableMaven = disableMaven,

@@ -32,8 +32,9 @@ lazy val root = (project in file("."))
         "-deprecation",
         "-feature",
         "-unchecked",
-        "-indent", //"-rewrite",
-//        "-Yexplicit-nulls",
+        //"-indent",
+        "-new-syntax", "-rewrite",
+        //"-Yexplicit-nulls",
         "-Ysafe-init",
         "-Wunused:all",
         "-Wvalue-discard",
@@ -88,7 +89,7 @@ enablePlugins(NativeImagePlugin)
 nativeImageGraalHome := file("/opt/hostedtoolcache/graalvm-jdk-21_linux-x64_bin/21.0.0/x64/graalvm-jdk-21.0.2+13.1").toPath
 
 nativeImageOptions ++= List(
-  "--static",
+//  "--static",
   "--verbose",
   "--allow-incomplete-classpath",
   "--report-unsupported-elements-at-runtime",

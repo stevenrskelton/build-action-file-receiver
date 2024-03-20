@@ -100,19 +100,19 @@ object MultipartParser {
     var i = 0
     var currState = state
     val len = values.length
-    while (currState < len && i < c.size) {
-      if (c(i) == values(currState))
+    while currState < len && i < c.size do {
+      if c(i) == values(currState) then
         currState += 1
-      else if (c(i) == values(0))
+      else if c(i) == values(0) then
         currState = 1
       else
         currState = 0
       i += 1
     }
 
-    if (currState == 0)
+    if currState == 0 then
       (0, Stream.empty)
-    else if (currState == len)
+    else if currState == len then
       (currState, Stream.chunk(c.drop(i)))
     else
       (currState, Stream.empty)
@@ -138,7 +138,7 @@ object MultipartParser {
                                         carry: Stream[F, Byte],
                                         c: Chunk[Byte],
                                       ): (Int, Stream[F, Byte], Stream[F, Byte]) =
-    if (middleChunked)
+    if middleChunked then
       (
         sti,
         // Emit the partial match as well
@@ -167,7 +167,7 @@ object MultipartParser {
                                        c: Chunk[Byte],
                                      ): (Int, Stream[F, Byte], Stream[F, Byte]) = {
     val ixx = i - currState
-    if (middleChunked) {
+    if middleChunked then {
       val (lchunk, rchunk) = c.splitAt(ixx)
       (currState, acc ++ carry ++ Stream.chunk(lchunk), Stream.chunk(rchunk))
     } else
@@ -197,10 +197,10 @@ object MultipartParser {
     var i = 0
     var currState = state
     val len = values.length
-    while (currState < len && i < c.size) {
-      if (c(i) == values(currState))
+    while currState < len && i < c.size do {
+      if c(i) == values(currState) then
         currState += 1
-      else if (c(i) == values(0))
+      else if c(i) == values(0) then
         currState = 1
       else
         currState = 0
@@ -212,9 +212,9 @@ object MultipartParser {
     // (i + state).
     val middleChunked = i + state - currState > 0
 
-    if (currState == 0)
+    if currState == 0 then
       (0, acc ++ carry ++ Stream.chunk(c), Stream.empty)
-    else if (currState == len)
+    else if currState == len then
       splitCompleteMatch(middleChunked, currState, i, acc, carry, c)
     else
       splitPartialMatch(middleChunked, currState, i, acc, carry, c)
@@ -242,7 +242,7 @@ object MultipartParser {
                             c2: Chunk[Byte],
                             remaining: Stream[F, Byte],
                           ): SplitStream[F] =
-        if (c1(0) == dashByte && c2(0) == dashByte)
+        if c1(0) == dashByte && c2(0) == dashByte then
           // Drain the multipart epilogue.
           Pull.eval(rest.compile.drain) *>
             Pull.pure((streamEmpty, streamEmpty))
@@ -258,14 +258,14 @@ object MultipartParser {
           go(remaining, ix, l, r, add)
         }
 
-      if (c.size == 1)
+      if c.size == 1 then
         rest.pull.uncons.flatMap {
           case Some((chnk, remaining)) =>
             checkTwoNonEmpty(c, chnk, remaining)
           case None =>
             Pull.raiseError[F](MalformedMessageBodyFailure("Malformed Multipart ending"))
         }
-      else if (c(0) == dashByte && c(1) == dashByte)
+      else if c(0) == dashByte && c(1) == dashByte then
         // Drain the multipart epilogue.
         Pull.eval(rest.compile.drain) *>
           Pull.pure((streamEmpty, streamEmpty))
@@ -283,11 +283,11 @@ object MultipartParser {
             racc: Stream[F, Byte],
             limitCTR: Int,
           ): SplitStream[F] =
-      if (limitCTR >= limit)
+      if limitCTR >= limit then
         Pull.raiseError[F](
           MalformedMessageBodyFailure(s"Part header was longer than $limit-byte limit")
         )
-      else if (state == values.length)
+      else if state == values.length then
         Pull.pure((lacc, racc ++ s))
       else
         s.pull.uncons.flatMap {
@@ -316,7 +316,7 @@ object MultipartParser {
           .fold("")(_ ++ _)
           .map { string =>
             val ix = string.indexOf(':')
-            if (ix >= 0)
+            if ix >= 0 then
               headers.put(
                 Header.Raw(CIString(string.substring(0, ix)), string.substring(ix + 1).trim)
               )
@@ -348,7 +348,7 @@ object MultipartParser {
             lacc: Stream[F, Byte],
             racc: Stream[F, Byte],
           ): SplitStream[F] =
-      if (state == values.length)
+      if state == values.length then
         Pull.pure((lacc, racc ++ s))
       else
         s.pull.uncons.flatMap {
@@ -390,7 +390,7 @@ object MultipartParser {
                                           carry: Stream[F, Byte],
                                           c: Chunk[Byte],
                                         ): (Int, Stream[F, Byte], Stream[F, Byte], Int) =
-    if (middleChunked)
+    if middleChunked then
       (
         sti,
         // Emit the partial match as well
@@ -431,7 +431,7 @@ object MultipartParser {
                                          c: Chunk[Byte],
                                        ): (Int, Stream[F, Byte], Stream[F, Byte], Int) = {
     val ixx = i - currState
-    if (middleChunked) {
+    if middleChunked then {
       val (lchunk, rchunk) = c.splitAt(ixx)
       (
         currState,
@@ -454,10 +454,10 @@ object MultipartParser {
     var i = 0
     var currState = state
     val len = values.length
-    while (currState < len && i < c.size) {
-      if (c(i) == values(currState))
+    while currState < len && i < c.size do {
+      if c(i) == values(currState) then
         currState += 1
-      else if (c(i) == values(0))
+      else if c(i) == values(0) then
         currState = 1
       else
         currState = 0
@@ -470,9 +470,9 @@ object MultipartParser {
     // (i + state).
     val middleChunked = i + state - currState > 0
 
-    if (currState == 0)
+    if currState == 0 then
       (0, acc ++ carry ++ Stream.chunk(c), Stream.empty, i)
-    else if (currState == len)
+    else if currState == len then
       splitCompleteLimited(state, middleChunked, currState, i, acc, carry, c)
     else
       splitPartialLimited(state, middleChunked, currState, i, acc, carry, c)
@@ -485,9 +485,9 @@ object MultipartParser {
     def go(st: Stream[F, Event], partsCounter: Int): Pull[F, Event, Unit] =
       st.pull.uncons1.flatMap {
         case Some((event: PartStart, rest)) =>
-          if (partsCounter < maxParts) {
+          if partsCounter < maxParts then {
             Pull.output1(event) >> go(rest, partsCounter + 1)
-          } else if (failOnLimit) {
+          } else if failOnLimit then {
             Pull.raiseError[F](MalformedMessageBodyFailure("Parts limit exceeded"))
           } else Pull.done
         case Some((event, rest)) =>
@@ -531,7 +531,7 @@ object MultipartParser {
       s.pull.uncons.flatMap {
         case Some((chnk, rest)) =>
           val (ix, remainder) = splitAndIgnorePrev(dashBoundaryBytes, state, chnk)
-          if (ix === dashBoundaryBytes.length) Pull.pure(remainder ++ rest)
+          if ix === dashBoundaryBytes.length then Pull.pure(remainder ++ rest)
           else go(rest, ix)
         case None =>
           Pull.raiseError[F](MalformedMessageBodyFailure("Malformed Malformed match"))
@@ -586,7 +586,7 @@ object MultipartParser {
       .flatMap { rest =>
         // We hit a boundary, but the rest of the stream is empty
         // and thus it's not a properly capped multipart body
-        if (rest == streamEmpty)
+        if rest == streamEmpty then
           Pull.raiseError[F](MalformedMessageBodyFailure("Part not terminated properly"))
         else
           Pull.output1(PartEnd).as(rest)
@@ -602,14 +602,14 @@ object MultipartParser {
             state: Int,
             racc: Stream[F, Byte],
           ): Pull[F, PartChunk, Stream[F, Byte]] =
-      if (state == delimiterBytes.length)
+      if state == delimiterBytes.length then
         Pull.pure(racc ++ s)
       else
         s.pull.uncons.flatMap {
           case Some((chnk, rest)) =>
             val (ix, l, r) = splitOnChunk[F](delimiterBytes, state, chnk, Stream.empty, racc)
             l.chunks.map(PartChunk.apply).pull.echo >> {
-              if (ix == delimiterBytes.length) Pull.pure(r ++ rest)
+              if ix == delimiterBytes.length then Pull.pure(r ++ rest)
               else go(rest, ix, r)
             }
           case None =>

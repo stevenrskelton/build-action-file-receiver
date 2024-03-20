@@ -33,7 +33,7 @@ object MetadataUtil:
       gitHubMavenArtifactPath =>
         fetchXML(gitHubMavenArtifactPath / "maven-metadata.xml", fileUploadFormData.authToken)
           .map { xml =>
-            if (allowAllVersions)
+            if allowAllVersions then
               parseAllVersionMetadata(fileUploadFormData, xml).getOrElse:
                 parseLatestVersionMetadata(fileUploadFormData, xml)
             else
@@ -41,10 +41,10 @@ object MetadataUtil:
           }
           .flatMap:
             mavenPackage =>
-              if (fileUploadFormData.version != mavenPackage.version)
+              if fileUploadFormData.version != mavenPackage.version then
                 val msg = s"Version ${fileUploadFormData.version} requested. Latest is ${mavenPackage.version}${mavenPackage.updated.fold("")(z => s" updated on ${z.toString}")}"
                 IO.raiseError(ResponseException(Status.Conflict, msg))
-              else if (fileUploadFormData.version.endsWith("-SNAPSHOT"))
+              else if fileUploadFormData.version.endsWith("-SNAPSHOT") then
                 fetchXML(gitHubMavenArtifactPath / fileUploadFormData.version / "maven-metadata.xml", fileUploadFormData.authToken)
                   .map(parseLatestSnapshotVersionMetadata(fileUploadFormData, _))
               else

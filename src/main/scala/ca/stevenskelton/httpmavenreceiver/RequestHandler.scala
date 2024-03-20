@@ -20,7 +20,7 @@ case class RequestHandler(
 
   def releasesPut(request: Request[IO]): IO[Response[IO]] =
     logger.info(s"Starting request from ${request.remoteAddr.fold("?")(_.toUriString)}") *> {
-      if (request.contentType.exists(contentType => contentType.mediaType.mainType == "multipart" && contentType.mediaType.subType == "form-data"))
+      if request.contentType.exists(contentType => contentType.mediaType.mainType == "multipart" && contentType.mediaType.subType == "form-data") then
         request.decodeWith(FileUploadFormData.makeDecoder, strict = true)(handleFileUploadFormData)
       else
         val fileUploadFormData = FileUploadFormData.readFromHttpHeaders(request.headers, request.body, isMavenDisabled)
@@ -33,11 +33,11 @@ case class RequestHandler(
   end releasesPut
 
   private def handleFileUploadFormData(fileUploadFormData: FileUploadFormData): IO[Response[IO]] =
-    for {
+    for
       startTime <- IO.realTimeInstant
 
       _ <-
-        if (allowedRepositories.nonEmpty && !allowedRepositories.contains(fileUploadFormData.repository))
+        if allowedRepositories.nonEmpty && !allowedRepositories.contains(fileUploadFormData.repository) then
           IO.raiseError(ResponseException(Status.Forbidden, s"Repository ${fileUploadFormData.repository} not allowed."))
         else
           IO.unit
@@ -45,7 +45,7 @@ case class RequestHandler(
       _ <- logger.info(s"Parsed request for file `${fileUploadFormData.filename}` by GitHub user `${fileUploadFormData.user}`")
 
       mavenPackage <-
-        if (isMavenDisabled) IO(MavenPackage.unverified(fileUploadFormData))
+        if isMavenDisabled then IO(MavenPackage.unverified(fileUploadFormData))
         else MetadataUtil.fetchMetadata(fileUploadFormData, allowAllVersions)
 
       tempFile <- FileUtils.createTempFileIfNotExists(uploadDirectory / mavenPackage.filename)
@@ -71,7 +71,7 @@ case class RequestHandler(
       })
       _ <- logger.info(s"Current JVM Heap ${Utils.humanReadableBytes(Runtime.getRuntime.totalMemory())}")
 
-    } yield response
+    yield response
   end handleFileUploadFormData
 
   private def handleUpload(tempFile: Path, mavenPackage: MavenPackage, entityBody: EntityBody[IO], authToken: AuthToken): IO[SuccessfulUpload] =
@@ -79,9 +79,9 @@ case class RequestHandler(
       val digest = MessageDigest.getInstance("MD5")
       var fileSize = 0
 
-      for {
+      for
         expectedMD5 <-
-          if (isMavenDisabled) IO.pure(None)
+          if isMavenDisabled then IO.pure(None)
           else MD5Util.fetchMavenMD5(mavenPackage, authToken).map(Some.apply)
 
         _ <- entityBody
@@ -109,7 +109,7 @@ case class RequestHandler(
           action => action.run(destinationFile, mavenPackage)
         )
 
-      } yield SuccessfulUpload(mavenPackage.filename, fileSize, uploadMD5)
+      yield SuccessfulUpload(mavenPackage.filename, fileSize, uploadMD5)
     }.flatten
 
   end handleUpload

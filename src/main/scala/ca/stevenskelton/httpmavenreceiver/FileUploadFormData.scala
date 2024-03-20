@@ -46,7 +46,7 @@ object FileUploadFormData:
                     case Some(FileUploadFieldName) =>
                       fieldsIO.map:
                         case fields: mutable.HashMap[String, String] =>
-                          for {
+                          for
                             authToken <- fields.get("authToken")
                             user <- fields.get("user")
                             repository <- fields.get("repository")
@@ -55,7 +55,7 @@ object FileUploadFormData:
                             packaging <- fields.get("packaging")
                             version <- fields.get("version")
                             filename <- part.filename
-                          } yield FileUploadFormData(
+                          yield FileUploadFormData(
                             authToken = authToken,
                             user = user,
                             repository = repository,
@@ -86,10 +86,10 @@ object FileUploadFormData:
 
   private def readHeader(name: String, headers: Headers, isMavenDisabled: Boolean): Option[String] =
     headers.get(CIString(name)).map(_.head.value).orElse:
-      if (isMavenDisabled) Some("") else None
+      if isMavenDisabled then Some("") else None
 
   def readFromHttpHeaders(headers: Headers, entityBody: EntityBody[IO], isMavenDisabled: Boolean): Option[FileUploadFormData] = {
-    for {
+    for
       authToken <- readHeader("X-authToken", headers, isMavenDisabled)
       user <- readHeader("X-user", headers, isMavenDisabled)
       repository <- readHeader("X-repository", headers, isMavenDisabled)
@@ -98,7 +98,7 @@ object FileUploadFormData:
       packaging <- readHeader("X-packaging", headers, isMavenDisabled)
       version <- readHeader("X-version", headers, isMavenDisabled)
       filename <- headers.get(CIString("X-file")).map(_.head).map(_.value)
-    } yield FileUploadFormData(
+    yield FileUploadFormData(
       authToken = authToken,
       user = user,
       repository = repository,
