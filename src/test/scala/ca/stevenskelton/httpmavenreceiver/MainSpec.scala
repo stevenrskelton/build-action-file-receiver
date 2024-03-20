@@ -212,7 +212,7 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
     val uploadFileForm404 = fileForm + ("version" -> "9.0.0-SNAPSHOT")
 
     def exec(isMavenDisabled: Boolean): IO[String] = {
-      val gitHubResponses = if (isMavenDisabled) Map.empty else Map(
+      val gitHubResponses = if isMavenDisabled then Map.empty else Map(
         uploadPackageMetadataUri -> UploadRequestHelper.successResponse(uploadPackageMetadataFile),
       )
 

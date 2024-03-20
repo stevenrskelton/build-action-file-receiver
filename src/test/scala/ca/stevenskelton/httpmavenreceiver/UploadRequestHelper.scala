@@ -23,9 +23,9 @@ object UploadRequestHelper {
                postUploadActions: Option[PostUploadAction] = None,
              )(using logger: Logger[IO] = Main.logger): IO[HttpApp[IO]] = {
 
-    for {
+    for
       tmpDir <- Files[IO].createTempDirectory(None, "http-maven-receiver-specs-", None)
-    } yield {
+    yield {
       given httpClient: Resource[IO, Client[IO]] = Resource.pure {
         Client(request => Resource.pure(responses.getOrElse(request.uri, Response.notFound)))
       }
