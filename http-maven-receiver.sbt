@@ -71,7 +71,7 @@ def publishToGitHubPackages(fileToPublish: File, vm: String): Def.Initialize[Tas
   </settings>"""
   IO.write(settingsXMLFile, settingsXML)
 
-  val (artifactId, packaging) = vmToArtifact(vm)
+  val (artifactId: String, packaging: String) = vmToArtifact(vm)
 
   val exe =
     s"""mvn deploy:deploy-file
@@ -107,7 +107,7 @@ def uploadByPut(fileToUpload: File, vm: String, useMultipart: Boolean = false): 
   val repository = name.value
   val groupId = organization.value.replace(".", "/")
 
-  val (artifactId, packaging) = vmToArtifact(vm)
+  val (artifactId: String, packaging: String) = vmToArtifact(vm)
 
   val destinationFile = if (version.value.contains("SNAPSHOT")) {
     val mavenUrl = s"https://maven.pkg.github.com/$githubUser/$repository/$groupId/$artifactId/${version.value}/maven-metadata.xml"
