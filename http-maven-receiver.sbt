@@ -7,23 +7,32 @@ import scala.xml.XML
 
 lazy val httpMavenReceiverUploadAssembly = taskKey[Unit]("Upload Jar via HTTP PUT to Maven Receiver")
 httpMavenReceiverUploadAssembly := Def.taskDyn {
-  val fileToUpload = (Compile / assembly).value
-  uploadByPut(fileToUpload, vm = "assembly", useMultipart = false)
-    .map(_ => publishToGitHubPackages(fileToUpload, vm ="assembly"))
+  (Compile / assembly).map {
+    fileToUpload => Def.sequential(
+      uploadByPut(fileToUpload, vm = "assembly", useMultipart = false),
+      publishToGitHubPackages(fileToUpload, vm = "assembly")
+    )
+  }
 }.value
 
 lazy val httpMavenReceiverUploadGraalNative = taskKey[Unit]("Upload Graal Native via HTTP PUT to Maven Receiver")
 httpMavenReceiverUploadGraalNative := Def.taskDyn {
-  val fileToUpload = (Compile / nativeImage).value
-  uploadByPut(fileToUpload, vm = "graalvm", useMultipart = false)
-    .map(_ => publishToGitHubPackages(fileToUpload, vm ="graalvm"))
+  (Compile / nativeImage).map {
+    fileToUpload => Def.sequential(
+      uploadByPut(fileToUpload, vm = "graalvm", useMultipart = false),
+      publishToGitHubPackages(fileToUpload, vm ="graalvm")
+    )
+  }
 }.value
 
 lazy val httpMavenReceiverUploadScalaNative = taskKey[Unit]("Upload Scala Native via HTTP PUT to Maven Receiver")
 httpMavenReceiverUploadGraalNative := Def.taskDyn {
-  val fileToUpload = (Compile / nativeLink).value
-  uploadByPut(fileToUpload, vm = "scala-native", useMultipart = false)
-    .map(_ => publishToGitHubPackages(fileToUpload, vm ="scala-native"))
+  (Compile / nativeLink).map {
+    fileToUpload => Def.sequential(
+      uploadByPut(fileToUpload, vm = "scala-native", useMultipart = false),
+      publishToGitHubPackages(fileToUpload, vm ="scala-native")
+    )
+  }
 }.value
 
 def publishToGitHubPackages(fileToPublish: File, vm: String): Def.Initialize[Task[Unit]] = Def.task {
