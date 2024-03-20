@@ -1,9 +1,12 @@
-//addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.16")
+//Fat-Jar Assembly
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.1.5")
 
-//addSbtPlugin("org.portable-scala" % "sbt-scala-native-crossproject" % "1.3.2")
-
+//GraalVM
 addSbtPlugin("org.scalameta" % "sbt-native-image" % "0.3.2")
+
+//Scala Native
+//addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.16")
+//addSbtPlugin("org.portable-scala" % "sbt-scala-native-crossproject" % "1.3.2")
 
 libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-ahc-ws-standalone" % "2.1.11",

@@ -31,4 +31,3 @@ object FileUtils:
         val errorMessage = s"Could not rename $tempFile to ${destinationFile.fileName}"
         logger.error(errorMessage) *>
           IO.raiseError(ResponseException(Status.InternalServerError, errorMessage, Some(ex)))
-

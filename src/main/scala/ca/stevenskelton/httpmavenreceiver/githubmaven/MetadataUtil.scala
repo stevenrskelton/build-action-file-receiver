@@ -98,27 +98,5 @@ object MetadataUtil:
       snapshotTimeIncrement = Some(snapshotVersion),
       updated = Some(lastUpdated((metadata \ "versioning" \ "lastUpdated").text)),
     )
-
-  //    private def parseAllSnapshotMetadata(fileUploadFormData: FileUploadFormData, metadata: Elem): MavenPackage = {
-  //      (metadata \\ "snapshotVersion").withFilter {
-  //        node => (node \ "extension").text == fileUploadFormData.packaging
-  //      }.flatMap {
-  //        n =>
-  //          for {
-  //            value <- n \ "value"
-  //            updated <- n \ "updated"
-  //          } yield {
-  //            val updatedTime = LocalDateTime.parse(updated.text, DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
-  //            MavenPackage(
-  //              user = fileUploadFormData.user,
-  //              repository = fileUploadFormData.repository,
-  //              groupId = fileUploadFormData.groupId,
-  //              artifactId = fileUploadFormData.artifactId,
-  //              packaging = fileUploadFormData.packaging,
-  //              version = value.text,
-  //              updated = updatedTime.atZone(ZoneId.of("UTC"))
-  //            )
-  //          }
-  //      }.sortBy(_.updated).reverse
-  //    }
+  
 end MetadataUtil

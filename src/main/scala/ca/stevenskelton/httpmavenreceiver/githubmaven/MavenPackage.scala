@@ -18,14 +18,9 @@ case class MavenPackage(
 
   val filename: String = s"$artifactId-${snapshotTimeIncrement.getOrElse(version)}.$packaging"
 
-  //  val gitHubMavenArtifactPath: Uri = MavenPackage.gitHubMavenArtifactPath(
-  //    user = user,
-  //    repository = repository,
-  //    groupId = groupId,
-  //    artifactId = artifactId,
-  //  )
-
   val gitHubMavenArtifactPath: Uri = Uri.unsafeFromString(s"https://maven.pkg.github.com/$user/$repository/${groupId.replace(".", "/")}/$artifactId")
+
+end MavenPackage
 
 
 object MavenPackage:
