@@ -10,9 +10,9 @@ hashes.**
 Run this if you have a *private repo* and want to get your artifacts out of GitHub using the unlimited egress bandwidth
 available during GitHub Actions.
 
-✅ Runs as fat-jar using the `java -jar` command.  
-✅ Runs as native assembly compiled with GraalVM.  
-🚫 Almost compiles using Scala Native.  
+![Runs as fat-jar using the `java -jar` command](https://github.com/stevenrskelton/http-maven-receiver/actions/workflows/http-maven-receiver-assembly-jar.yml/badge.svg)  
+![Runs as native assembly compiled with GraalVM](https://github.com/stevenrskelton/http-maven-receiver/actions/workflows/http-maven-receiver-graal-native.yml/badge.svg)  
+![Almost compiles using Scala Native](https://github.com/stevenrskelton/http-maven-receiver/actions/workflows/http-maven-receiver-scala-native.yml/badge.svg)  
 
 ## User Permissions
 
