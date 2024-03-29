@@ -93,7 +93,8 @@ nativeImageOptions ++= List(
   "--verbose",
   "--allow-incomplete-classpath",
   "--report-unsupported-elements-at-runtime",
-  "--no-fallback"
+  "--no-fallback",
+  "-march=compatibility",
 )
 /*
 
