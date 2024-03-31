@@ -2,7 +2,7 @@
 
 Written in Scala 3, using FS2 / HTTP4s / Cats.
 
-### An HTTP server accepting HTTP PUT file uploads, validating authenticity against GitHub Packages Maven MD5 hashes.
+### A light-weight HTTP server accepting file uploads, validating authenticity with GitHub Packages Maven MD5 hashes.
 
 Run this if you have a GitHub *private repo* and want to get your artifacts out of GitHub CI/CD using the unlimited 
 egress bandwidth available to GitHub Actions.
