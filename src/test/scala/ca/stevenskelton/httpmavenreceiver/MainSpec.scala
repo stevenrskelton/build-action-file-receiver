@@ -237,9 +237,9 @@ class MainSpec extends AsyncFreeSpec with Matchers with AsyncIOSpec {
     }
 
   }
-  
+
   "allowed-repositories" - {
-    
+
   }
 
   "post upload action" - {

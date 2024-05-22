@@ -80,7 +80,7 @@ This program is configured via command line arguments:
 
 - `--disable-maven` : Do not validate against Maven, **DISABLED ALL SECURITY**
 - `--allow-all-versions` : Allow upload of non-latest versions in Maven
-- `--allowed-repos=[STRING]` : Comma-separated list of allowed repositories
+- `--allowed-user-repos=[STRING]` : Comma-separated list of allowed user, or user/repositories
 - `--host=[STRING]` : Host/IP address to bind to.  _REQUIRED_
 - `--port=[INTEGER]` : Port to bind to. _DEFAULT: 8080_
 - `--exec=[STRING]` : Command to execute after successful upload.

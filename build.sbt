@@ -1,8 +1,8 @@
 import sbt.TupleSyntax.t3ToTable3
 
-ThisBuild / version := "1.1.2"
+ThisBuild / version := "1.1.3"
 ThisBuild / organization := "ca.stevenskelton"
-ThisBuild / scalaVersion := "3.4.0"
+ThisBuild / scalaVersion := "3.4.2"
 
 val javaVersion = "17"
 
@@ -21,7 +21,7 @@ Compile / sourceGenerators += (Compile / sourceManaged, version, name).map {
     Seq(file)
 }.taskValue
 
-val http4sVersion = "1.0.0-M40"
+val http4sVersion = "1.0.0-M41"
 
 lazy val root = (project in file("."))
   .settings(
@@ -75,9 +75,9 @@ libraryDependencies ++= Seq(
   "org.http4s"              %% "http4s-ember-client"  % http4sVersion,
   "org.http4s"              %% "http4s-ember-server"  % http4sVersion,
   "org.http4s"              %% "http4s-dsl"           % http4sVersion,
-  "org.typelevel"           %% "log4cats-core"        % "2.6.0",
-  "co.fs2"                  %% "fs2-io"               % "3.10.0",
-  "org.scala-lang.modules"  %% "scala-xml"            % "2.2.0",
+  "org.typelevel"           %% "log4cats-core"        % "2.7.0",
+  "co.fs2"                  %% "fs2-io"               % "3.10.2",
+  "org.scala-lang.modules"  %% "scala-xml"            % "2.3.0",
   "org.scalatest"           %% "scalatest"            % "3.3.0-alpha.1"   % Test,
   "org.typelevel"           %% "cats-effect-testing-scalatest" % "1.5.0"  % Test,
 )

@@ -14,7 +14,7 @@ case class RequestHandler(
                            uploadDirectory: Path,
                            allowAllVersions: Boolean,
                            isMavenDisabled: Boolean,
-                           allowedRepositories: Seq[String],
+                           allowedRepositories: Seq[UserRepository],
                            postUploadActions: Option[PostUploadAction],
                          )(using httpClient: Resource[IO, Client[IO]], logger: Logger[IO]):
 
@@ -37,7 +37,7 @@ case class RequestHandler(
       startTime <- IO.realTimeInstant
 
       _ <-
-        if allowedRepositories.nonEmpty && !allowedRepositories.contains(fileUploadFormData.repository) then
+        if allowedRepositories.nonEmpty && !allowedRepositories.exists(_.matches(fileUploadFormData)) then
           IO.raiseError(ResponseException(Status.Forbidden, s"Repository ${fileUploadFormData.repository} not allowed."))
         else
           IO.unit

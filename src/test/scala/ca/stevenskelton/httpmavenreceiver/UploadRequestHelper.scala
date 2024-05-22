@@ -19,7 +19,7 @@ object UploadRequestHelper {
                responses: Map[Uri, Response[IO]],
                allowAllVersions: Boolean = false,
                isMavenDisabled: Boolean = false,
-               allowedRepositories: Seq[String] = Nil,
+               allowedRepositories: Seq[UserRepository] = Nil,
                postUploadActions: Option[PostUploadAction] = None,
              )(using logger: Logger[IO] = Main.logger): IO[HttpApp[IO]] = {
 

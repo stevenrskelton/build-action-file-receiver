@@ -9,7 +9,7 @@ import org.typelevel.log4cats.Logger
 case class MainArgs(
                      allowAllVersions: Boolean,
                      disableMaven: Boolean,
-                     allowedRepositories: Seq[String],
+                     allowedRepositories: Seq[UserRepository],
                      host: Host,
                      port: Port,
                      postUploadAction: Option[PostUploadAction],
@@ -55,7 +55,8 @@ object MainArgs:
 
       disableMaven <- IO.pure(argMap.contains("disable-maven"))
 
-      allowedRepositories <- IO.pure(argMap.get("allowed-repos").toSeq.flatMap(_.split(',')))
+      allowedRepositories <- IO.pure:
+        argMap.get("allowed-repos").toSeq.flatMap(_.split(',')).map(UserRepository.parse)
 
       allowAllVersions <- IO.pure(argMap.contains("allow-all-versions"))
 
@@ -100,7 +101,7 @@ object MainArgs:
             if allowedRepositories.isEmpty then
               logger.warn("WARNING: Allowing all repositories.")
             else
-              logger.info(s"Allowing repositories:\n${allowedRepositories.map(" ‣ " + _).mkString("\n")}")
+              logger.info(s"Allowing repositories:\n${allowedRepositories.map(t => " ‣ " + t._1 + t._2.fold("")("/" + _)).mkString("\n")}")
 
         yield path
 

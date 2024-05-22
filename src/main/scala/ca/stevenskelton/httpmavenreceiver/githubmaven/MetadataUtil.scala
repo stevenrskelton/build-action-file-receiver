@@ -98,5 +98,5 @@ object MetadataUtil:
       snapshotTimeIncrement = Some(snapshotVersion),
       updated = Some(lastUpdated((metadata \ "versioning" \ "lastUpdated").text)),
     )
-  
+
 end MetadataUtil
