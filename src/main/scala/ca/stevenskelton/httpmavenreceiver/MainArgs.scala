@@ -100,6 +100,8 @@ object MainArgs:
           _ <-
             if allowedRepositories.isEmpty then
               logger.warn("WARNING: Allowing all repositories.")
+            else if allowedRepositories.forall(_._2.isEmpty) then
+              logger.info(s"Allowing all repositories for users:\n${allowedRepositories.map(" ‣ " + _._1).mkString("\n")}")
             else
               logger.info(s"Allowing repositories:\n${allowedRepositories.map(t => " ‣ " + t._1 + t._2.fold("")("/" + _)).mkString("\n")}")
 

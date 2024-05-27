@@ -1,6 +1,6 @@
 import sbt.TupleSyntax.t3ToTable3
 
-ThisBuild / version := "1.1.3"
+ThisBuild / version := "1.1.4"
 ThisBuild / organization := "ca.stevenskelton"
 ThisBuild / scalaVersion := "3.4.2"
 
