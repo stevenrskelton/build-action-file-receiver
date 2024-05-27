@@ -68,9 +68,6 @@ lazy val root = (project in file("."))
     }
   )
 
-//nativeImageVersion := "21.1.0"
-//nativeImageVersion := "21.0.2+13.1"
-
 libraryDependencies ++= Seq(
   "org.http4s"              %% "http4s-ember-client"  % http4sVersion,
   "org.http4s"              %% "http4s-ember-server"  % http4sVersion,
@@ -85,6 +82,8 @@ libraryDependencies ++= Seq(
 enablePlugins(DisabledScalaNativePlugin)
 enablePlugins(NativeImagePlugin)
 
+nativeImageVersion := "21.0.3"
+//nativeImageVersion := "21.0.2+13.1"
 //nativeImageGraalHome := file("/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.2+13.1/Contents/Home").toPath
 //nativeImageGraalHome := file("/opt/hostedtoolcache/graalvm-jdk-21_linux-x64_bin/21.0.0/x64/graalvm-jdk-21.0.2+13.1").toPath
 
