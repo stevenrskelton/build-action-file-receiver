@@ -86,7 +86,7 @@ enablePlugins(DisabledScalaNativePlugin)
 enablePlugins(NativeImagePlugin)
 
 //nativeImageGraalHome := file("/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.2+13.1/Contents/Home").toPath
-nativeImageGraalHome := file("/opt/hostedtoolcache/graalvm-jdk-21_linux-x64_bin/21.0.0/x64/graalvm-jdk-21.0.2+13.1").toPath
+//nativeImageGraalHome := file("/opt/hostedtoolcache/graalvm-jdk-21_linux-x64_bin/21.0.0/x64/graalvm-jdk-21.0.2+13.1").toPath
 
 nativeImageOptions ++= List(
 //  "--static",
