@@ -1,0 +1,46 @@
+name: build-action-file-receiver Scala Native
+
+on:
+  workflow_dispatch:
+   push:
+     branches: [ main ]
+
+env:
+  GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  PUT_URI: ${{vars.PUT_URI}}
+  SBT_OPTS: "-Xmx6G -XX:+UseSerialGC"
+  CMAKE_EXE_LINKER_FLAGS: "-L${{ github.workspace }}/s2n-tls/s2n-tls-install/lib"
+  CMAKE_SHARED_LINKER_FLAGS: "-L${{ github.workspace }}/s2n-tls/s2n-tls-install/lib"
+  CMAKE_MODULE_LINKER_FLAGS: "-L${{ github.workspace }}/s2n-tls/s2n-tls-install/lib"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    - name: Compile and Install AWS S2N-TLS
+      run: |
+        # clone s2n-tls
+        git clone --depth 1 https://github.com/aws/s2n-tls.git
+        cd s2n-tls
+        # build s2n-tls
+        cmake . -Bbuild \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=./s2n-tls-install
+        cmake --build build -j $(nproc)
+        CTEST_PARALLEL_LEVEL=$(nproc) ctest --test-dir build
+        cmake --install build
+        echo $CMAKE_EXE_LINKER_FLAGS
+    - name: Publish Native Linux & Deploy
+      run: sbt buildActionFileReceiverUploadScalaNative

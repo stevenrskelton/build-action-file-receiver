@@ -12,7 +12,7 @@ logLevel := Level.Info
 Compile / sourceGenerators += (Compile / sourceManaged, version, name).map {
   (sourceDirectory, version, name) =>
     val file = sourceDirectory / "SbtBuildInfo.scala"
-    IO.write(file, """package ca.stevenskelton.httpmavenreceiver
+    IO.write(file, """package ca.stevenskelton.buildactionfilereceiver
                      |object SbtBuildInfo {
                      |  val version = "%s"
                      |  val name = "%s"
@@ -25,7 +25,7 @@ val http4sVersion = "1.0.0-M41"
 
 lazy val root = (project in file("."))
   .settings(
-    name := "http-maven-receiver",
+    name := "build-action-file-receiver",
     scalacOptions ++= {
       Seq(
         "-encoding", "UTF-8",
@@ -46,11 +46,11 @@ lazy val root = (project in file("."))
       "-Wunused:all",
       "-Wnonunit-statement",
     ),
-    Compile / mainClass := Some("ca.stevenskelton.httpmavenreceiver.Main"),
+    Compile / mainClass := Some("ca.stevenskelton.buildactionfilereceiver.Main"),
     javacOptions ++= Seq("-source", javaVersion, "-target", javaVersion),
     addArtifact(assembly / artifact, assembly),
 //    addArtifact(nativeLink / artifact, nativeLink),
-    assembly / mainClass := Some ("ca.stevenskelton.httpmavenreceiver.Main"),
+    assembly / mainClass := Some ("ca.stevenskelton.buildactionfilereceiver.Main"),
     assembly / assemblyMergeStrategy := {
       //Logback
       case PathList("META-INF", "services", xs@_*) if xs.lastOption.contains("ch.qos.logback.classic.spi.Configurator") => MergeStrategy.first
@@ -122,7 +122,7 @@ nativeConfig ~= { c =>
     .withGC(GC.immix) // commix
 }
 
-nativeLinkingOptions += s"-L/home/runner/work/http-maven-receiver/http-maven-receiver/s2n-tls/s2n-tls-install/lib"
+nativeLinkingOptions += s"-L/home/runner/work/build-action-file-receiver/build-action-file-receiver/s2n-tls/s2n-tls-install/lib"
 
 libraryDependencies ++= Seq(
   "com.armanbilge"          %%% "epollcat"            % "0.1.4",

@@ -1,4 +1,4 @@
-# http-maven-receiver
+# build-action-file-receiver
 
 Written in Scala 3, using FS2 / HTTP4s / Cats.
 
@@ -9,15 +9,15 @@ egress bandwidth available to GitHub Actions.
 
 #### ✅ Runs as fat-jar using the `java -jar` command Java JDK 17  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-![](https://github.com/stevenrskelton/http-maven-receiver/actions/workflows/http-maven-receiver-assembly-jar.yml/badge.svg)    
+![](https://github.com/stevenrskelton/build-action-file-receiver/actions/workflows/build-action-file-receiver-assembly-jar.yml/badge.svg)    
 
 #### ✅ Runs as native assembly compiled with GraalVM JDK 21.0  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-![](https://github.com/stevenrskelton/http-maven-receiver/actions/workflows/http-maven-receiver-graal-native.yml/badge.svg)  
+![](https://github.com/stevenrskelton/build-action-file-receiver/actions/workflows/build-action-file-receiver-graal-native.yml/badge.svg)  
 
 #### 🚫 Almost compiles using Scala Native 0.4.17  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-![](https://github.com/stevenrskelton/http-maven-receiver/actions/workflows/http-maven-receiver-scala-native.yml/badge.svg)  
+![](https://github.com/stevenrskelton/build-action-file-receiver/actions/workflows/build-action-file-receiver-scala-native.yml/badge.svg)  
 
 
 ## User Permissions
@@ -34,18 +34,18 @@ All requests without a valid token, or for repos not explicitly allowed by serve
 
 ## SBT Tasks
 
-The _http-maven-receivers.sbt_ file has 2 helper tasks:
+The _build-action-file-receivers.sbt_ file has 2 helper tasks:
 - `publishToGitHubPackages` contains tasks to upload to GitHub Packages (Maven)
 - `uploadByPut` contains tasks to upload to this server (HTTP PUT)
 
 Your GitHub Action should call one of 3 tasks, depending on the artifact to be compiled:
-- `httpMavenReceiverUploadAssembly` for fat-jar
-- `httpMavenReceiverUploadGraalNative` for GraalVM native
-- `httpMavenReceiverUploadScalaNative` for Scala Native
+- `buildActionFileReceiverUploadAssembly` for fat-jar
+- `buildActionFileReceiverUploadGraalNative` for GraalVM native
+- `buildActionFileReceiverUploadScalaNative` for Scala Native
 
 These tasks are dependent on external libraries, meaning SBT plugins need to be installed in _project/plugins.sbt_.  
 If not using a particular artifact output, that SBT dependency can be omitted and the SBT task above can be removed
-from _http-maven-receivers.sbt_ to avoid compilation errors.  
+from _build-action-file-receivers.sbt_ to avoid compilation errors.  
 
 The SBT plugins required to be added to _project/plugins.sbt_ are:
 - `addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.1.5")` for fat-jar
@@ -60,8 +60,8 @@ The SBT plugins required to be added to _project/plugins.sbt_ are:
 
 - Copy `http-mave-receiver.sbt` to the root directory of your project.
 - Add plugins to _project/plugins.sbt_ in your project.
-- Copy `.github/workflows/http-maven-receiver-*.yml` to the `.github/workflows` folder in your project.
-- Create new `PUT_URI` environmental variable in your `http-maven-receiver-*.yml` workflow, or hard-code it into
+- Copy `.github/workflows/build-action-file-receiver-*.yml` to the `.github/workflows` folder in your project.
+- Create new `PUT_URI` environmental variable in your `build-action-file-receiver-*.yml` workflow, or hard-code it into
   the YML file in the `env` section.
 
 example:
@@ -89,13 +89,13 @@ This program is configured via command line arguments:
 JVM example:
 
 ```shell
-java -Xmx=40m -Dhost="192.168.0.1" -jar http-maven-receiver-assembly-1.1.1.jar
+java -Xmx=40m -Dhost="192.168.0.1" -jar build-action-file-receiver-assembly-1.1.1.jar
 ```
 
 GraalVM / Scala Native example:
 
 ```shell
-./http-maven-receiver --host="192.168.0.1"
+./build-action-file-receiver --host="192.168.0.1"
 ```
 
 ### Post Upload Tasks
@@ -131,7 +131,7 @@ fi
 
 # About
 
-See https://www.stevenskelton.ca/examples/#http-maven-receiver for additional information.
+See https://www.stevenskelton.ca/examples/#build-action-file-receiver for additional information.
 
 ## GraalVM on MacOS M1
 
@@ -139,39 +139,10 @@ Uses [SBT Native-Image plugin](https://github.com/scalameta/sbt-native-image).
 
 Uses [GraalVM](https://www.graalvm.org/downloads/) installed to `/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.2+13.1/Contents/Home`  
 
-Run `nativeImageRunAgent` to capture files in `/META-INF/native-image/ca.stevenskelton/httpmavenreceiver`.  
+Run `nativeImageRunAgent` to capture files in `/META-INF/native-image/ca.stevenskelton/buildactionfilereceiver`.  
 
-Run `nativeImage` to compile http-maven-receiver (executable).  
+Run `nativeImage` to compile build-action-file-receiver (executable).  
 
 ## Scala Native
 
-Attempting to support Scala Native compilation.  
-
-**Currently doesn't compile.**
-
-👎Scala Native isn't well suited to this application, it will diminish performance and is a headache with no upside,
-but why not? The rest of this document are working notes.  
-
-See https://www.stevenskelton.ca/compiling-scala-native-github-actions-alternative-to-graalvm/  
-
-## Modifications Required to Enable Scala Native
-
-Code blocks have been commented out in `build.sbt` and `project/plugins.sbt` which when uncommented will provide Scala
-Native support.  
-
-Code blocks will need to be commented out in `build.sbt` and `project/DisabledScalaNativePlugin.scala`.  
-
-## Compiling Scala Native
-
-Refer to `.github/workflows/http-maven-receiver-scala-native.yml` for how the GitHub Action workflow is configured.
-
-Follow the setup instructions https://scala-native.org/en/stable/user/setup.html  
-
-In addition, the AWS S2N-TLS (https://github.com/aws/s2n-tls) is required to be installed.  
-If it is not in a standard library path; modify `build.sbt` to specify the location manually.  
-
-```scala
-nativeLinkingOptions += s"-L/home/runner/work/http-maven-receiver/http-maven-receiver/s2n-tls/s2n-tls-install/lib"
-```
-
-The `nativeLink` SBT task will produce the native executable as `/target/scala-3.4.0/http-maven-receiver-out`
+Attempting to support Scala Native compilation. See [ScalaNative.md](ScalaNative.md) for status.
