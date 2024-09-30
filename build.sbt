@@ -1,10 +1,10 @@
 import sbt.TupleSyntax.t3ToTable3
 
-ThisBuild / version := "1.1.4"
+ThisBuild / version := "1.2.0"
 ThisBuild / organization := "ca.stevenskelton"
-ThisBuild / scalaVersion := "3.4.2"
+ThisBuild / scalaVersion := "3.5.1"
 
-val javaVersion = "17"
+val javaVersion = "21"
 
 // set to Debug for compilation details (Info is default)
 logLevel := Level.Info
@@ -35,7 +35,7 @@ lazy val root = (project in file("."))
         //"-indent",
         "-new-syntax", "-rewrite",
         //"-Yexplicit-nulls",
-        "-Ysafe-init",
+        "-Wsafe-init",
         "-Wunused:all",
         "-Wvalue-discard",
         "-Wnonunit-statement",
@@ -73,7 +73,7 @@ libraryDependencies ++= Seq(
   "org.http4s"              %% "http4s-ember-server"  % http4sVersion,
   "org.http4s"              %% "http4s-dsl"           % http4sVersion,
   "org.typelevel"           %% "log4cats-core"        % "2.7.0",
-  "co.fs2"                  %% "fs2-io"               % "3.10.2",
+  "co.fs2"                  %% "fs2-io"               % "3.11.0",
   "org.scala-lang.modules"  %% "scala-xml"            % "2.3.0",
   "org.scalatest"           %% "scalatest"            % "3.3.0-alpha.1"   % Test,
   "org.typelevel"           %% "cats-effect-testing-scalatest" % "1.5.0"  % Test,
