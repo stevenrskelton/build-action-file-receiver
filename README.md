@@ -48,8 +48,8 @@ If not using a particular artifact output, that SBT dependency can be omitted an
 from _build-action-file-receivers.sbt_ to avoid compilation errors.  
 
 The SBT plugins required to be added to _project/plugins.sbt_ are:
-- `addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.1.5")` for fat-jar
-- `addSbtPlugin("org.scalameta" % "sbt-native-image" % "0.3.2")` for GraalVM native
+- `addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.2.0")` for fat-jar
+- `addSbtPlugin("org.scalameta" % "sbt-native-image" % "0.3.4")` for GraalVM native
 - `addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.4.16")` for Scala Native
 
 ![Request Flow](./requests.drawio.svg)
@@ -89,13 +89,18 @@ This program is configured via command line arguments:
 JVM example:
 
 ```shell
-java -Xmx=40m -Dhost="192.168.0.1" -jar build-action-file-receiver-assembly-1.1.1.jar
+java -Xmx=40m -jar build-action-file-receiver-assembly-1.2.0.jar \
+ --host="192.168.0.1" \
+ --max-upload-size=160M \
+ --allowed-repos=stevenrskelton
 ```
 
-GraalVM / Scala Native example:
 
 ```shell
-./build-action-file-receiver --host="192.168.0.1"
+./build-action-file-receiver \
+ --host="192.168.0.1"
+ --max-upload-size=160M \
+ --allowed-repos=stevenrskelton 
 ```
 
 ### Post Upload Tasks

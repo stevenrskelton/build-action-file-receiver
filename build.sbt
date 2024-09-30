@@ -86,7 +86,8 @@ enablePlugins(NativeImagePlugin)
 //nativeImageVersion := "21.0.2+13.1"
 //nativeImageGraalHome := file("/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.2+13.1/Contents/Home").toPath
 //nativeImageGraalHome := file("/opt/hostedtoolcache/graalvm-jdk-21_linux-x64_bin/21.0.0/x64/graalvm-jdk-21.0.2+13.1").toPath
-nativeImageGraalHome := file(scala.sys.env("GRAALVM_HOME")).toPath
+//nativeImageGraalHome := file("/usr/src/graalvm-community-openjdk-23+37.1").toPath
+nativeImageGraalHome := scala.sys.env.get("GRAALVM_HOME").fold(throw new Exception("Set GRAALVM_HOME to the directory where GraalVM is installed"))(file(_).toPath)
 
 nativeImageOptions ++= List(
 //  "--static",
