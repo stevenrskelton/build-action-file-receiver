@@ -138,15 +138,26 @@ fi
 
 See https://www.stevenskelton.ca/examples/#build-action-file-receiver for additional information.
 
-## GraalVM on MacOS M1
+## GraalVM
 
 Uses [SBT Native-Image plugin](https://github.com/scalameta/sbt-native-image).  
 
-Uses [GraalVM](https://www.graalvm.org/downloads/) installed to `/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.2+13.1/Contents/Home`  
+Uses [GraalVM](https://www.graalvm.org/downloads/) installed to `$GRAALVM_HOME` directory.
 
-Run `nativeImageRunAgent` to capture files in `/META-INF/native-image/ca.stevenskelton/buildactionfilereceiver`.  
+If using the `GRAALVM_HOME` environment variable isn't suitable, edit `build.sbt` to set `nativeImageGraalHome` directly,
+eg:
 
-Run `nativeImage` to compile build-action-file-receiver (executable).  
+```
+nativeImageGraalHome := file("/Library/Java/JavaVirtualMachines/graalvm-jdk-21.0.2+13.1/Contents/Home").toPath
+```
+
+Run `nativeImage` to compile `build-action-file-receiver` (executable).
+
+### Rebuild GraalVM
+
+GraalVM requires knowledge of some runtime information, and this is captured by the Graal run agent.
+These files are included in `/src/main/resources//META-INF/native-image/ca.stevenskelton/buildactionfilereceiver`.
+They can be rebuilt using run `nativeImageRunAgent`.
 
 ## Scala Native
 
