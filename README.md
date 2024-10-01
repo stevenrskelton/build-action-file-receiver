@@ -7,7 +7,7 @@ Written in Scala 3, using FS2 / HTTP4s / Cats.
 Run this if you have a GitHub *private repo* and want to get your artifacts out of GitHub CI/CD using the unlimited 
 egress bandwidth available to GitHub Actions.
 
-#### ✅ Runs as fat-jar using the `java -jar` command Java JDK 17  
+#### ✅ Runs as fat-jar using the `java -jar` command Java JDK 21  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 ![](https://github.com/stevenrskelton/build-action-file-receiver/actions/workflows/build-action-file-receiver-assembly-jar.yml/badge.svg)    
 
@@ -58,7 +58,7 @@ The SBT plugins required to be added to _project/plugins.sbt_ are:
 
 ## GitHub Action Install
 
-- Copy `http-mave-receiver.sbt` to the root directory of your project.
+- Copy `build-action-file-receiver.sbt` to the root directory of your project.
 - Add plugins to _project/plugins.sbt_ in your project.
 - Copy `.github/workflows/build-action-file-receiver-*.yml` to the `.github/workflows` folder in your project.
 - Create new `PUT_URI` environmental variable in your `build-action-file-receiver-*.yml` workflow, or hard-code it into
