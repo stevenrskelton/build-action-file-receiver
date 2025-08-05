@@ -75,7 +75,7 @@ object FileUploadFormData:
                     case _ => fieldsIO
               .compile.lastOrError.flatten.map:
                 case Some(fileUploadFields) => Right(fileUploadFields)
-                case obj => Left(new ResponseException(Status.BadRequest, FormErrorMessage) with DecodeFailure)
+                case _ => Left(new ResponseException(Status.BadRequest, FormErrorMessage) with DecodeFailure)
 
         case None =>
           DecodeResult.failureT(

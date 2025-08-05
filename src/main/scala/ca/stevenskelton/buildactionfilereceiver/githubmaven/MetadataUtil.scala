@@ -5,7 +5,6 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import org.http4s.*
 import org.http4s.client.Client
-import org.typelevel.log4cats.Logger
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
@@ -28,7 +27,7 @@ object MetadataUtil:
             IO.raiseError(ResponseException(errorResponse.status, msg))
         .map(XML.loadString)
 
-  def fetchMetadata(fileUploadFormData: FileUploadFormData, allowAllVersions: Boolean)(using httpClient: Resource[IO, Client[IO]], logger: Logger[IO]): IO[MavenPackage] =
+  def fetchMetadata(fileUploadFormData: FileUploadFormData, allowAllVersions: Boolean)(using httpClient: Resource[IO, Client[IO]]): IO[MavenPackage] =
     MavenPackage.gitHubMavenArtifactPath(fileUploadFormData).map {
       gitHubMavenArtifactPath =>
         fetchXML(gitHubMavenArtifactPath / "maven-metadata.xml", fileUploadFormData.authToken)
@@ -72,7 +71,7 @@ object MetadataUtil:
     (metadata \ "versioning" \ "versions" \ "version")
       .find(_.text == fileUploadFormData.version)
       .map:
-        version =>
+        _ =>
           MavenPackage(
             user = fileUploadFormData.user,
             repository = fileUploadFormData.repository,

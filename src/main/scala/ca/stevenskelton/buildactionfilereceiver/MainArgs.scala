@@ -90,7 +90,7 @@ object MainArgs:
               Files[IO].createDirectories(path) *>
                 logger.info(s"Created upload directory: $pathString")
                   .onError:
-                    ex => IO.raiseError(ExitException(s"Could not create upload directory: $pathString"))
+                    case _ => IO.raiseError(ExitException(s"Could not create upload directory: $pathString"))
             case true => Files[IO].isWritable(path).flatMap:
               case true => IO.unit
               case false => IO.raiseError(ExitException(s"Can not write to directory: $pathString"))

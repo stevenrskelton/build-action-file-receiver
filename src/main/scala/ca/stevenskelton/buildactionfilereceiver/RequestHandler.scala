@@ -56,7 +56,7 @@ case class RequestHandler(
         fileUploadFormData.entityBody,
         fileUploadFormData.authToken,
       ).onError:
-        ex =>
+        case ex =>
           logger.error(ex)(ex.getMessage) *> Files[IO].exists(tempFile).flatMap {
             case true => Files[IO].delete(tempFile)
             case false => IO.unit

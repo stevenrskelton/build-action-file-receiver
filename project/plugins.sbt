@@ -10,5 +10,5 @@ addSbtPlugin("org.scalameta" % "sbt-native-image" % "0.3.4")
 
 libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-ahc-ws-standalone" % "2.1.11",
-  "org.scala-lang.modules" %% "scala-xml" % "2.3.0"
+  "org.scala-lang.modules" %% "scala-xml" % "2.4.0"
 )

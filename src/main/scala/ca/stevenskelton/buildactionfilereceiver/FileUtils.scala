@@ -7,7 +7,7 @@ import org.typelevel.log4cats.Logger
 
 object FileUtils:
 
-  def createTempFileIfNotExists(destinationFile: Path)(using logger: Logger[IO]): IO[Path] =
+  def createTempFileIfNotExists(destinationFile: Path): IO[Path] =
     Files[IO].exists(destinationFile).flatMap:
       exists =>
         if exists then
